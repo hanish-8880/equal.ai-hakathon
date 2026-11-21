@@ -127,3 +127,23 @@ def test_compute_is_code_not_model():
     assert tools.compute(ME, {"expression": "714 × 50"}, ctx)["value"] == 35700
     with pytest.raises(tools.ToolError):
         tools.compute(ME, {"expression": "__import__('os')"}, ctx)
+
+
+def test_refs_with_brackets_and_missing_values_never_reach_approval(monkeypatch, tmp_path):
+    """Real case (Sun 00:20): the plan said {s1.phones[0]} and the approval card showed the raw text."""
+    from app.chinku.models import StepState, Task
+    t = Task(task_id="i_r", user=ME, request="x", plan=Plan(understood="x"), created_at=0, updated_at=0)
+    t.steps["s1"] = StepState(status="done", output={"phones": ["+919989683607"], "title": "Sri Sai Constructions"})
+    assert executor.resolve("{s1.phones[0]}", t) == "+919989683607"
+    assert executor.resolve("{s1.phones.0}", t) == "+919989683607"
+    assert executor.missing_refs(executor.resolve({"phone": "{s1.phones[3]}"}, t)) == ["s1.phones[3]"]
+    p = Plan(understood="call", confidence=0.95, steps=[
+        Step(id="s1", tool="analyze", inputs={"attachment": "a1"}),
+        Step(id="s2", tool="call", inputs={"targets": [{"name": "{s1.title}", "phone": "{s1.phones.0}"}], "purpose": "ask"},
+             depends_on=["s1"], needs_approval=True)])
+    monkeypatch.setattr("app.chinku.planner.plan", lambda *a, **k: p)
+    monkeypatch.setattr(tools, "analyze", lambda u, i, c: {"title": "Poster", "phones": []})  # no number on the photo
+    monkeypatch.setitem(tools.REGISTRY, "analyze", tools.analyze)
+    executor.handle(ME, "call this number", photo(tmp_path), send, card)
+    assert not any("Needs you" in x for x, _ in CARDS)  # no approval for a call with no number
+    assert any("couldn't find a phone number" in o for o in OUT)

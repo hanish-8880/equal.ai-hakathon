@@ -13,7 +13,8 @@ from app.store.dynamo import store
 
 Send = Callable[[str], None]
 Card = Callable[[str, dict[str, Any] | None], None]
-REF = re.compile(r"\{(s\d+|last)(?:\.([\w.]+))?\}")
+REF = re.compile(r"\{(s\d+|last)(?:\.([\w.\[\]]+))?\}")
+MISSING = re.compile(r"\{missing:([^}]*)\}")
 
 STEP_WORDS = {"analyze": "look at the {what}", "transcribe_image": "type out the page exactly", "extract": "pull out the key details",
               "search": "search: {query}", "map": "show the places on a map", "call": "call {who}", "draft_email": "write the email to {to}",
@@ -40,7 +41,8 @@ def _remember_output(user: str, name: str, value: Any) -> None:
 
 # ---------------- references ----------------
 def _dig(v: Any, path: str | None) -> Any:
-    for p in (path or "").split(".") if path else []:
+    path = re.sub(r"\[(\d+)\]", r".\1", path or "").strip(".")  # phones[0] == phones.0
+    for p in path.split(".") if path else []:
         v = v.get(p) if isinstance(v, dict) else (v[int(p)] if isinstance(v, list) and p.isdigit() and int(p) < len(v) else None)
     return v
 
@@ -60,10 +62,17 @@ def resolve(v: Any, t: Task) -> Any:
             return _dig(outs.get(name), rest or None)
         st = t.steps.get(sid)
         return _dig(st.output if st else None, path)
+    def val(m: re.Match) -> Any:
+        x = get(m.group(1), m.group(2))
+        return f"{{missing:{m.group(0)[1:-1]}}}" if x is None or x == "" else x  # never silently blank
     m = REF.fullmatch(v.strip())
     if m:
-        return get(m.group(1), m.group(2))
-    return REF.sub(lambda m: str(get(m.group(1), m.group(2)) or ""), v)
+        return val(m)
+    return REF.sub(lambda m: str(val(m)), v)
+
+
+def missing_refs(inputs: Any) -> list[str]:
+    return MISSING.findall(json.dumps(inputs, ensure_ascii=False, default=str))
 
 
 # ---------------- readback ----------------
@@ -110,6 +119,14 @@ def run(t: Task, send: Send, card: Card) -> Task:
             st.status, st.error = "skipped", f"skipped because step {bad[0]} did not finish"
             continue
         inputs = resolve(s.inputs, t)
+        gaps = missing_refs(inputs)
+        if gaps:  # never ask approval for (or run) a step with a hole in it
+            st.status, st.error = "failed", f"missing {', '.join(gaps)}"
+            what = {"phones": "a phone number", "emails": "an email address", "text": "the text"}
+            hint = next((w for k, w in what.items() if any(k in g for g in gaps)), "a detail from the earlier step")
+            send(f"⚠️ I couldn't find {hint} for this step, so I didn't do it. Please type it in.")
+            save(t)
+            continue
         needs = s.needs_approval or s.tool in tools.ALWAYS_APPROVE
         if needs and not st.output.get("approved"):
             st.status, st.preview = "waiting", _preview(s.tool, inputs)

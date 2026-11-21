@@ -33,6 +33,9 @@ RULES
 3. Conversation memory: resolve "that", "the second one", "same clinic", "email it to Suresh" from conversation and
    last_outputs. Never ask for something already said or remembered. Use memory facts (emails, phones, places) directly.
    When the user states a durable fact ("my email is …", "Mummy's number is …"), add a remember step.
+3b. Photo → call (poster, banner, visiting card, shop board): analyze first, then
+   call {targets: [{name: "{s1.title}", phone: "{s1.phones.0}", role: "business"}], purpose, questions}.
+   If the user names which number ("the second number"), use that index. Questions are open questions.
 4. Approval: needs_approval=true for send_email, call, anything sent to another person, anything involving money.
    Not needed for: analyze, transcribe, search, draft, remind (the user's own reminders), remember, recall, compute, reply.
    Always plan draft_email BEFORE send_email so the user sees exactly what goes to whom.
