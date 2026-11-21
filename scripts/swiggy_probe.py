@@ -12,9 +12,10 @@ print(json.dumps(m, ensure_ascii=False)[:2200])
 lat, lon = 17.4931, 78.4054  # Kukatpally
 d = swiggy.call("search_restaurants_dineout", {"query": "biryani", "latitude": lat, "longitude": lon}, "dineout")
 print("\nDINEOUT keys:", list(d.keys()) if isinstance(d, dict) else type(d)); print(json.dumps(d, ensure_ascii=False)[:1500])
-rows = d.get("restaurants") or next((v for v in d.values() if isinstance(v, list)), [])
-if rows:
-    rid = str(rows[0].get("id") or rows[0].get("restaurantId"))
+import re
+ids = re.findall(r"\(ID: (\d+)\)", d.get("text", ""))
+if ids:
+    rid = ids[0]
     day = (datetime.now(timezone(timedelta(hours=5, minutes=30))) + timedelta(days=1)).strftime("%Y-%m-%d")
     s = swiggy.call("get_available_slots", {"restaurantId": rid, "date": day, "latitude": lat, "longitude": lon}, "dineout")
     print("\nSLOTS keys:", list(s.keys()) if isinstance(s, dict) else type(s)); print(json.dumps(s, ensure_ascii=False)[:2000])
