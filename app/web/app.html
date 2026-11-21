@@ -65,7 +65,7 @@ h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(-
 .card.need { border-color:#BFD5FB; background:linear-gradient(0deg, #F6F9FF, #F6F9FF); }
 .row { display:flex; align-items:center; gap:12px; }
 .row .t { flex:1; min-width:0; }
-.row .t b { display:block; font-size:15px; }
+.row .t b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:15px; }
 .row .t span { color:var(--ink2); font-size:14px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ico { width:40px; height:40px; border-radius:12px; background:var(--blue-l); display:grid; place-items:center; flex:none; font-size:18px; }
 .btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
@@ -154,7 +154,7 @@ h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(-
     </div>
     <div class="files" id="homefiles"></div>
     <form class="composer" id="homeform" autocomplete="off">
-      <textarea id="hometext" rows="1" placeholder="e.g. Transcribe this and email me a copy" data-i18n-ph aria-label="Type what you need"></textarea>
+      <textarea id="hometext" rows="1" placeholder="e.g. Email me a copy of this" data-i18n-ph aria-label="Type what you need"></textarea>
       <button class="send" id="homesend" aria-label="Send" disabled><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"/></svg></button>
     </form>
     <div class="recbar hidden" id="homerec" aria-live="assertive"><span>●</span><span id="homerectime">0:00</span><canvas id="homewave"></canvas><span data-i18n>Release to send</span></div>
@@ -223,7 +223,7 @@ const I = {
   "Type or speak in your language — or show a photo.": ["మీ భాషలో టైప్ చేయండి లేదా మాట్లాడండి — లేదా ఫోటో చూపించండి.", "अपनी भाषा में लिखें या बोलें — या फ़ोटो दिखाएँ।", "Mee language lo type cheyyandi leda matladandi — leda photo chupinchandi."],
   "Hold the blue button and talk": ["నీలి బటన్ నొక్కి పట్టి మాట్లాడండి", "नीला बटन दबाकर बोलिए", "Blue button nokki patti matladandi"],
   "Add photo": ["ఫోటో జోడించండి", "फ़ोटो जोड़ें", "Photo add cheyyandi"],
-  "e.g. Transcribe this and email me a copy": ["ఉదా: ఇది టైప్ చేసి నాకు ఇమెయిల్ చేయి", "जैसे: इसे टाइप करके मुझे ईमेल करो", "eg: Idi type chesi naaku email cheyyi"],
+  "e.g. Email me a copy of this": ["ఉదా: దీని కాపీ నాకు ఇమెయిల్ చేయి", "जैसे: इसकी कॉपी मुझे ईमेल करो", "eg: Idi naaku email cheyyi"],
   "Release to send": ["వదిలితే పంపుతాను", "छोड़ें तो भेजूँ", "Vadilithe pamputha"],
   "Recent work": ["ఇటీవలి పనులు", "हाल का काम", "Recent work"], "Needs you": ["మీ నిర్ణయం కావాలి", "आपका फ़ैसला चाहिए", "Mee decision kavali"],
   "Active task": ["జరుగుతున్న పని", "चल रहा काम", "Active task"], "Reminders": ["రిమైండర్లు", "रिमाइंडर", "Reminders"],
