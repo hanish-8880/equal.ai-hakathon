@@ -181,6 +181,39 @@ Chinku queries every connected provider through adapters → ranks by **this req
 "**Recommended: X — why it won**" + full comparison + next action (Book / Order / Call / Remind).
 Same engine also covers **local stock and dealer quotes** (calls shops via `call` when no API exists).
 
+**J10 — Voice-first chat for people who cannot type (elders and anyone).**
+Inside the Chinku App: the user taps the big mic and simply talks, like talking to a person. Their words appear in the
+chat as a transcript bubble; Chinku replies in the chat and speaks the reply aloud; the user answers by voice again.
+A full back-and-forth conversation with no typing at all.
+- **Tap to talk** (not hold): tap once to start, Chinku stops listening automatically on silence (~1.5 s) or on a second
+  tap. Live words appear while speaking (show partial transcript if available; else show final transcript within 2–3 s).
+- **Spoken replies auto-play** in the chosen language (OpenAI TTS); short sentences; a replay button on every reply.
+- **"Talk mode"** toggle on the home screen (and auto-on if the user's first message is voice): bigger text, bigger
+  buttons, mic always visible, yes/no answered by voice ("haa", "avunu", "vaddu") or big Yes/No buttons.
+- Example: Mummy taps the mic and says "Babu, naaku repu BP doctor appointment kavali" → transcript bubble → Chinku
+  (voice + text): "Repu sayantram doctor appointment book cheyyana? Ye hospital?" → she answers by voice → journey runs
+  (J2) → result read aloud.
+- Optional extra channel: the same voice conversation by calling Chinku's inbound number (secondary).
+- Transcription tuned for elders: Telugu-first, vocabulary prompt with family names, local places, medicine/doctor
+  words, common dialect forms; keep the original audio; show the transcript to the family member.
+- Chinku reads back in simple, slow Telugu and confirms ("Repu sayantram doctor appointment, correct aa?").
+- Then runs the normal journey (e.g. J2) and informs the son/daughter (app card + summary): "Mummy asked for a BP
+  doctor appointment · Booked tomorrow 6 PM · Reminder set."
+- Safety: no money actions from elder requests without the family member's approval (configurable); never ask for
+  OTPs; if the request is unclear, ask one simple question or tell the family member.
+
+**J11 — Trip planner that calls hotels for you.**
+"Plan a 2-day trip to Araku for 4 people next weekend, budget ₹15,000, and check hotels."
+- `search` → short itinerary (day-wise places, travel time) with sources.
+- Travel options: Kiwi flights (LIVE) if relevant; trains/buses as DEMO links; road distance.
+- `search` hotels in the area with phone numbers (official sites/listings) → map card.
+- Approval → calls 2–3 hotels on my behalf (one at a time): room available for the dates? room type, price per night,
+  taxes, breakfast, check-in/out, cancellation, can they hold the room until when?
+- Extract with evidence quotes → compute totals in code → "Recommended: Hotel X — why" + comparison.
+- Next actions: "Ask Hotel X to hold the room" (call), "Email me the plan", "Remind me to confirm by Thursday".
+  Book/pay only after explicit approval; Chinku never pays. Hotels in the demo are played by consenting people
+  (SIMULATED) unless a real hotel agrees.
+
 ---
 
 ## 6A. Connected services layer — "if they provide an API, it plugs in"
@@ -206,6 +239,8 @@ Offer: provider, item/vehicle/slot, unit_price, fees, taxes, delivery_fee, final
 | Rides | Ola, Uber, Rapido | No public consumer booking API for us → **DEMO adapters** with realistic fares/ETAs, labelled DEMO. Real fallback: deep link to open the provider app with pickup/drop prefilled. |
 | Food | Swiggy, Zomato | No public ordering API → **DEMO adapters**; real fallback: deep link + `call` the restaurant (LIVE). |
 | Grocery / products | Blinkit, Zepto, BigBasket, Amazon | **DEMO adapters**; optional `search` for public prices (LIVE, with source + date). |
+| Flights | Kiwi.com (official MCP, `https://mcp.kiwi.com`, Streamable HTTP, no auth; tool `search-flight`) | **LIVE** search → compare in code → Kiwi booking link (user books on Kiwi; Chinku never pays) |
+| Food / grocery / tables | Swiggy MCP (`/food`, `/im`, `/dineout`; OAuth 2.1 PKCE, localhost login once, tokens to server) | **LIVE** search/compare/cart; checkout only on explicit approval (demo stops at cart). Zomato not permitted for third-party apps. |
 | Bookings (clinic, service, venue) | Any business with a phone number | **LIVE via `call`** (+ OmniDimension Google Calendar / Cal.com option if time). |
 | Email | SMTP/Gmail | **LIVE** |
 | Reminders | Chinku scheduler | **LIVE** |
@@ -361,13 +396,14 @@ Fallback: recorded replay of the full run, labelled as a recording.
 | Sun 5:00 AM | `search` + `map`; J2 (clinic call, Mummy call, reminders) |
 | Sun 7:00 AM | J3 (auto-detect, official email search, send/call, promise, follow-up); J5 transfer verified |
 | Sun 8:30 AM | J6 language bridge; J7 scam check |
+| Sun 9:00 AM | J10 elder voice mode (inbound call/voice note → readback in Telugu → journey → family informed); J11 trip planner (itinerary + hotel search + 2 hotel calls + comparison) |
 | Sun 9:30 AM | J9 adapter layer + ranking engine (tests) + demo adapters for rides, food, grocery; comparison card |
 | Sun 10:00 AM | UI complete (home, working view, cards, map, Listen); screenshots fixed |
 | Sun 11:00 AM | Eval scripts run; restart test |
 | Sun 12:00 PM | README, HONEST_NOTE, submission text, demo rehearsed + fallback recorded; pushed + deployed |
 | Sun 2:00 PM | Code freeze |
 
-**Cut order if late:** J8 → J9 grocery → J7 → J6 → J9 food → map polish (list only) → Listen button.
+**Cut order if late:** J8 → J11 (keep itinerary + 1 hotel call) → J9 grocery → J7 → J6 → J9 food → map polish (list only) → Listen button.
 (Keep J9 rides — "cheapest auto home vs home before 8" shows priority ranking in 10 seconds.)
 **Never cut:** J1, J3, approval gate, evidence quotes, eval, honest note.
 
