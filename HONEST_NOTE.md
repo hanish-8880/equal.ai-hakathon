@@ -5,7 +5,7 @@ reminders and reminder calls, promises + follow-up + escalation, connected-servi
 prompts and schemas, exact transcription + extraction logic, Telugu/English/Hindi number normaliser, translation guard,
 Chinku App UI, eval harness.
 **Reused:** OpenAI (gpt-5.5 planning/vision/extraction, gpt-4o-transcribe, TTS, web search), OmniDimension (phone calls,
-voice agent), Kiwi.com MCP (flights), Swiggy MCP (Instamart, the user's own login), Gmail SMTP/IMAP, AWS (EC2, DynamoDB),
+voice agent), Kiwi.com MCP (flights), 1Stay MCP (hotel search), Swiggy MCP (Instamart, the user's own login), Gmail SMTP/IMAP, AWS (EC2, DynamoDB),
 OpenStreetMap + Leaflet, Twilio WhatsApp sandbox (optional, not in the demo).
 
 | Component | Status (observed) |
@@ -19,6 +19,7 @@ OpenStreetMap + Leaflet, Twilio WhatsApp sandbox (optional, not in the demo).
 | J4 photo → call | **LIVE** to the approval card; the call itself waits for a consenting test (owner's own number) |
 | J7 scam check | **LIVE** — real scam SMS → Likely scam with reasons + official sources; code red flags can't be overridden to "genuine" |
 | J9 flights — Kiwi.com | **LIVE** — real HYD→BLR fares in INR, ranked in code, booking link opens Kiwi; Chinku never pays |
+| Hotels — 1Stay | **LIVE search** (open MCP, no key) — real Goa / Hyderabad hotels with stay totals in INR, ranked in code; search only, Chinku never books or pays a hotel online |
 | J9 groceries — Swiggy Instamart | **LIVE** — real products/prices, recipe → ingredients → packs chosen in code; adds to the user's cart only after approval; checkout/payment/clear-cart blocked in code. Production access is "invite-based" per Swiggy docs — it may be switched off |
 | J9 rides — Ola, Uber, Rapido | **DEMO data** (real road distance, demo fares/ETAs, labelled "Demo data"); real "open in app" links for Uber/Ola |
 | J9 Swiggy Food | **LIVE** — real dishes, filters/ranking in code, added to the real food cart after approval, real bill (item + delivery + taxes = to pay) and closed/out-of-stock warnings. Chinku never places the order or pays |
