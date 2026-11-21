@@ -135,16 +135,18 @@ class DynamoStore:
 
 
 def create_dynamo_tables(prefix: str = "chinku_", region: str = "ap-south-1") -> list[str]:
+    """Create missing tables without dynamodb:ListTables (the EC2 role only has access to chinku_* tables)."""
     import boto3
     c = boto3.client("dynamodb", region_name=region)
-    have = set(c.list_tables()["TableNames"])
     made = []
     for name in TABLES:
-        if prefix + name not in have:
+        try:
             c.create_table(TableName=prefix + name, BillingMode="PAY_PER_REQUEST",
                            AttributeDefinitions=[{"AttributeName": "k", "AttributeType": "S"}],
                            KeySchema=[{"AttributeName": "k", "KeyType": "HASH"}])
             made.append(prefix + name)
+        except c.exceptions.ResourceInUseException:
+            pass
     for name in made:
         c.get_waiter("table_exists").wait(TableName=name)
     return made
