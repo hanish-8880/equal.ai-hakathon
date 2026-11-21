@@ -1,10 +1,10 @@
-# CLAUDE.md — Instint · Equal AI Builders Hackathon 2026 (FINAL)
+# CLAUDE.md — Chinku · Equal AI Builders Hackathon 2026 (FINAL)
 
 You are my senior product, design and engineering partner. I am **Hanish**, building solo at the
 Equal AI × OpenAI Builders Hackathon, Equal HQ Hyderabad.
 **Now: Sat 21 Nov, ~11:15 PM IST. Code freeze: Sun 22 Nov, 2:00 PM IST. Push + deploy by 12:00 PM.**
 
-This file replaces every earlier CLAUDE.md (Chinku errands, Chinku for Plumbers, earlier Instint drafts).
+This file replaces every earlier CLAUDE.md (Chinku errands, Chinku for Plumbers, earlier Chinku drafts).
 It is the single source of truth. The existing repo (formerly "Chinku") is the foundation: **reuse it, never rewrite it.**
 
 ---
@@ -39,12 +39,12 @@ show a working journey from raw input to a useful outcome.
 
 ## 2. Product
 
-**Instint: tell it what you need — type, speak in your language, or show a photo — and it finds the answer or
+**Chinku: tell it what you need — type, speak in your language, or show a photo — and it finds the answer or
 does the next step for you: searches, analyses, calls anyone, emails anyone, reminds you, and follows up until
 it's done.**
 
 ### Why it wins (one step above Equal)
-| Equal AI today | Instint |
+| Equal AI today | Chinku |
 |---|---|
 | Screens and answers calls coming **to** you | **Makes calls for you** — book, ask, complain, confirm |
 | Voice only | **Photo, screenshot, PDF, voice or text** turned into action |
@@ -54,9 +54,9 @@ it's done.**
 | — | **Language bridge**: calls in *their* language, reports in *yours* |
 
 Equal has said users want the assistant to "act autonomously on behalf of the user — e.g. sending addresses to the
-delivery person with consent or making outbound calls to book meetings." Instint is that next step, built today.
+delivery person with consent or making outbound calls to book meetings." Chinku is that next step, built today.
 
-**Pitch line:** *"Equal answers the calls that come to you. Instint makes the calls, sends the mails, and follows up
+**Pitch line:** *"Equal answers the calls that come to you. Chinku makes the calls, sends the mails, and follows up
 until it's done."*
 
 **Research to cite:** Indians spent 15+ billion hours on hold to customer service in a year — ~30.7 hours per person
@@ -106,7 +106,7 @@ warranty complaint, passbook explanation, appointment + reminder, invoice total.
 
 ---
 
-## 5. Planner (core of Instint)
+## 5. Planner (core of Chinku)
 
 Pipeline for every request: **capture → transcribe (voice) → analyze (attachments) → recall memory → plan →
 approval → execute → results → follow-through.**
@@ -150,7 +150,7 @@ card** → "Which one?" (or the one named) → approval → call the clinic → 
 when the clinic confirms → call Mummy in Telugu with the details → reminder call to Mummy 1 hour before + reminder to me.
 
 **J3 — Complaint with follow-through (auto-detect + auto-find email).**
-Photo of a broken product / screenshot of a problem (missed return pickup, double charge, internet down) → Instint
+Photo of a broken product / screenshot of a problem (missed return pickup, double charge, internet down) → Chinku
 identifies it ("Broken mixer · Brand X · Model Y") → searches the **official** support email/helpline (official domain
 only, show the source) → drafts the complaint → approval → sends email **or** calls the helpline → records ticket
 number + promised time (evidence quotes) → creates a promise → at that time asks "Did they fix it?" → if no, follow-up
@@ -162,7 +162,7 @@ approval ("Call 98xxxx21 — Sri Sai Constructions?") → call → answers with 
 
 **J5 — Connect me now (transfer).**
 On a support/booking call, when a human is on the line and the user asked for it ("connect me when someone picks up"),
-Instint says "Connecting you now" and transfers via Custom API transfer to the user's phone. Verify with a test call
+Chinku says "Connecting you now" and transfers via Custom API transfer to the user's phone. Verify with a test call
 first; if it fails, show "Talk to them now: call <number>, ticket <id>" instead.
 
 **J6 — Language bridge.**
@@ -208,7 +208,7 @@ or bank account numbers, government ID numbers. User can view and delete memory 
 
 ---
 
-## 9. UI — Instint App (chat-first, warm white + light blue)
+## 9. UI — Chinku App (chat-first, warm white + light blue)
 
 Serve at `/app` (keep `?key=` protection). Mobile first (check 390×844), good on desktop.
 
@@ -231,10 +231,10 @@ Show **Sent / Booked / Resolved only when confirmed.**
    "Booked · Tomorrow 6 PM · Sri Sai Clinic".
 
 **Working view (chat thread):** user bubble (photo thumbnail + editable transcript of what was said, numbers/codes
-highlighted and tappable) → Instint readback ("Transcribe · email you · remind tomorrow 9 AM") → live step list
+highlighted and tappable) → Chinku readback ("Transcribe · email you · remind tomorrow 9 AM") → live step list
 (✓ / ⏳ / ✗ with words) → result cards. Live call card: "Calling Sri Sai Clinic… ringing → on call → reading result",
 with **Connect me now** button when transfer is available. Map card: OpenStreetMap with numbered pins + list
-(name, distance, open now if known, source) → tap to choose. Every Instint answer has a 🔊 **Listen** button (OpenAI TTS).
+(name, distance, open now if known, source) → tap to choose. Every Chinku answer has a 🔊 **Listen** button (OpenAI TTS).
 
 Screenshot every screen at 390×844 and desktop; fix spacing/typography before reporting.
 
@@ -306,7 +306,7 @@ Fallback: recorded replay of the full run, labelled as a recording.
 ## 14. HONEST_NOTE.md (keep current)
 
 - **Built by me:** planner and tool engine, state machine, approval gates, promises/follow-up, memory, prompts and
-  schemas, transcription/extraction logic, number normaliser, Instint App UI, eval harness.
+  schemas, transcription/extraction logic, number normaliser, Chinku App UI, eval harness.
 - **Reused:** OpenAI (models, vision, speech, TTS, web search if used), OmniDimension (calls, transfer), SMTP/Gmail,
   AWS (EC2, DynamoDB, scheduler), OpenStreetMap/Leaflet, Twilio WhatsApp sandbox (optional).
 - **Simulated:** businesses and support agents played by consenting people; shortened follow-up timers in the demo;
@@ -318,10 +318,10 @@ Fallback: recorded replay of the full run, labelled as a recording.
 
 ## 15. Submission text (update with real results before submitting)
 
-**Project:** Instint — tell it what you need, and it gets it done.
+**Project:** Chinku — tell it what you need, and it gets it done.
 
-**What are you building?** Instint is an everyday assistant with one question: "What do you need?" You type, speak in
-Telugu, English or a mix, or show a photo. Instint plans the steps and does the work: it reads photos and documents,
+**What are you building?** Chinku is an everyday assistant with one question: "What do you need?" You type, speak in
+Telugu, English or a mix, or show a photo. Chinku plans the steps and does the work: it reads photos and documents,
 searches the web, **makes real phone calls** with an AI voice agent, emails anyone, sets reminders, and **follows up
 on promises** until the task is done. It books a doctor and calls your mother to tell her; it spots a broken product in
 a photo, finds the company's official support email, sends the complaint, and checks back when they promised to
@@ -332,10 +332,10 @@ called without your one-tap approval.
 **What exact problem are you solving?** People know what they want, but still have to turn it into a search, a phone
 call, an email and a reminder themselves — and then chase it. Indians spent over 15 billion hours on hold to customer
 service in a year, about 30 hours each. Call assistants today handle calls coming *to* you; the call-for-you features
-that exist abroad are not available in India or in Indian languages. Instint does the outbound work and the
+that exist abroad are not available in India or in Indian languages. Chinku does the outbound work and the
 follow-through, in your language.
 
-**Pitch:** *"Equal answers the calls that come to you. Instint makes the calls, sends the mails, and follows up until
+**Pitch:** *"Equal answers the calls that come to you. Chinku makes the calls, sends the mails, and follows up until
 it's done."*
 
 ---

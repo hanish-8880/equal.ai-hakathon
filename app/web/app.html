@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FAF8F4">
-<title>Instint</title>
+<title>Chinku</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -125,6 +125,9 @@ h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(-
 .lang { min-height:76px; border-radius:18px; border:1.5px solid var(--line); background:var(--card); text-align:left; padding:12px 14px; }
 .lang b { display:block; font-size:19px; } .lang span { color:var(--ink2); font-size:13px; }
 .lang.on { border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-l); }
+.seg { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:5px; }
+.seg button { min-height:44px; border:0; border-radius:12px; background:transparent; font-weight:700; font-size:14.5px; color:var(--ink2); }
+.seg button.on { background:var(--blue); color:#fff; }
 .memrow { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
 .memrow .t { flex:1; min-width:0; } .memrow .t b { display:block; font-size:14px; } .memrow .t span { font-size:14px; color:var(--ink2); overflow-wrap:anywhere; }
 @media (min-width: 900px) { .ask h1 { font-size:32px; } #thread .bub { max-width:72%; } }
@@ -133,14 +136,16 @@ h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(-
 <body>
 <header id="hdr"><div class="wrap">
   <button class="iconbtn hidden" id="back" aria-label="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
-  <div class="logo"><i>I</i>Instint</div>
+  <div class="logo"><i>C</i>Chinku</div>
   <div class="sp"></div>
+  <button class="iconbtn" id="langbtn" aria-label="Language"><span id="langcode">EN</span></button>
   <button class="iconbtn hidden" id="newchat" aria-label="New conversation" data-i18n-aria>＋</button>
   <button class="iconbtn" id="settings" aria-label="Settings: language and memory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
 </div></header>
 
 <!-- HOME -->
 <main id="home" class="wrap">
+  <div class="seg" id="langseg" role="radiogroup" aria-label="Language"></div>
   <section class="ask fade" aria-label="What do you need?">
     <h1 data-i18n>What do you need?</h1>
     <p class="sub" data-i18n>Type or speak in your language — or show a photo.</p>
@@ -178,7 +183,7 @@ h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(-
   <form class="composer" id="chatform" autocomplete="off">
     <label class="clip" aria-label="Add photo or PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>
       <input type="file" id="chatfile" accept="image/*,application/pdf" multiple hidden></label>
-    <textarea id="chattext" rows="1" placeholder="Message Instint…" data-i18n-ph aria-label="Message"></textarea>
+    <textarea id="chattext" rows="1" placeholder="Message Chinku…" data-i18n-ph aria-label="Message"></textarea>
     <div class="recbar hidden" id="chatrec"><span>●</span><span id="chatrectime">0:00</span><canvas id="chatwave"></canvas></div>
     <button class="mic" id="chatmic" type="button" aria-label="Hold to talk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
     <button class="send hidden" id="chatsend" aria-label="Send"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"/></svg></button>
@@ -187,7 +192,7 @@ h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(-
 
 <!-- language (first launch, with Skip) -->
 <div class="sheet" id="langsheet" role="dialog" aria-label="Choose language"><div class="in">
-  <h1 style="margin:0 0 4px;font-size:24px" data-i18n>Hi! I'm Instint.</h1>
+  <h1 style="margin:0 0 4px;font-size:24px" data-i18n>Hi! I'm Chinku.</h1>
   <p style="margin:0;color:var(--ink2)" data-i18n>Tell me what you need — I'll search, call, email, remind and follow up. Which language should I use?</p>
   <div class="langs" id="langs"></div>
   <div class="btns"><button class="btn primary" id="langok" style="flex:1" data-i18n>Continue</button><button class="btn" id="langskip" data-i18n>Skip</button></div>
@@ -217,7 +222,7 @@ function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add(
 const vib = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 
 /* ---------- language ---------- */
-let LANG = ls.get("instint_lang") || "en";
+let LANG = ls.get("chinku_lang") || "en";
 const I = {
   "What do you need?": ["మీకు ఏం కావాలి?", "आपको क्या चाहिए?", "Meeku em kavali?"],
   "Type or speak in your language — or show a photo.": ["మీ భాషలో టైప్ చేయండి లేదా మాట్లాడండి — లేదా ఫోటో చూపించండి.", "अपनी भाषा में लिखें या बोलें — या फ़ोटो दिखाएँ।", "Mee language lo type cheyyandi leda matladandi — leda photo chupinchandi."],
@@ -228,8 +233,8 @@ const I = {
   "Recent work": ["ఇటీవలి పనులు", "हाल का काम", "Recent work"], "Needs you": ["మీ నిర్ణయం కావాలి", "आपका फ़ैसला चाहिए", "Mee decision kavali"],
   "Active task": ["జరుగుతున్న పని", "चल रहा काम", "Active task"], "Reminders": ["రిమైండర్లు", "रिमाइंडर", "Reminders"],
   "Nothing yet — ask for something above.": ["ఇంకా ఏమీ లేదు — పైన అడగండి.", "अभी कुछ नहीं — ऊपर पूछिए।", "Inka emi ledu — paina adagandi."],
-  "Message Instint…": ["Instint కి మెసేజ్…", "Instint को संदेश…", "Instint ki message…"],
-  "Hi! I'm Instint.": ["నమస్కారం! నేను Instint.", "नमस्ते! मैं Instint हूँ।", "Namaskaram! Nenu Instint."],
+  "Message Chinku…": ["Chinku కి మెసేజ్…", "Chinku को संदेश…", "Chinku ki message…"],
+  "Hi! I'm Chinku.": ["నమస్కారం! నేను Chinku.", "नमस्ते! मैं Chinku हूँ।", "Namaskaram! Nenu Chinku."],
   "Tell me what you need — I'll search, call, email, remind and follow up. Which language should I use?": ["మీకు ఏం కావాలో చెప్పండి — వెతుకుతాను, కాల్ చేస్తాను, ఇమెయిల్ పంపుతాను, గుర్తు చేస్తాను, పూర్తయ్యే వరకు చూస్తాను. ఏ భాష వాడాలి?", "बताइए क्या चाहिए — मैं खोजूँगा, कॉल करूँगा, ईमेल भेजूँगा, याद दिलाऊँगा और पूरा होने तक पीछा करूँगा। कौन सी भाषा?", "Em kavalo cheppandi — vethukutha, call chestha, email pamputha, remind chestha, follow up chestha. Ye language?"],
   "Continue": ["కొనసాగించు", "आगे बढ़ें", "Continue"], "Skip": ["దాటవేయి", "छोड़ें", "Skip"], "Settings": ["సెట్టింగ్స్", "सेटिंग्स", "Settings"],
   "Language": ["భాష", "भाषा", "Language"], "What I remember": ["నాకు గుర్తున్నవి", "मुझे क्या याद है", "Naaku gurthunnavi"],
@@ -238,7 +243,7 @@ const I = {
   "Forget": ["మర్చిపో", "भूल जाओ", "Marchipo"], "Send": ["పంపు", "भेजो", "Pampu"], "Not now": ["ఇప్పుడు కాదు", "अभी नहीं", "Ippudu kadu"],
   "Edit": ["మార్చు", "बदलें", "Edit"], "Call": ["కాల్ చేయి", "कॉल करो", "Call cheyyi"], "Copy text": ["టెక్స్ట్ కాపీ", "टेक्स्ट कॉपी", "Text copy"],
   "Email this": ["ఇది ఇమెయిల్ చేయి", "इसे ईमेल करो", "Idi email cheyyi"], "Copied": ["కాపీ అయ్యింది", "कॉपी हो गया", "Copy ayyindi"],
-  "Listen": ["వినండి", "सुनें", "Listen"], "Instint heard": ["Instint విన్నది", "Instint ने सुना", "Instint vinnadi"],
+  "Listen": ["వినండి", "सुनें", "Listen"], "Chinku heard": ["Chinku విన్నది", "Chinku ने सुना", "Chinku vinnadi"],
   "Transcript": ["ట్రాన్స్క్రిప్ట్", "ट्रांसक्रिप्ट", "Transcript"], "Email": ["ఇమెయిల్", "ईमेल", "Email"], "To": ["ఎవరికి", "किसे", "Evariki"],
   "Subject": ["విషయం", "विषय", "Subject"], "Attachment": ["జతచేసినది", "अटैचमेंट", "Attachment"], "Reminder": ["రిమైండర్", "रिमाइंडर", "Reminder"],
   "Sources": ["మూలాలు", "स्रोत", "Sources"], "checked": ["చూసిన తేదీ", "जाँचा", "checked"], "Which one?": ["ఏది?", "कौन सा?", "Edi?"],
@@ -264,14 +269,20 @@ function applyStatic() {
   document.querySelectorAll("[data-i18n]").forEach(el => { el.dataset.en = el.dataset.en || el.textContent; el.textContent = L(el.dataset.en); });
   document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.dataset.enph = el.dataset.enph || el.placeholder; el.placeholder = L(el.dataset.enph); });
 }
-function setLang(c) { LANG = c || "en"; ls.set("instint_lang", LANG); applyStatic(); renderExamples(); }
+function setLang(c) { LANG = c || "en"; ls.set("chinku_lang", LANG); applyStatic(); renderExamples(); renderSeg(); }
+const SHORT = {en: "EN", te: "తె", hi: "हि", "te-en": "Mix"};
+function renderSeg() { $("langcode").textContent = SHORT[LANG] || "EN";
+  $("langseg").innerHTML = LANGS.map(([c, n]) => `<button role="radio" aria-checked="${c === LANG}" class="${c === LANG ? "on" : ""}" data-l="${c}">${esc(c === "te-en" ? "Mixed" : n)}</button>`).join("");
+  $("langseg").querySelectorAll("button").forEach(b => b.onclick = () => saveLang(b.dataset.l)); }
 const LANGS = [["en", "English", "English"], ["te", "తెలుగు", "Telugu"], ["hi", "हिन्दी", "Hindi"], ["te-en", "Mixed", "Telugu + English"]];
 let pick = null;
 function langCards(el, onPick) { el.innerHTML = LANGS.map(([c, n, s]) => `<button class="lang ${c === pick ? "on" : ""}" data-l="${c}" aria-pressed="${c === pick}"><b>${esc(n)}</b><span>${esc(s)}</span></button>`).join("");
   el.querySelectorAll(".lang").forEach(b => b.onclick = () => { pick = b.dataset.l; langCards(el, onPick); onPick && onPick(pick); }); }
-async function saveLang(c) { try { const r = await post("/api/me", {language: c}); if (!r.ok) throw 0; setLang(c); toast(L("Saved")); } catch (e) { toast(L("No connection — try again")); } }
-$("langok").onclick = async () => { if (pick) await saveLang(pick); $("langsheet").classList.remove("on"); ls.set("instint_onboarded", "1"); };
-$("langskip").onclick = () => { $("langsheet").classList.remove("on"); ls.set("instint_onboarded", "1"); };
+const LNAME = {en: "English", te: "తెలుగు", hi: "हिन्दी", "te-en": "Telugu + English"};
+async function saveLang(c) { try { const r = await post("/api/me", {language: c}); if (!r.ok) throw 0; setLang(c); toast("✓ " + LNAME[c]); rerenderThread(); loadHome(); }
+  catch (e) { toast(L("No connection — try again")); } }
+$("langok").onclick = async () => { if (pick) await saveLang(pick); $("langsheet").classList.remove("on"); ls.set("chinku_onboarded", "1"); };
+$("langskip").onclick = () => { $("langsheet").classList.remove("on"); ls.set("chinku_onboarded", "1"); };
 
 /* ---------- settings + memory ---------- */
 async function openSettings() {
@@ -282,7 +293,8 @@ async function openSettings() {
     $("memlist").querySelectorAll("[data-k]").forEach(b => b.onclick = async () => { await post("/api/memory/forget", {item: b.dataset.k}); openSettings(); });
   } catch (e) {}
 }
-$("settings").onclick = openSettings; $("setclose").onclick = () => $("setsheet").classList.remove("on");
+$("settings").onclick = openSettings;
+$("langbtn").onclick = () => { pick = LANG; langCards($("langs"), null); $("langsheet").classList.add("on"); }; $("setclose").onclick = () => $("setsheet").classList.remove("on");
 document.querySelectorAll(".sheet").forEach(s => s.addEventListener("click", e => { if (e.target === s && s.id !== "langsheet") s.classList.remove("on"); }));
 
 /* ---------- views ---------- */
@@ -359,7 +371,7 @@ const hhmm = ts => new Date(ts * 1000).toLocaleTimeString(LOC(), {hour: "numeric
 function heardHtml(m) { let h = esc(m.text);
   const marks = [...(m.spans || []).map(s => [String(s.raw), ""]), ...(m.low || []).map(x => [String(x), "low"])].filter(([r]) => r && r.trim()).sort((a, b) => b[0].length - a[0].length);
   const seen = new Set(); for (const [raw, cls] of marks) { const e = esc(raw); if (seen.has(e) || !h.includes(e)) continue; seen.add(e); h = h.split(e).join(`<span class="hl ${cls}" data-raw="${esc(raw)}">${e}</span>`); }
-  return `<span class="lbl">🎙️ ${L("Instint heard")}${m.media_url ? ` · <a href="${esc(m.media_url)}" target="_blank" rel="noopener">▶</a>` : ""}</span>${h}`; }
+  return `<span class="lbl">🎙️ ${L("Chinku heard")}${m.media_url ? ` · <a href="${esc(m.media_url)}" target="_blank" rel="noopener">▶</a>` : ""}</span>${h}`; }
 function card(c) {
   if (!c) return "";
   if (c.type === "transcript") return `<div class="rc"><h4>📝 ${L("Transcript")} ${c.title ? "· " + esc(c.title) : ""} ${c.unclear ? `<span class="status wait">${c.unclear} [unclear]</span>` : ""}</h4><pre>${esc(c.text)}</pre>
@@ -414,6 +426,7 @@ async function pollChat() {
       if (rows.length && near) setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 30); first = false; } } catch (e) {}
   schedChat(waiting ? 900 : (!$("chat").classList.contains("hidden") ? 2500 : 7000));
 }
+function rerenderThread() { $("thread").innerHTML = ""; since = Math.max(0, since - 1e10); first = true; pollChat(); }
 $("newchat").onclick = async () => { if (!confirm(L("Start a new conversation? Your tasks stay saved."))) return; await post("/api/chat/clear", {}); $("thread").innerHTML = ""; $("quick").innerHTML = ""; since = Date.now() / 1000; };
 
 /* ---------- voice: hold to talk (both mics) ---------- */
@@ -445,11 +458,11 @@ holdToTalk($("chatmic"), $("chatrec"), $("chatrectime"), $("chatwave"));
 
 /* ---------- start ---------- */
 (async () => {
-  applyStatic(); renderExamples(); syncHome(); syncChat();
+  applyStatic(); renderExamples(); renderSeg(); syncHome(); syncChat();
   const start = (location.hash || "#home").slice(1); show(start === "chat" ? "chat" : "home");
   try { const r = await api("/api/me"); if (r.status === 403) { toast("Wrong or missing key in the link"); return; }
     const me = await r.json(); const ql = new URLSearchParams(location.search).get("lang"); if (ql || me.language) setLang(ql || me.language);
-    if (!me.language && !ls.get("instint_onboarded") && !new URLSearchParams(location.search).get("shot")) { pick = null; langCards($("langs"), null); $("langsheet").classList.add("on"); }
+    if (!me.language && !ls.get("chinku_onboarded") && !new URLSearchParams(location.search).get("shot")) { pick = null; langCards($("langs"), null); $("langsheet").classList.add("on"); }
   } catch (e) {}
   pollChat(); setInterval(() => { if ($("chat").classList.contains("hidden")) loadHome(); }, 7000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) { loadHome(); schedChat(50); } });

@@ -7,8 +7,8 @@ import uuid
 from typing import Any, Callable
 
 from app.engine import runner
-from app.instint import planner, tools
-from app.instint.models import Plan, StepState, Task
+from app.chinku import planner, tools
+from app.chinku.models import Plan, StepState, Task
 from app.store.dynamo import store
 
 Send = Callable[[str], None]
@@ -141,7 +141,7 @@ def run(t: Task, send: Send, card: Card) -> Task:
             send(f"⚠️ {e}")
         except Exception as e:  # noqa: BLE001
             st.status, st.error = "failed", str(e)[:300]
-            store().add_event(t.task_id, "error", {"where": f"instint:{s.tool}", "error": str(e)[:500]})
+            store().add_event(t.task_id, "error", {"where": f"chinku:{s.tool}", "error": str(e)[:500]})
             send(f"⚠️ Sorry — the step “{STEP_WORDS.get(s.tool, s.tool).split(' {')[0]}” failed. The other steps carry on.")
         save(t)
     states = [x.status for x in t.steps.values()]
@@ -180,7 +180,7 @@ def handle(user: str, text: str, attachments: list[dict[str, Any]], send: Send, 
         try:
             analysis = tools.analyze(user, {"attachment": attachments[-1]["id"]}, _ctx(t, send, card, "a"))
         except Exception as e:  # noqa: BLE001
-            store().add_event("-", "error", {"where": "instint:analyze", "error": str(e)[:300]})
+            store().add_event("-", "error", {"where": "chinku:analyze", "error": str(e)[:300]})
         if analysis:
             _remember_output(user, "analysis", analysis)
             sug = analysis.get("suggestions") or []

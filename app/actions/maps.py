@@ -1,10 +1,10 @@
-"""OpenStreetMap geocoding (Nominatim) for the Instint map card. Free, no key; usage policy: 1 req/s, cached 24 h."""
+"""OpenStreetMap geocoding (Nominatim) for the Chinku map card. Free, no key; usage policy: 1 req/s, cached 24 h."""
 import time
 from typing import Any
 
 import httpx
 
-UA = {"User-Agent": "instint-hackathon-prototype/0.1"}  # generic client name, no personal data
+UA = {"User-Agent": "chinku-hackathon-prototype/0.1"}  # generic client name, no personal data
 _cache: dict[str, tuple[float, Any]] = {}
 
 

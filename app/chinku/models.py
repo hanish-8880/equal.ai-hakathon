@@ -1,4 +1,4 @@
-"""Plan / Task / Result for Instint (CLAUDE.md §5, §8)."""
+"""Plan / Task / Result for Chinku (CLAUDE.md §5, §8)."""
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field

@@ -1,4 +1,4 @@
-"""Show Instint's messages in the user's language (Telugu / Hindi / Telugu-English mix).
+"""Show Chinku's messages in the user's language (Telugu / Hindi / Telugu-English mix).
 The LLM translates; CODE guards exactness: every number in the original (₹ amounts, times, dates, ticket numbers,
 masked phones) must appear unchanged in the translation, and the "(yes / no)" answer hint must survive.
 Otherwise retry once with the brain model, then fall back to the English original — a wrong number is worse than
@@ -17,7 +17,7 @@ NAMES = {"te": "Telugu (Telugu script)", "hi": "Hindi (Devanagari script)",
 SCRIPT = {"te": re.compile(r"[ఀ-౿]"), "hi": re.compile(r"[ऀ-ॿ]")}
 HINT = re.compile(r"\((?:yes|yes / no|yes / correct it)[^)]*\)", re.I)
 
-SYSTEM = """You translate short messages from Instint (a personal AI assistant) to its user in India.
+SYSTEM = """You translate short messages from Chinku (a personal AI assistant) to its user in India.
 Target language: {lang}.
 Rules:
 - TRANSLATE EVERY SENTENCE fully into the target language. Only the protected items below stay as they are.

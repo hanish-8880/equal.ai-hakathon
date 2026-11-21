@@ -1,4 +1,4 @@
-"""Instint tools (CLAUDE.md §4). Each tool: fn(user, inputs, ctx) -> output dict (JSON-safe).
+"""Chinku tools (CLAUDE.md §4). Each tool: fn(user, inputs, ctx) -> output dict (JSON-safe).
 ctx = {"task": Task, "attachments": [...], "card": fn(text, card)}. The LLM understands; CODE owns times, numbers,
 recipients and anything that leaves the device (approval gate lives in executor.py)."""
 import ast
@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from app.brain.client import image_part, json_call, prompt
 from app.config import settings
-from app.instint import memory
+from app.chinku import memory
 from app.store.dynamo import store
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -232,7 +232,7 @@ def draft_email(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[
     mode = inputs.get("mode") or "write"
     if mode == "exact_copy":  # transcripts go EXACTLY as transcribed — never rewritten
         subj = inputs.get("subject") or "Transcript" + (f": {inputs.get('title')}" if inputs.get("title") else "")
-        body = (inputs.get("intro") or "Here is the exact transcript of the page:") + "\n\n" + content + "\n\n— Sent by Instint for " + settings().user_name
+        body = (inputs.get("intro") or "Here is the exact transcript of the page:") + "\n\n" + content + "\n\n— Sent by Chinku for " + settings().user_name
         d = Draft(subject=subj, body=body)
     else:
         sys = prompt("email_writer").replace("{user_name}", settings().user_name)

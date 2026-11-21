@@ -381,16 +381,16 @@ never rings the phone during the test.
 - NOT translated (honest): phone calls (English — Telugu voice was choppy earlier), customer WhatsApp messages (customer's language unknown), invoice PDF (English for the billing company; the PDF font has no Telugu), job data the plumber/customer said (issue, address) and timeline evidence.
 - Incident: a dropped 22 s customer call created job J33 ("application"). Rule now: job only if problem AND (address or agreed slot); else "Missed enquiry" card. J33 cancelled (kept) with the reason.
 
-## Sat 23:55 — Pivot to Instint (CLAUDE.md FINAL) — checkpoint "Sun 1:00 AM"
+## Sat 23:55 — Pivot to Chinku (CLAUDE.md FINAL) — checkpoint "Sun 1:00 AM"
 - Observed: planner (gpt-5.5, effort low) turned "Transcribe this, email me a copy, and remind me tomorrow at 9" into transcribe_image → draft_email(exact_copy) → send_email[approval] → remind(Tomorrow, Sun 22 Nov, 9:00 AM). Live: transcript exact vs ground truth (font page), email delivered (IMAP verified), reminder stored.
 - Chose: tools wrap existing code (email, web search, maps, call engine via call_and_ask spec) — no engine rewrite. Approval enforced in CODE for send_email/call even if the plan forgets (test). Transcripts go by email EXACTLY (mode exact_copy), never rewritten.
 - Chose: tasks/memory/reminders live in the existing `contacts` table (itask:/mem:/rem:/ilast:) — no new DynamoDB table needed (EC2 role is limited to chinku_* tables).
 - Fixed on the way: memory secret filter blocked +91 phone numbers (12 digits looked like Aadhaar) → now 4-4-4 format or the word Aadhaar/UID.
 - Times: planner proposes ISO from now_ist; code validates (future, IST) and renders words. Would change: a code date parser for common phrases.
-- MODE=instint is now default; plumber flows stay with MODE=plumber.
+- MODE=chinku is now default; plumber flows stay with MODE=plumber.
 
-## Sun 00:40 — Plumber removed; Instint App live
+## Sun 00:40 — Plumber removed; Chinku App live
 - Removed (git history keeps it): app/jobs (jobs, booking, parts, billing, customer calls, slots), plumber prompts/call scripts, book_visit/part_sourcing specs, plumber tests and scripts, old UI. Kept: engine + v1 recipes (CLAUDE.md: still selectable), normaliser, translation, voice transcription (now app/brain/listen.py with a vocabulary from the user's memory).
-- Omni agents renamed to Instint (welcome + prompts pushed by scripts/omni_sync_agents.py, read back OK). Inbound = owner tells Instint what they need → same planner + approval.
-- New Instint App: home + chat cards + Leaflet map + 🔊 Listen (/api/tts, cached). Observed: J1 via the app — email arrived with the photo attached (IMAP: att_….jpg, 107 KB).
+- Omni agents renamed to Chinku (welcome + prompts pushed by scripts/omni_sync_agents.py, read back OK). Inbound = owner tells Chinku what they need → same planner + approval.
+- New Chinku App: home + chat cards + Leaflet map + 🔊 Listen (/api/tts, cached). Observed: J1 via the app — email arrived with the photo attached (IMAP: att_….jpg, 107 KB).
 - 97 tests pass (plumber tests removed with the code).

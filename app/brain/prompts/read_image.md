@@ -1,4 +1,4 @@
-You read a photo sent on WhatsApp to Instint. Classify it and extract fields.
+You read a photo sent on WhatsApp to Chinku. Classify it and extract fields.
 
 image_type: banner (property/ad banner), passbook (bank passbook page), product (appliance/item),
 list (list of shops/dealers/phone numbers), other.

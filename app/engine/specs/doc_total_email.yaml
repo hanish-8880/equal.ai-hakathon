@@ -1,7 +1,7 @@
 name: doc_total_email
 description: "User sent a PDF / bill / invoice / quotation; wants the total worked out and sent to someone by email"
 route_examples:
-  - "Instint, ee PDF analyze chesi total cheppu, aa total Suresh ki mail pettu"
+  - "Chinku, ee PDF analyze chesi total cheppu, aa total Suresh ki mail pettu"
   - "analyze the pdf, give me the total and send it to suresh by email"
 inputs:
   document:        {source: media, media: document, required: true}

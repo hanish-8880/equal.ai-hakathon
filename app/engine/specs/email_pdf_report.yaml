@@ -1,5 +1,5 @@
 name: email_pdf_report
-description: "Someone emailed Hanish a PDF (bill, invoice, quotation, report, statement); Instint should find it in Hanish's own Gmail inbox, analyse it, send the key values / total on WhatsApp, and (if asked) make a PowerPoint about it"
+description: "Someone emailed Hanish a PDF (bill, invoice, quotation, report, statement); Chinku should find it in Hanish's own Gmail inbox, analyse it, send the key values / total on WhatsApp, and (if asked) make a PowerPoint about it"
 route_examples:
   - "na boss ippude PDF mail chesaru, analyze chesi value WhatsApp lo pampu, PPT kuda chey"
   - "Suresh sent me a quotation PDF by email, analyse it, tell me the total and make a ppt"

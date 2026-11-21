@@ -1,5 +1,5 @@
 """Is everything linked? Run ON THE SERVER: python -m scripts.check_links
-Part 1 checks every external connection with the real config. Part 2 runs Instint J1 with the REAL planner under a TEST identity;
+Part 1 checks every external connection with the real config. Part 2 runs Chinku J1 with the REAL planner under a TEST identity;
 the email approval is answered 'no', so nothing is sent."""
 import json
 import time
@@ -107,11 +107,11 @@ def _():
     return True, "fpdf2 + python-pptx"
 
 
-# ---------------- Part 2: Instint J1 with the REAL planner (no email is sent: approval is answered "no") ----------------
-@check("Instint J1: plan -> exact transcript -> email waits for approval -> reminder")
+# ---------------- Part 2: Chinku J1 with the REAL planner (no email is sent: approval is answered "no") ----------------
+@check("Chinku J1: plan -> exact transcript -> email waits for approval -> reminder")
 def _():
     from pathlib import Path
-    from app.instint import executor
+    from app.chinku import executor
     U = "test:check_links"
     out, cards = [], []
     page = Path("eval/pages/todo_page.jpg")

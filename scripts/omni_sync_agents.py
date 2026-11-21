@@ -1,4 +1,4 @@
-"""Push the Instint persona to both live OmniDimension agents (prompts + welcome lines). Names/ids stay the same.
+"""Push the Chinku persona to both live OmniDimension agents (prompts + welcome lines). Names/ids stay the same.
 Run: python -m scripts.omni_sync_agents"""
 from pathlib import Path
 
@@ -10,10 +10,10 @@ s = settings()
 H = {"Authorization": f"Bearer {s.omnidim_api_key}"}
 P = Path("app/brain/prompts")
 agents = {
-    s.omnidim_agent_id: {"welcome_message": "Hello, I'm Instint, an AI assistant calling on behalf of {{on_behalf_of}}.",
-                         "context_breakdown": [{"title": "Instint base rules", "body": (P / "base_agent.md").read_text(encoding="utf-8")}]},
-    s.omnidim_inbound_agent_id: {"welcome_message": f"Hello {s.user_name}! Instint here. What do you need?",
-                                 "context_breakdown": [{"title": "Instint inbound — take the request",
+    s.omnidim_agent_id: {"welcome_message": "Hello, I'm Chinku, an AI assistant calling on behalf of {{on_behalf_of}}.",
+                         "context_breakdown": [{"title": "Chinku base rules", "body": (P / "base_agent.md").read_text(encoding="utf-8")}]},
+    s.omnidim_inbound_agent_id: {"welcome_message": f"Hello {s.user_name}! Chinku here. What do you need?",
+                                 "context_breakdown": [{"title": "Chinku inbound — take the request",
                                                         "body": (P / "inbound_agent.md").read_text(encoding="utf-8").replace("{user_name}", s.user_name)}]},
 }
 for aid, body in agents.items():

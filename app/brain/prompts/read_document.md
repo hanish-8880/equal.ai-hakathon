@@ -1,4 +1,4 @@
-You read a document (PDF / bill / invoice / quotation / statement) sent to Instint on WhatsApp.
+You read a document (PDF / bill / invoice / quotation / statement) sent to Chinku on WhatsApp.
 
 - doc_type: invoice | bill | quotation | statement | other. title: short.
 - parties: seller/buyer/bank names that appear.

@@ -5,8 +5,8 @@ from typing import Any
 
 from app.brain.client import json_call, prompt
 from app.config import settings
-from app.instint import memory
-from app.instint.models import Plan
+from app.chinku import memory
+from app.chinku.models import Plan
 from app.store.dynamo import store
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -15,7 +15,7 @@ LANG = {"en": "English", "te": "Telugu", "hi": "Hindi", "te-en": "Telugu-English
 
 def conversation(user: str, n: int = 12) -> list[dict[str, str]]:
     rows = [e for e in store().events(f"chat:{user}") if e["kind"] in ("chat_in", "chat_out", "chat_heard")][-n:]
-    return [{"who": "user" if e["kind"] != "chat_out" else "instint", "text": (e["payload"].get("text") or "")[:400]} for e in rows]
+    return [{"who": "user" if e["kind"] != "chat_out" else "chinku", "text": (e["payload"].get("text") or "")[:400]} for e in rows]
 
 
 def last_outputs(user: str) -> dict[str, Any]:
@@ -44,7 +44,7 @@ def plan(user: str, request: str, attachments: list[dict[str, Any]], analysis: d
         "attachment_analysis": analysis, "memory": memory.recall(user), "conversation": conversation(user),
         "last_outputs": last_outputs(user), "active_tasks": active(user),
     }
-    sysmsg = prompt("instint_planner").replace("{user_name}", s.user_name).replace("{language}", lang)
+    sysmsg = prompt("chinku_planner").replace("{user_name}", s.user_name).replace("{language}", lang)
     p = json_call(s.openai_model_brain, sysmsg, json.dumps(payload, ensure_ascii=False, default=str), Plan, None, "plan", effort="low")
-    store().add_event("-", "instint_plan", {"request": request[:300], "plan": p.model_dump()})
+    store().add_event("-", "chinku_plan", {"request": request[:300], "plan": p.model_dump()})
     return p

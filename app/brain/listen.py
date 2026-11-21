@@ -9,7 +9,7 @@ from app.store.dynamo import store
 
 
 def vocabulary(user: str) -> str:
-    from app.instint import memory
+    from app.chinku import memory
     names = []
     for r in memory.recall(user):
         for x in (r["key"], str(r["value"])):

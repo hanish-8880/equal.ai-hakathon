@@ -1,10 +1,10 @@
-"""Instint: planner → approval gate → tools → results (model calls mocked; code rules tested for real)."""
+"""Chinku: planner → approval gate → tools → results (model calls mocked; code rules tested for real)."""
 from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.instint import executor, memory, tools
-from app.instint.models import Plan, Step
+from app.chinku import executor, memory, tools
+from app.chinku.models import Plan, Step
 from app.store.dynamo import MemoryStore, set_store, store
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -45,7 +45,7 @@ J1 = Plan(understood="Transcribe the page · email you a copy · remind you tomo
 def test_j1_photo_to_email_waits_for_yes_then_sends_exact_text_once(monkeypatch, tmp_path):
     from app.config import settings
     monkeypatch.setattr(settings(), "smtp_user", "me@example.com")
-    monkeypatch.setattr("app.instint.planner.plan", lambda *a, **k: J1)
+    monkeypatch.setattr("app.chinku.planner.plan", lambda *a, **k: J1)
     page = "Milk 2 L\nRice 5 kg — ₹350\n[unclear] by Friday"
     monkeypatch.setattr(tools, "json_call", lambda *a, **k: tools.Transcript(text=page, kind="handwritten", title="Shopping list"))
     executor.handle(ME, "Transcribe this, email me a copy, and remind me tomorrow at 9 to review it.", photo(tmp_path), send, card)
@@ -67,7 +67,7 @@ def test_j1_photo_to_email_waits_for_yes_then_sends_exact_text_once(monkeypatch,
 def test_no_means_nothing_is_sent(monkeypatch, tmp_path):
     from app.config import settings
     monkeypatch.setattr(settings(), "smtp_user", "me@example.com")
-    monkeypatch.setattr("app.instint.planner.plan", lambda *a, **k: J1)
+    monkeypatch.setattr("app.chinku.planner.plan", lambda *a, **k: J1)
     monkeypatch.setattr(tools, "json_call", lambda *a, **k: tools.Transcript(text="hello", title="x"))
     executor.handle(ME, "transcribe and email me", photo(tmp_path), send, card)
     executor.handle(ME, "vaddu", [], send, card)
@@ -77,7 +77,7 @@ def test_no_means_nothing_is_sent(monkeypatch, tmp_path):
 def test_send_email_needs_approval_even_if_the_plan_forgot(monkeypatch, tmp_path):
     p = Plan(understood="x", confidence=0.9, steps=[Step(id="s1", tool="send_email", needs_approval=False,
                                                          inputs={"draft": {"to": "a@b.com", "subject": "s", "body": "b"}})])
-    monkeypatch.setattr("app.instint.planner.plan", lambda *a, **k: p)
+    monkeypatch.setattr("app.chinku.planner.plan", lambda *a, **k: p)
     executor.handle(ME, "send it", [], send, card)
     assert SENT == [] and any("Needs you" in t for t, _ in CARDS)
 
@@ -117,7 +117,7 @@ def test_reminder_in_the_past_is_refused_and_repeat_reschedules():
 
 
 def test_clarifying_question_means_no_action(monkeypatch):
-    monkeypatch.setattr("app.instint.planner.plan", lambda *a, **k: Plan(understood="", clarifying_question="Whose email?", confidence=0.4))
+    monkeypatch.setattr("app.chinku.planner.plan", lambda *a, **k: Plan(understood="", clarifying_question="Whose email?", confidence=0.4))
     executor.handle(ME, "email it", [], send, card)
     assert OUT == ["Whose email?"] and SENT == []
 

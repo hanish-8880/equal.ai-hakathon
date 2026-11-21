@@ -389,7 +389,7 @@ def run_make_doc(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any
     deck = decider.write_deck(req, doc, analysis, computed, meta, task["task_id"]).model_dump()
     table = [(it.get("label", ""), inr(float(it["amount"]))) for it in doc.get("line_items", []) if it.get("amount") is not None]
     total = (computed or {}).get("total_str")
-    data = slides.render(deck, table or None, total, footer=f"Prepared by Instint for {settings().user_name}")
+    data = slides.render(deck, table or None, total, footer=f"Prepared by Chinku for {settings().user_name}")
     fname = f"{task['task_id']}_{(deck['title'] or 'report')[:30].replace(' ', '_')}.pptx"
     SEND_FILE(task["user"], data, fname, f"📊 {deck['title']} — PPT ready")
     store().add_event(task["task_id"], "doc_made", {"file": fname, "slides": len(deck.get("slides", [])) + 1 + bool(table)})

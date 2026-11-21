@@ -1,4 +1,4 @@
-"""Instint — FastAPI app, routes only. One router (app/instint), many channels: the Instint App, WhatsApp, phone."""
+"""Chinku — FastAPI app, routes only. One router (app/chinku), many channels: the Chinku App, WhatsApp, phone."""
 import json
 import threading
 import time
@@ -15,11 +15,11 @@ from app.channels import whatsapp
 from app.config import settings
 from app.engine import runner, steps, validate
 from app.engine.validate import mask_phone
-from app.instint import executor, memory
+from app.chinku import executor, memory
 from app.store.dynamo import store
 from app.voice import omni
 
-app = FastAPI(title="Instint")
+app = FastAPI(title="Chinku")
 STARTED_AT = time.time()
 IST = timezone(timedelta(hours=5, minutes=30))
 EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response></Response>'
@@ -86,7 +86,7 @@ steps.SEND_FILE = send_file
 
 # ---------------- background loops ----------------
 def _scheduler_loop() -> None:
-    """Calls in flight, retries, reminders, async Instint steps. State is in the store → survives restarts."""
+    """Calls in flight, retries, reminders, async Chinku steps. State is in the store → survives restarts."""
     while True:
         try:
             runner.tick_schedules()
@@ -170,7 +170,7 @@ def process_whatsapp(msg: dict[str, Any]) -> None:
     user = msg["from"]
     store().add_event("-", "wa_in", {"from_last4": user[-4:] if user else None, "body": msg["body"][:500],
                                      "media": [m["type"] for m in msg["media"]]})
-    if user != settings().user_whatsapp:  # Instint works for its owner only
+    if user != settings().user_whatsapp:  # Chinku works for its owner only
         return
     set_channel(user, "whatsapp")
     chat_log(user, "chat_in", msg["body"] or "(media)")
@@ -200,13 +200,13 @@ def owner_number(number: str | None) -> str | None:
 
 
 def process_inbound_call(parsed: dict[str, Any]) -> None:
-    """The user called Instint and said what they need: plan it like a typed request (approval still applies)."""
+    """The user called Chinku and said what they need: plan it like a typed request (approval still applies)."""
     owner = owner_number(parsed.get("from_number"))
     store().add_event("-", "inbound_call", {"from_last4": (parsed.get("from_number") or "")[-4:], "allowed": bool(owner),
                                             "summary": parsed.get("summary"), "transcript": parsed.get("transcript", "")[:3000]})
     if not owner:
         if parsed.get("transcript"):
-            deliver(settings().user_whatsapp, f"📞 Someone else called Instint ({mask_phone(parsed.get('from_number'))}): "
+            deliver(settings().user_whatsapp, f"📞 Someone else called Chinku ({mask_phone(parsed.get('from_number'))}): "
                                               f"{parsed.get('summary') or 'no summary'}")
         return
     said = "\n".join(ln[5:].strip() for ln in parsed.get("transcript", "").splitlines() if ln.startswith("user:"))
@@ -247,7 +247,7 @@ def media(name: str) -> FileResponse:
     return FileResponse(p, media_type=mt)
 
 
-# ---------------- the Instint App (key-protected) ----------------
+# ---------------- the Chinku App (key-protected) ----------------
 def _ok(key: str | None) -> bool:
     k = settings().chat_key
     return bool(k) and key == k
@@ -342,7 +342,7 @@ def api_home(key: str = "") -> JSONResponse:
     """Home: Needs you · Active task · Recent work · upcoming reminders (CLAUDE.md §9)."""
     if not _ok(key):
         return _forbidden()
-    from app.instint.tools import when_words
+    from app.chinku.tools import when_words
     owner = settings().user_whatsapp
     tasks = sorted((t for t in store().scan("contacts", kind="itask") if t.get("user") == owner), key=lambda t: t.get("updated_at", 0), reverse=True)
     needs, active, recent = [], None, []
@@ -434,7 +434,7 @@ async def api_me_set(request: Request) -> JSONResponse:
 
 @app.post("/api/tts")
 async def api_tts(request: Request) -> Response:
-    """🔊 Listen: read an Instint answer aloud (OpenAI TTS). Cached per text."""
+    """🔊 Listen: read an Chinku answer aloud (OpenAI TTS). Cached per text."""
     import hashlib
     form = await request.form()
     if not _ok(form.get("key")):
