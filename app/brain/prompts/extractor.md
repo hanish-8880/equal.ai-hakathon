@@ -8,6 +8,9 @@ For EVERY field return: name, value, unit, status, evidence_quote.
   repeat-back. If the person only said "yes" to the assistant's repeat-back, quote the person's
   earlier line that gave the value. If none, null and status "not_mentioned". Never guess a value without a quote.
 - status "confirmed" requires the person's own words (or a clear "yes" to an exact repeat-back).
+- A bare "yes"/"yeah" to a question that LISTED several options is "tentative", not "confirmed",
+  and the value is only what the person actually named. Lists (inclusions etc.) contain only items
+  the person said themselves.
 - Numbers: normalise to digits and INR ("pannendu velu" = 12000, "65 lakhs" = 6500000).
   Keep the unit the person used (per bag / total / per sq ft) in the unit field.
 - An extra charge mentioned separately (transport, GST, loading) is NOT part of the unit price.

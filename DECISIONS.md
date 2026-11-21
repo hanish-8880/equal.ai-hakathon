@@ -77,3 +77,12 @@ Extracted all 4 fields confirmed; deterministic total 50×714 = 35700; WhatsApp 
 Weakness: price evidence_quote was the assistant's repeat-back, not the dealer's words.
 Chose: extractor prompt now requires the other person's own words as evidence (shortest line).
 Also seen: agent switched to English because the callee answered in English (rule 2 working).
+
+## [Sat 14:15] F2 banner_rate LIVE (t_2e3eac4e) + leading-question weakness
+Observed: banner photo → vision (phone, project, ₹65L) → confirm → call → 5 fields with callee-quote evidence → reply. Works end to end.
+Weakness: agent asked a LEADING question listing 6 inclusions; callee said "Yeah" → extractor marked all 6 inclusions "confirmed" (wrong-confirmed).
+Also unit_type taken as "2 & 3 BHK Luxury Apartments" (banner text) instead of default 2BHK; reply wrote ₹6500000.
+Chose: brief_writer must ask open questions only; extractor treats bare "yes" to a listed question as tentative and lists only items the callee named; reply formats lakhs/crore.
+Gave up: nothing.
+Would change if: eval shows open questions make calls too long.
+This transcript becomes an eval case (leading-question "Yeah" → inclusions tentative).
