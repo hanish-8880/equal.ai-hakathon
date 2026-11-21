@@ -565,10 +565,10 @@ mic.addEventListener("contextmenu", e => e.preventDefault());
 
 /* ---------------- start ---------------- */
 (async () => {
-  try { const r = await api("/api/me"); if (r.ok) { me = await r.json(); } else if (r.status === 403) toast("Wrong or missing key in the link"); } catch (e) {}
   const start = (location.hash || "#today").slice(1).split("?")[0];
-  go(["today", "jobs", "calls", "bills", "chat"].includes(start) ? start : "today");
+  go(["today", "jobs", "calls", "bills", "chat"].includes(start) ? start : "today");  // render at once, never a blank page
   renderAll(false);
+  try { const r = await api("/api/me"); if (r.ok) { me = await r.json(); renderToday(); } else if (r.status === 403) toast("Wrong or missing key in the link"); } catch (e) {}
   if (!me.language && !new URLSearchParams(location.search).get("shot")) { pickLang = null; showOnboard(); }
   await loadAll(); pollChat();
   setInterval(loadAll, 6000);
