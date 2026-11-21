@@ -162,13 +162,17 @@ def run(t: Task, send: Send, card: Card) -> Task:
             st.status, st.preview = "waiting", _preview(s.tool, inputs)
             t.status = "waiting"
             save(t)
-            store().put("contacts", f"iwait:{t.user}", {"kind": "iwait", "task_id": t.task_id, "step_id": s.id})
             what = {"send_email": f"Send this email to {st.preview.get('to')}?",
                     "food_cart_add": f"Add {st.preview.get('dish') or 'this'} from {st.preview.get('restaurant') or 'the restaurant'} to your Swiggy food cart?",
                     "table_book": f"Book a FREE table at {st.preview.get('restaurant')} · {st.preview.get('when')} · {st.preview.get('guests')} guests?",
                     "cart_add": f"Add {st.preview.get('count')} items (₹{st.preview.get('total') or 0:,.0f}) to your Swiggy cart?",
                     "call": "Call " + ", ".join(f"{x.get('name') or ''} {x.get('phone') or ''}".strip() for x in inputs.get("targets") or []) + "?"}
-            card(f"👉 Needs you: {what.get(s.tool, 'Go ahead?')} (yes / no)", {**st.preview, "task_id": t.task_id, "step_id": s.id})
+            q = what.get(s.tool, "Go ahead?")
+            # asked_at: a typed yes/no only answers THIS question if it comes right after it (see handle)
+            store().put("contacts", f"iwait:{t.user}", {"kind": "iwait", "task_id": t.task_id, "step_id": s.id,
+                                                        "asked_at": time.time(), "q": q,
+                                                        "asked_after": (store().get("contacts", f"ilastin:{t.user}") or {}).get("n", 0)})
+            card(f"👉 Needs you: {q} (yes / no)", {**st.preview, "task_id": t.task_id, "step_id": s.id})
             return t
         fn = tools.REGISTRY.get(s.tool)
         st.status = "running"
@@ -235,15 +239,40 @@ def approve(user: str, task_id: str, step_id: str, yes: bool, send: Send, card: 
 
 
 # ---------------- entry ----------------
+def _last_question(user: str) -> str | None:
+    """Chinku's latest chat line, if it was a QUESTION to the user (not an approval card)."""
+    for e in reversed(store().events(f"chat:{user}")[-8:]):
+        if e["kind"] in ("chat_in", "chat_heard"):
+            continue  # the user's own message (often logged before handle) — look at what Chinku said before it
+        txt = (e["payload"].get("text") or "").strip()
+        if (e["payload"].get("card") or {}).get("task_id") or txt.startswith("👉"):
+            return None  # an approval card → only its buttons / an immediate yes answer it
+        return txt if txt.endswith("?") else None
+    return None
+
+
+
 def handle(user: str, text: str, attachments: list[dict[str, Any]], send: Send, card: Card) -> None:
     text = (text or "").strip()
-    # 1) a typed / spoken "yes" or "no" answers the NEWEST waiting approval (buttons answer their own task: approve())
+    prev_n = (store().get("contacts", f"ilastin:{user}") or {}).get("n", 0)  # message counter (timestamps can tie)
+    store().put("contacts", f"ilastin:{user}", {"kind": "ilastin", "n": prev_n + 1, "ts": time.time()})
+    # 1) a typed / spoken "yes" or "no" answers the waiting approval ONLY if that question was asked after the user's
+    #    previous message — i.e. it is the latest thing Chinku asked. Observed Sun 02:21: a "yes" meant for a trip plan
+    #    sent an email asked about 2 messages earlier. Buttons always answer their own card (approve()).
     w = store().get("contacts", f"iwait:{user}")
-    if w and text and not attachments and (runner.YES.match(text) or runner.NO.match(text)):
+    yes_no = bool(text and not attachments and (runner.YES.match(text) or runner.NO.match(text)))
+    if w and yes_no and w.get("asked_after", -1) == prev_n:  # asked after the user's last message = the latest question
         if approve(user, w["task_id"], w["step_id"], bool(runner.YES.match(text)), send, card) != "gone":
             return
-    if text and not attachments and BARE.fullmatch(text):
-        send("Nothing is waiting for your answer right now. What do you need?")
+    if text and not attachments and BARE.fullmatch(text) and _last_question(user):
+        pass  # "yes" right after Chinku ASKED something ("Plan it for 8 days?") → plan it WITH the recent chat (intent)
+    elif text and not attachments and BARE.fullmatch(text):
+        t_old = load(w["task_id"]) if w else None
+        if w and t_old and t_old.steps.get(w["step_id"]) and t_old.steps[w["step_id"]].status == "waiting":
+            send(f"I didn't do anything. An older question is still open: “{w.get('q') or 'an approval'}” — tap its button on "
+                 "that card if you still want it. What do you need now?")
+        else:
+            send("Nothing is waiting for your answer right now. What do you need?")
         return
     # 2) new request → (analyze a lone attachment) → plan → readback → run
     analysis = None

@@ -182,7 +182,8 @@ def address_id(server: str = "im") -> str:
     rows = data if isinstance(data, list) else next((v for v in data.values() if isinstance(v, list)), [])
     a = next((r for r in rows if isinstance(r, dict) and (r.get("id") or r.get("addressId"))), None)
     if not a:
-        raise SwiggyError(f"No delivery address on the Swiggy account “{active()}” — add one in the Swiggy app first (needed for carts).")
+        raise SwiggyError(f"Your Swiggy account “{active()}” has no saved delivery address, so I can't add to a cart. Add your address "
+                          "in the Swiggy app (Account → Addresses), or switch account in ☰ → Memory & settings, then ask again.")
     ses["addr"] = str(a.get("id") or a.get("addressId"))
     ses["addr_label"] = str(a.get("annotation") or a.get("label") or a.get("tag") or "your address")
     return ses["addr"]
@@ -194,11 +195,11 @@ def where(server: str = "im") -> dict[str, Any]:
     try:
         return {"addressId": address_id(server)}
     except SwiggyError as e:
-        if "No delivery address" not in str(e):
+        if "no saved delivery address" not in str(e):
             raise
         if server == "im":  # observed Sun 02:30: Instamart accepts coordinates only for logged-OUT guests
             raise SwiggyError(f"Swiggy Instamart needs a saved delivery address on the account “{active()}” — add one in the "
-                              "Swiggy app (Account → Addresses), then ask again. Swiggy Food works without one.") from e
+                              "Swiggy app (Account → Addresses), then ask again. (Food search works without one; any cart needs it.)") from e
     from app.actions import maps
     from app.chinku import memory
     from app.config import settings

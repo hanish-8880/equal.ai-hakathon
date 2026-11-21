@@ -1021,7 +1021,10 @@ def food_cart_add(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dic
         raise ToolError("Which dish should I add? Pick one from the list first.")
     if not store().claim(f"ifood:{ctx['task'].task_id}:{ctx['step_id']}"):
         return {"added": len(items), "duplicate": True}
-    aid = sw.address_id("food")
+    try:
+        aid = sw.address_id("food")
+    except sw.SwiggyError as e:  # plain words, never a bare "step failed"
+        raise ToolError(str(e)) from e
     try:
         cur = sw.call("get_food_cart", {"addressId": aid}, "food")
         cd = cur.get("data") if isinstance(cur.get("data"), dict) else cur

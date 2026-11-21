@@ -3,6 +3,7 @@ Observed (DECISIONS Sun 01:20): tool `search-flight`, dates dd/mm/yyyy, city nam
 totalDurationSeconds, outbound{departureTime, arrivalTime, stops, route, segments[carrierName, flightNumber]}, bookingUrl.
 Chinku never pays: the booking link opens Kiwi.com, where the user checks out themselves."""
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -65,12 +66,34 @@ def to_offers(data: dict[str, Any]) -> list[Offer]:
     return offers
 
 
+# Indian city → airport code(s). Observed Sun 02:45: Kiwi resolves "Goa" / "GOA" to GENOA, Italy (₹39,457 via London);
+# "GOI,GOX" gives the real ₹6,281 direct flight. So Indian names are mapped in CODE before asking Kiwi.
+INDIA_AIRPORTS = {
+    "goa": "GOI,GOX", "north goa": "GOX", "south goa": "GOI", "mopa": "GOX", "dabolim": "GOI",
+    "hyderabad": "HYD", "secunderabad": "HYD", "bengaluru": "BLR", "bangalore": "BLR", "mumbai": "BOM", "bombay": "BOM",
+    "navi mumbai": "NMI", "delhi": "DEL", "new delhi": "DEL", "chennai": "MAA", "madras": "MAA", "kolkata": "CCU", "calcutta": "CCU",
+    "pune": "PNQ", "ahmedabad": "AMD", "kochi": "COK", "cochin": "COK", "visakhapatnam": "VTZ", "vizag": "VTZ", "vijayawada": "VGA",
+    "tirupati": "TIR", "rajahmundry": "RJA", "jaipur": "JAI", "lucknow": "LKO", "varanasi": "VNS", "srinagar": "SXR", "leh": "IXL",
+    "port blair": "IXZ", "andaman": "IXZ", "coimbatore": "CJB", "madurai": "IXM", "trivandrum": "TRV", "thiruvananthapuram": "TRV",
+    "mangalore": "IXE", "mangaluru": "IXE", "bhubaneswar": "BBI", "guwahati": "GAU", "patna": "PAT", "chandigarh": "IXC",
+    "amritsar": "ATQ", "indore": "IDR", "bhopal": "BHO", "nagpur": "NAG", "udaipur": "UDR", "dehradun": "DED", "bagdogra": "IXB",
+    "darjeeling": "IXB", "kozhikode": "CCJ", "calicut": "CCJ", "mysore": "MYQ", "mysuru": "MYQ", "hubli": "HBX", "belgaum": "IXG",
+    "raipur": "RPR", "ranchi": "IXR", "jammu": "IXJ", "surat": "STV", "vadodara": "BDQ", "rajkot": "HSR", "jodhpur": "JDH",
+}
+
+
+def airport(place: str) -> str:
+    """'Goa' → 'GOI,GOX'; 'Hyderabad, India' → 'HYD'; anything unknown goes to Kiwi unchanged."""
+    k = re.sub(r"\s+", " ", str(place).lower().replace(", india", "").replace(" airport", "").replace(" international", "")).strip(" ,.")
+    return INDIA_AIRPORTS.get(k, str(place))
+
+
 class KiwiFlights(ProviderAdapter):
     name, category, status = "Kiwi.com", "flight", "LIVE"
 
     def search(self, request: dict[str, Any]) -> list[Offer]:
         d = datetime.fromisoformat(str(request["date"])[:10])
-        args = {"flyFrom": request["from"], "flyTo": request["to"], "departureDate": d.strftime("%d/%m/%Y"),
+        args = {"flyFrom": airport(request["from"]), "flyTo": airport(request["to"]), "departureDate": d.strftime("%d/%m/%Y"),
                 "adults": int(request.get("adults") or 1), "currency": request.get("currency") or "INR", "locale": "en",
                 "sort": {"cheapest": "price", "fastest": "duration", "earliest": "date"}.get(request.get("priority", "cheapest"), "price")}
         if request.get("return_date"):

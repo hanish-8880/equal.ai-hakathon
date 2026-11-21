@@ -186,7 +186,7 @@ def test_search_without_saved_address_uses_home_area(monkeypatch):
     from app.chinku import memory
 
     def no_addr(*a):
-        raise swiggy.SwiggyError("No delivery address on the Swiggy account “second” — add one in the Swiggy app first (needed for carts).")
+        raise swiggy.SwiggyError("Your Swiggy account “second” has no saved delivery address, so I can't add to a cart.")
     monkeypatch.setattr(swiggy, "address_id", no_addr)
     monkeypatch.setattr(memory, "get", lambda u, k: "Kukatpally")
     monkeypatch.setattr(maps, "geocode", lambda p: (17.4849, 78.4138, p))

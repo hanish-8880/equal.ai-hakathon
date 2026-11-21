@@ -188,3 +188,32 @@ def test_old_approval_cards_get_their_own_task_or_show_decided(monkeypatch):
     rows = [{"card": dict(t1)}]
     m._link_old_approvals(ME, rows)
     assert rows[0]["card"].get("decided")                                               # decided → no live buttons
+
+
+def test_yes_only_answers_the_latest_question_not_an_older_one(monkeypatch):
+    """Observed Sun 02:21: 'yes' to a trip readback sent an email asked about two messages earlier."""
+    sent = []
+    monkeypatch.setattr("app.chinku.tools.REGISTRY", {**tools.REGISTRY, "send_email": lambda u, i, c: sent.append(i) or {"sent": True},
+                                                      "reply": lambda u, i, c: {"text": "ok"}})
+    plans = {"mail them": Plan(understood="x", confidence=0.95, steps=[Step(id="s1", tool="send_email", inputs={"draft": {"to": "a@b.com", "subject": "s", "body": "b"}})]),
+             "plan a trip to goa": Plan(understood="trip", confidence=0.95, steps=[Step(id="s1", tool="reply", inputs={"text": "ok"})])}
+    monkeypatch.setattr("app.chinku.planner.plan", lambda u, text, *a, **k: plans[text])
+    executor.handle(ME, "mail them", [], send, card)            # approval asked
+    executor.handle(ME, "plan a trip to goa", [], send, card)   # user moved on
+    executor.handle(ME, "yes", [], send, card)                  # meant for the trip — must NOT send the email
+    assert sent == [] and "older question is still open" in OUT[-1], OUT
+    executor.handle(ME, "mail them", [], send, card)            # asked again → now it's the latest question
+    executor.handle(ME, "yes", [], send, card)
+    assert len(sent) == 1
+
+
+def test_yes_after_a_question_is_read_with_the_chat(monkeypatch):
+    """'Plan it for 8 days?' → 'yes' goes to the planner (with the conversation), not to an old approval."""
+    seen = []
+    monkeypatch.setattr("app.chinku.tools.REGISTRY", {**tools.REGISTRY, "reply": lambda u, i, c: {"text": "ok"}})
+    monkeypatch.setattr("app.chinku.planner.plan", lambda u, text, *a, **k: seen.append(text) or Plan(
+        understood="Plan an 8-day Goa trip", confidence=0.95, steps=[Step(id="s1", tool="reply", inputs={"text": "ok"})]))
+    store().add_event(f"chat:{ME}", "chat_out", {"text": "Should I plan the Goa trip for 8 days?"})
+    store().add_event(f"chat:{ME}", "chat_in", {"text": "yes"})
+    executor.handle(ME, "yes", [], send, card)
+    assert seen == ["yes"]
