@@ -126,7 +126,8 @@
   .hl { background:var(--hl); border-radius:6px; padding:0 3px; cursor:pointer; font-weight:600; }
   .hl.low { outline:1.5px solid var(--violet-d); }
   .rb { font-weight:700; }
-  .bub .card { margin-top:8px; min-height:auto; box-shadow:none; padding:12px 14px; border-radius:20px; }
+  .bub .card { margin-top:8px; min-height:auto; box-shadow:none; padding:12px 14px; border-radius:20px; white-space:normal; overflow-wrap:break-word; }
+  .kv.bill { grid-template-columns:1fr auto; } .kv.bill dd { text-align:right; white-space:nowrap; font-weight:700; }
   .bub .card h3 { font-size:17px; margin:6px 0 4px; }
   .offer { padding:8px 0; border-top:1px solid rgba(21,19,31,.12); } .offer:first-of-type { border-top:0; }
   .offer a { color:#15131F; font-weight:700; }
@@ -507,7 +508,7 @@ function billCard(c) {
   const col = c.type === "invoice" ? "c-mint" : "c-sky";
   const lines = (c.lines || []).map(l => `<dt>${esc(l.qty)} × ${esc(l.item)}<br><span class="meta">${esc(l.source || "")}</span></dt><dd>${esc(inr(l.amount))}</dd>`).join("");
   return `<div class="card ${col}"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip(c.type === "invoice" ? "Invoice" : "Estimate")}${chip(c.state)}${c.demo_rates ? chip("Demo rates", "dash") : ""}</div>
-    <h3>${esc(inr(c.total))}</h3><dl class="kv">${lines}${c.labour ? `<dt>Labour</dt><dd>${esc(inr(c.labour))}</dd>` : ""}</dl>
+    <h3>${esc(inr(c.total))}</h3><dl class="kv bill">${lines}${c.labour ? `<dt>Labour</dt><dd>${esc(inr(c.labour))}</dd>` : ""}</dl>
     ${c.number ? `<p class="meta">${esc(c.number)}${c.bill_to ? " · " + esc(c.bill_to) : ""}${c.wo ? " · " + esc(c.wo) : ""}</p>` : ""}
     ${c.pdf_url ? `<a class="file" href="${esc(c.pdf_url)}" target="_blank" rel="noopener">📄 Open PDF</a>` : ""}</div>`;
 }
