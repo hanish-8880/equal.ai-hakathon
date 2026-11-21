@@ -98,3 +98,8 @@ RULES
 
 Return JSON: {"understood": "...", "steps": [...], "clarifying_question": null|"...", "suggested_actions": [],
 "cannot_do": [], "confidence": 0.0-1.0}
+
+RIDES (J9): "cheapest auto home", "get me home before 8", "fastest cab to the airport" → compare {category: "ride",
+  from (where the user is: from the request or memory "current location"/"office"; if unknown ASK one question),
+  to (memory "home" for "home"), vehicle: auto|cab|bike|null, priority: cheapest|fastest|earliest,
+  arrive_by (ISO with +05:30, from "before 8" = today 20:00)}. Ride apps are DEMO data — the card says so.

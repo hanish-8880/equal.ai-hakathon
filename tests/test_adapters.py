@@ -72,3 +72,17 @@ def test_one_provider_failing_is_reported_not_hidden(monkeypatch):
     nxt = (datetime.now(IST) + timedelta(days=5)).date().isoformat()
     with pytest.raises(tools.ToolError, match="Kiwi.com: timeout"):
         tools.compare("u", {"category": "flight", "from": "HYD", "to": "BLR", "date": nxt}, ctx)
+
+
+def test_rides_demo_rank_and_arrive_by_excludes_with_reason():
+    from datetime import datetime, timedelta, timezone
+    from app.chinku.adapters import rides
+    now = datetime(2026, 11, 22, 19, 10, tzinfo=timezone(timedelta(hours=5, minutes=30)))
+    req = {"_from_ll": (17.4401, 78.3489), "_to_ll": (17.4935, 78.3995), "vehicle": "auto", "_now": now}  # ~10 km
+    offers = [o for p in ("Rapido", "Ola", "Uber") for o in rides.DemoRides(p).search(req)]
+    assert len(offers) == 3 and all(o.status == "DEMO" and o.source == "demo" for o in offers)
+    cheap = adapters.rank(offers, "cheapest")
+    assert cheap.winner.provider == "Rapido"  # lowest base + per-km in the demo rates
+    by = adapters.rank(offers, "cheapest", arrive_by=(now + timedelta(minutes=35)).isoformat())
+    assert by is None or all(adapters._dt(o.arrive) <= now + timedelta(minutes=35) for o in by.table)
+    assert offers[2].link.startswith("https://m.uber.com/ul/") and "dropoff[latitude]" in offers[2].link

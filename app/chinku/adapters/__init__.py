@@ -69,10 +69,17 @@ def _t(iso: str | None) -> str:
         return iso or "unknown"
 
 
+def _dt(iso: str) -> datetime:
+    """Compare times as times, not text ('19:40+05:30' vs '20:00:00+05:30'); naive = IST."""
+    from datetime import timedelta, timezone
+    d = datetime.fromisoformat(iso)
+    return d if d.tzinfo else d.replace(tzinfo=timezone(timedelta(hours=5, minutes=30)))
+
+
 KEY = {
     "cheapest": lambda o: (o.final_payable is None, o.final_payable or 0, o.duration_min or 10**6),
     "fastest": lambda o: (o.duration_min is None, o.duration_min or 0, o.final_payable or 10**9),
-    "earliest": lambda o: (o.arrive is None, o.arrive or "", o.final_payable or 10**9),
+    "earliest": lambda o: (o.arrive is None, _dt(o.arrive).timestamp() if o.arrive else 0, o.final_payable or 10**9),
 }
 
 
@@ -82,7 +89,7 @@ def rank(offers: list[Offer], priority: Priority, max_stops: int | None = None, 
     for o in offers:
         if max_stops is not None and o.stops is not None and o.stops > max_stops:
             excluded.append({"item": o.item, "why": f"{o.stops} stop(s) — you asked for at most {max_stops}"})
-        elif arrive_by and o.arrive and o.arrive > arrive_by:
+        elif arrive_by and o.arrive and _dt(o.arrive) > _dt(arrive_by):
             excluded.append({"item": o.item, "why": f"arrives {_t(o.arrive)}, after {_t(arrive_by)}"})
         else:
             keep.append(o)
@@ -111,4 +118,5 @@ def rank(offers: list[Offer], priority: Priority, max_stops: int | None = None, 
 
 def registry() -> dict[str, list[ProviderAdapter]]:
     from app.chinku.adapters.kiwi import KiwiFlights
-    return {"flight": [KiwiFlights()]}
+    from app.chinku.adapters.rides import DemoRides
+    return {"flight": [KiwiFlights()], "ride": [DemoRides("Rapido"), DemoRides("Ola"), DemoRides("Uber")]}

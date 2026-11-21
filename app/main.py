@@ -334,7 +334,9 @@ async def chat_clear(request: Request) -> JSONResponse:
 
 TOOL_WORDS = {"transcribe_image": "Transcript", "analyze": "Photo read", "send_email": "Email", "draft_email": "Draft",
               "remind": "Reminder", "search": "Research", "map": "Map", "call": "Call", "remember": "Memory", "reply": "Answer",
-              "extract": "Details", "compute": "Calculation", "recall": "Memory"}
+              "extract": "Details", "compute": "Calculation", "recall": "Memory", "compare": "Comparison", "recipe": "Recipe",
+              "shop_list": "Shopping list", "cart_add": "Swiggy cart", "find_support": "Support contact", "promise": "Promise",
+              "promise_update": "Promise", "scam_check": "Scam check", "trip_plan": "Trip plan"}
 
 
 @app.get("/api/home")

@@ -432,6 +432,16 @@ def compare(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str,
         raise ToolError(f"I can't compare “{cat}” yet — connected today: {', '.join(adapters.registry())}.")
     priority = inputs.get("priority") if inputs.get("priority") in ("cheapest", "fastest", "earliest") else "cheapest"
     req = dict(inputs) | {"priority": priority}
+    if cat == "ride":
+        if not (req.get("from") and req.get("to")):
+            raise ToolError("Where from and where to? (Say “my home is …” once and I'll remember it.)")
+        from app.chinku.adapters import rides
+        try:  # geocode once, share with every provider
+            req["_from_ll"], req["_to_ll"] = rides.where(str(req["from"])), rides.where(str(req["to"]))
+        except ValueError as e:
+            raise ToolError(str(e)) from e
+        if inputs.get("arrive_by"):
+            req["arrive_by"] = inputs["arrive_by"]
     if cat == "flight":
         if not (req.get("from") and req.get("to") and req.get("date")):
             raise ToolError("For flights I need from, to and the date.")
@@ -451,12 +461,14 @@ def compare(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str,
     if not rec:
         raise ToolError("No options found" + (f" ({'; '.join(failed)})" if failed else "") + ".")
     w = rec.winner
-    head = {"flight": f"{req.get('from')} → {req.get('to')} · {day:%a %d %b} · {int(req.get('adults') or 1)} adult(s)"}.get(cat, cat)
+    head = (f"{req.get('from')} → {req.get('to')} · {day:%a %d %b} · {int(req.get('adults') or 1)} adult(s)" if cat == "flight"
+            else f"{req.get('from')} → {req.get('to')}" + (f" · arrive by {datetime.fromisoformat(inputs['arrive_by']).strftime('%I:%M %p').lstrip('0')}"
+                                                         if inputs.get("arrive_by") else "") if cat == "ride" else cat)
     card = {"type": "compare", "category": cat, "title": head, "priority": priority,
             "winner": w.model_dump(), "why": rec.why, "change": rec.what_would_change,
             "rows": [o.model_dump() for o in rec.table[:8]], "excluded": rec.excluded, "providers": [p.name for p in provs],
             "status": sorted({p.status for p in provs}), "failed": failed, "checked": w.fetched_at, "total_found": len(offers)}
-    ctx["card"](f"✈️ Recommended ({priority}): {w.item} — "
+    ctx["card"](f"{'✈️' if cat == 'flight' else '🛺'} Recommended ({priority}): {w.item} — "
                 f"{'₹' + format(w.final_payable, ',.0f') if w.currency == 'INR' and w.final_payable is not None else w.final_payable}. "
                 f"Why: {'; '.join(rec.why)}. Booking happens on {w.provider} — Chinku never pays.", card)
     return {"recommended": w.model_dump(), "why": rec.why, "count": len(offers), "priority": priority, "failed": failed}
