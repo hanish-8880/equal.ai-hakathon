@@ -190,7 +190,9 @@ def test_search_without_saved_address_uses_home_area(monkeypatch):
     monkeypatch.setattr(swiggy, "address_id", no_addr)
     monkeypatch.setattr(memory, "get", lambda u, k: "Kukatpally")
     monkeypatch.setattr(maps, "geocode", lambda p: (17.4849, 78.4138, p))
-    assert swiggy.where("im") == {"latitude": 17.4849, "longitude": 78.4138}
+    assert swiggy.where("food") == {"latitude": 17.4849, "longitude": 78.4138}   # Food: coordinates are fine
+    with pytest.raises(swiggy.SwiggyError, match="Instamart needs a saved delivery address"):
+        swiggy.where("im")                                                       # Instamart: signed-in needs an address
     monkeypatch.setattr(swiggy, "address_id", lambda *a: "addr1")
     assert swiggy.where("im") == {"addressId": "addr1"}
 

@@ -1115,8 +1115,7 @@ def grocery_search(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> di
     rows = sorted(rows, key=key)[:6]
     if not rows:
         raise ToolError(f"I couldn't find “{q}” on Instamart right now.")
-    saved = bool(sw._sessions.get(f"{sw.active()}:im", {}).get("addr"))
-    loc = "your saved address" if saved else "your home area (this Swiggy account has no saved address — add one in the Swiggy app to order)"
+    loc = "your saved Swiggy address"
     w = rows[0]
     why = f"best value ₹{w['per_100']}/100 g" if prio == "value" and w["per_100"] else f"lowest price ₹{w['price']}"
     ctx["card"](f"🛒 {q.title()} on Swiggy Instamart · recommended {w['name']} {w['pack']} ₹{w['price']} — {why}",

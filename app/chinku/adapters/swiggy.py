@@ -196,6 +196,9 @@ def where(server: str = "im") -> dict[str, Any]:
     except SwiggyError as e:
         if "No delivery address" not in str(e):
             raise
+        if server == "im":  # observed Sun 02:30: Instamart accepts coordinates only for logged-OUT guests
+            raise SwiggyError(f"Swiggy Instamart needs a saved delivery address on the account “{active()}” — add one in the "
+                              "Swiggy app (Account → Addresses), then ask again. Swiggy Food works without one.") from e
     from app.actions import maps
     from app.chinku import memory
     from app.config import settings
