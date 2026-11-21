@@ -434,7 +434,8 @@ function card(c) {
       <div class="src">${esc(L(c.note || ""))}</div>
       ${c.state === "waiting" ? `<div class="btns"><button class="btn primary" data-say="yes">${L("Add to Swiggy cart")}</button><button class="btn" data-say="no">${L("Not now")}</button></div>`
         : `<div class="btns"><button class="btn primary" data-say="Add these items to my Swiggy cart">${L("Add to Swiggy cart")}</button></div>`}</div>`; }
-  if (c.type === "cart_done") return `<div class="rc"><h4>✅ ${L("Added to your Swiggy cart")} <span class="status ok">${esc(c.added)}</span></h4>
+  if (c.type === "cart_done") return `<div class="rc"><h4>${c.warning ? "⚠️" : "✅"} ${L("Added to your Swiggy cart")}${c.restaurant ? " · " + esc(c.restaurant) : ""}</h4>
+      ${c.warning ? `<div class="status bad" style="margin:2px 0 6px">${esc(c.warning)}</div>` : ""}
       ${(c.lines || []).length ? `<dl class="kv">${c.lines.map(l => `<dt>${esc(l.label)}</dt><dd>${esc(l.value)}</dd>`).join("")}</dl>` : ""}
       ${c.to_pay ? `<div style="font-size:18px;margin-top:6px"><b>${L("To pay")}: ₹${esc(c.to_pay)}</b></div>` : ""}
       <div class="btns"><a class="btn primary" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(c.open_url)}" target="_blank" rel="noopener">${L("Open Swiggy to pay")} ↗</a></div>

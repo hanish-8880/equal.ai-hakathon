@@ -943,26 +943,33 @@ def food_cart_add(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dic
     aid = sw.address_id("food")
     try:
         cur = sw.call("get_food_cart", {"addressId": aid}, "food")
-        cur_rid = str((cur.get("restaurant") or {}).get("id") or cur.get("restaurantId") or "")
-        cur_items = [x for x in (cur.get("items") or cur.get("cartItems") or []) if isinstance(x, dict)]
+        cd = cur.get("data") if isinstance(cur.get("data"), dict) else cur
+        cur_rid = str((cd.get("restaurant") or {}).get("id") or cd.get("restaurantId") or "")
+        cur_items = [x for x in (cd.get("items") or []) if isinstance(x, dict)]
         if cur_items and cur_rid and cur_rid != rid:
-            raise ToolError("Your Swiggy food cart already has dishes from another restaurant — I won't replace them. "
-                            "Empty it in the Swiggy app, then ask me again.")
+            raise ToolError(f"Your Swiggy food cart already has dishes from {(cd.get('restaurant') or {}).get('name') or 'another restaurant'} — "
+                            "I won't replace them. Empty it in the Swiggy app, then ask me again.")
         merged = {i["menu_item_id"]: i for i in items}
         for x in cur_items if cur_rid == rid else []:
-            mid = str(x.get("menu_item_id") or x.get("menuItemId") or x.get("id") or "")
+            mid = str(x.get("menu_item_id") or "")
             if mid and mid not in merged:
                 merged[mid] = {"menu_item_id": mid, "quantity": int(x.get("quantity") or 1)}
         sw.call("update_food_cart", {"restaurantId": rid, "cartItems": list(merged.values()), "addressId": aid}, "food")
         cart = sw.call("get_food_cart", {"addressId": aid, "restaurantName": inputs.get("restaurant") or ""}, "food")
     except sw.SwiggyError as e:
         raise ToolError(str(e)) from e
-    bill = cart.get("billBreakdown") or cart.get("bill") or {}
-    lines = [{"label": li.get("label") or li.get("name"), "value": li.get("value") or li.get("amount")} for li in (bill.get("lineItems") or []) if isinstance(li, dict)]
-    pay = ((bill.get("toPay") or {}).get("value") if isinstance(bill.get("toPay"), dict) else bill.get("toPay")) or cart.get("cartTotalAmount") or cart.get("totalAmount")
-    ctx["card"](f"✅ Added to your Swiggy food cart" + (f" · to pay ₹{pay}" if pay else "") + ". Open Swiggy to place the order — Chinku never pays.",
-                {"type": "cart_done", "added": len(items), "to_pay": pay, "lines": lines, "open_url": "https://www.swiggy.com/checkout",
-                 "provider": "Swiggy Food", "restaurant": inputs.get("restaurant")})
+    cd = cart.get("data") if isinstance(cart.get("data"), dict) else cart
+    pr = cd.get("pricing") or {}
+    lines = [{"label": l, "value": f"₹{pr[k]:,}" if isinstance(pr.get(k), (int, float)) else pr.get(k)}
+             for l, k in (("Item total", "item_total"), ("Delivery", "delivery_charge"), ("Taxes & charges", "taxes_and_charges")) if pr.get(k) is not None]
+    pay = pr.get("to_pay")
+    issue = (cd.get("delivery_issue") or {})
+    oos = [x.get("name") for x in cd.get("items") or [] if isinstance(x, dict) and str(x.get("in_stock")) == "0"]
+    warn = " · ".join(w for w in [issue.get("title"), ("Out of stock: " + ", ".join(oos)) if oos else None] if w)
+    ctx["card"]((f"⚠️ Added, but {warn.lower()} — you can't order it right now." if warn else "✅ Added to your Swiggy food cart")
+                + (f" Swiggy bill: ₹{pay:,}." if isinstance(pay, (int, float)) else "") + " Chinku never places the order or pays.",
+                {"type": "cart_done", "added": len(items), "to_pay": pay, "lines": lines, "warning": warn or None,
+                 "open_url": "https://www.swiggy.com/checkout", "provider": "Swiggy Food", "restaurant": (cd.get("restaurant") or {}).get("name") or inputs.get("restaurant")})
     return {"added": len(items), "to_pay": pay, "lines": lines}
 
 
