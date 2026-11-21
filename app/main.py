@@ -70,7 +70,8 @@ async def omni_webhook(request: Request, bg: BackgroundTasks) -> JSONResponse:
 @app.get("/media/{name}")
 def media(name: str) -> FileResponse:
     p = whatsapp.MEDIA_DIR / Path(name).name
-    return FileResponse(p, media_type="audio/mpeg")
+    mt = {".mp3": "audio/mpeg", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}.get(p.suffix.lower(), "application/octet-stream")
+    return FileResponse(p, media_type=mt)
 
 
 @app.get("/api/state")
