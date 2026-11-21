@@ -256,3 +256,21 @@ def test_passbook_flow_wait_for_photo_then_explain_and_voice(fake, monkeypatch):
     voice = [n for n in notes if n[2] == b"mp3"]
     assert len(voice) == 1 and voice[0][0] == amma and "Telugu" in voice[0][1]
     assert notes[-1][0] == me  # final report to owner
+
+
+def test_concurrency_limit_queues_calls(fake, monkeypatch):
+    """Omni plan = 1 concurrent call: second dealer call waits in queue instead of failing."""
+    monkeypatch.setattr(steps, "QUEUE_POLL_S", 0.01)
+    busy = {"n": 0}
+    real = steps.DISPATCH
+    def limited(to, ctx):
+        if busy["n"] < 3:  # first 3 attempts hit the limit
+            busy["n"] += 1
+            raise RuntimeError('429: {"error": "concurrency_limit_exceeded"}')
+        return real(to, ctx)
+    monkeypatch.setattr(steps, "DISPATCH", limited)
+    runner.handle_message("u", "cement", None, lambda m: None)
+    runner.handle_message("u", "yes", None, lambda m: None)
+    calls = store().scan("calls")
+    assert len(fake) == 2 and all(c["status"] == "dispatched" for c in calls)
+    assert any(c.get("waited_in_queue") for c in calls)

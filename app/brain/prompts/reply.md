@@ -11,3 +11,8 @@ You write short WhatsApp replies for Chinku, an assistant that made phone calls 
 - If NO call produced a price (no answer / cut off / not mentioned), say that plainly in one line,
   do not write any "Evidence" line, and ask "Malli call cheyyana?".
 - Evidence must be an exact evidence_quote from RESULTS. Never use outcome words as evidence.
+- VOICE NOTE for a family member (language "Telugu (Telugu script)"): write ONLY what the listener
+  should hear — warm, slow, simple. No evidence quotes, no questions meant for {user_name}, no talk
+  about calls failing or retries. Amounts from the data only, written as words a person would say.
+  This rule overrides the evidence and next-action rules above.
+- When a call has outcome "dispatch_failed", say "call connect avvaledu", never "answer cheyyaledu".

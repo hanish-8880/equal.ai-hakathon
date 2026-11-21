@@ -215,6 +215,8 @@ def advance(task_id: str, send) -> None:
         if state in ("running", "awaiting_confirm", "waiting"):
             return  # waiting on webhooks / user / a contact's WhatsApp input
         result = steps.run(step, spec, task, send)
+        if result["status"] == "running":
+            return  # run_call already stored "running"; webhooks / late failures finish it
         task = store().get("tasks", task_id)  # step may have written
         task["steps"][step["id"]] = result
         if result["status"] == "awaiting_confirm":
@@ -241,7 +243,23 @@ def on_call_result(parsed: dict[str, Any], send_to_user) -> None:
     step = next(s for s in spec["steps"] if s["id"] == call["step_id"])
     if steps.maybe_retry(call, step, task):
         return
-    if steps.step_calls_terminal(task["task_id"], step["id"]):
-        task["steps"][step["id"]] = {"status": "done", "output": steps.collect(task["task_id"], step["id"])}
+    finish_call_step(task["task_id"], step["id"], lambda m: send_to_user(task["user"], m))
+
+
+def finish_call_step(task_id: str, step_id: str, send) -> None:
+    task = store().get("tasks", task_id)
+    if not task or task["steps"].get(step_id, {}).get("status") == "done":
+        return
+    if steps.step_calls_terminal(task_id, step_id):
+        task["steps"][step_id] = {"status": "done", "output": steps.collect(task_id, step_id)}
         save_task(task, "step_done")
-        advance(task["task_id"], lambda m: send_to_user(task["user"], m))
+        advance(task_id, send)
+
+
+def _late_terminal(task_id: str, step_id: str) -> None:
+    t = store().get("tasks", task_id)
+    if t:
+        finish_call_step(task_id, step_id, lambda m: steps.NOTIFY(t["user"], m, None))
+
+
+steps.ON_CALL_TERMINAL = _late_terminal

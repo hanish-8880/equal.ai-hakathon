@@ -108,3 +108,14 @@ Chose: brief_writer must write all call text in English letters (romanized Telug
 Would change if: Omni dashboard lets us set the agent voice language to Telugu.
 Privacy: raw passbook image is never stored; only extracted entries go into task state.
 Also: removed uvicorn --reload — a reload killed an in-flight WhatsApp request (14:11 voice note lost after transcription).
+
+## [Sat 14:40] F4 live run (t_43d935ef) — worked end to end, 3 real defects found & fixed
+Observed 1: first call failed: Omni 429 "concurrent call limit (1)" (our plan = 1 call at a time). Task continued to wait_for anyway; report said "didn't answer".
+  Chose: dispatch waits in queue on concurrency_limit (poll 15 s, max 10 min); late failures finish the step via a hook; failure reason "dispatch_failed" reaches the reply.
+  Impact: dealer_quotes "parallel" calls are effectively SEQUENTIAL on this plan (honest note).
+Observed 2: explanation call — our brief had correct numbers, but Omni's live LLM (gpt-4.1-mini) re-translated into Telugu and CHANGED numbers
+  (pension 18,500 → "25,000", electricity 1,180 → "180", LIC 3,250 → "3,200").
+  Chose: base agent rule 9 "NUMBERS ARE SACRED" + agent LLM upgraded to gpt-4.1 (temp 0.2) via PUT {"model":{...}} (VERIFIED llm_service=gpt-4.1).
+  Would change if: still wrong → send the explanation as pre-written exact sentences and ask the agent to read them verbatim / rely on the WhatsApp voice note (our TTS, exact).
+Observed 3: voice note for mummy contained an evidence quote and a question for Hanish. Chose: voice-note mode in reply prompt.
+Positive: wait_for + photo from contact + 2nd call + Telugu voice note + report all ran live; mummy's doubt ("passbook number?") was captured; agent refused to invent it.

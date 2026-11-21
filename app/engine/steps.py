@@ -15,6 +15,8 @@ from app.voice import omni
 TERMINAL = {"completed", "no_answer", "failed"}
 RETRY_DELAY_S = 300
 DISPATCH = omni.dispatch_call  # swapped in tests
+QUEUE_POLL_S, QUEUE_MAX_S, JOIN_S = 15, 600, 45
+ON_CALL_TERMINAL = lambda task_id, step_id: None  # set by runner
 # NOTIFY(to_whatsapp, text, mp3_bytes_or_None): message anyone (owner or contact). Set by main.py.
 NOTIFY = lambda to, text, audio=None: store().add_event("-", "notify_unwired", {"to_last4": to[-4:], "text": text[:200]})
 
@@ -45,7 +47,7 @@ def dispatch_one(task: dict[str, Any], step: dict[str, Any], target: dict[str, A
         ctx = {**{k: (v if isinstance(v, (str, int, float)) else str(v)) for k, v in brief.model_dump().items()
                   if k in ("on_behalf_of", "language", "max_minutes", "call_script", "callee_role")},
                "task_id": task["task_id"], "step_id": step["id"], "chinku_call_id": cid}
-        resp = DISPATCH(target["to"], ctx)
+        resp = _dispatch_queued(call, target["to"], ctx)
         call["omni"] = resp
         call["omni_call_id"] = str(resp.get("requestId") or resp.get("call_id") or resp.get("id") or "")
         call["status"] = "dispatched"
@@ -55,7 +57,25 @@ def dispatch_one(task: dict[str, Any], step: dict[str, Any], target: dict[str, A
         call["error"] = str(e)[:500]
         store().add_event(task["task_id"], "call_failed", {"call_id": cid, "error": call["error"]})
     store().put("calls", cid, call)
+    if call["status"] == "failed" and call.get("waited_in_queue"):
+        ON_CALL_TERMINAL(task["task_id"], step["id"])  # run_call already returned; finish the step from here
     return call
+
+
+def _dispatch_queued(call: dict[str, Any], to: str, ctx: dict[str, Any]) -> dict[str, Any]:
+    """Omni plan allows N concurrent calls (ours: 1). On concurrency_limit, wait in queue and retry."""
+    deadline = time.time() + QUEUE_MAX_S
+    while True:
+        try:
+            return DISPATCH(to, ctx)
+        except Exception as e:  # noqa: BLE001
+            if "concurrency_limit" not in str(e) or time.time() > deadline:
+                raise
+            if not call.get("waited_in_queue"):
+                call["waited_in_queue"] = True
+                store().put("calls", call["call_id"], call)
+                store().add_event(call["task_id"], "call_queued", {"call_id": call["call_id"], "reason": "omni concurrency limit"})
+            time.sleep(QUEUE_POLL_S)
 
 
 def run_call(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any]) -> dict[str, Any]:
@@ -68,7 +88,7 @@ def run_call(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any]) -
     for th in threads:
         th.start()
     for th in threads:
-        th.join()
+        th.join(timeout=JOIN_S)  # queued calls keep waiting in their thread
     if step_calls_terminal(task["task_id"], step["id"]):  # e.g. all dispatches failed
         return {"status": "done", "output": collect(task["task_id"], step["id"])}
     return {"status": "running"}
@@ -141,7 +161,8 @@ def collect(task_id: str, step_id: str) -> list[dict[str, Any]]:
             continue
         fields = {f["name"]: f for f in (c.get("extracted") or {}).get("fields", [])}
         out.append({"callee": c["callee"], "to_last4": c["to_number"][-4:] if c.get("to_number") else None,
-                    "status": c["status"], "outcome": c.get("outcome"), "fields": fields})
+                    "status": c["status"], "outcome": c.get("outcome") or ("dispatch_failed" if c["status"] == "failed" else None),
+                    "fields": fields})
     return out
 
 
