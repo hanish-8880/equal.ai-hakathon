@@ -1,29 +1,40 @@
 # HONEST NOTE — Chinku
 
-**Built by me:** planner and tool engine, call state machine, approval gate, memory, reminders, prompts and schemas,
-exact transcription + extraction logic, Telugu/English/Hindi number normaliser, translation guard, Chinku App UI, eval harness.
-**Reused:** OpenAI (gpt-5.5 brain, vision, gpt-4o-transcribe, TTS, web search), OmniDimension (phone calls, voice),
-Gmail SMTP/IMAP, AWS (EC2, DynamoDB via instance role), OpenStreetMap + Leaflet, Twilio WhatsApp sandbox (optional).
+**Built by me (Hanish, with Claude Code):** planner and tool engine, call state machine, approval gate (in code), memory,
+reminders and reminder calls, promises + follow-up + escalation, connected-services adapter layer and ranking engine,
+prompts and schemas, exact transcription + extraction logic, Telugu/English/Hindi number normaliser, translation guard,
+Chinku App UI, eval harness.
+**Reused:** OpenAI (gpt-5.5 planning/vision/extraction, gpt-4o-transcribe, TTS, web search), OmniDimension (phone calls,
+voice agent), Kiwi.com MCP (flights), Swiggy MCP (Instamart, the user's own login), Gmail SMTP/IMAP, AWS (EC2, DynamoDB),
+OpenStreetMap + Leaflet, Twilio WhatsApp sandbox (optional, not in the demo).
 
-| Component | Status |
+| Component | Status (observed) |
 |---|---|
-| Planner — one request → plan of tool steps; conversation memory (recent chat + earlier results); personal memory | LIVE (Sat 23:55 / Sun 00:40): J1 photo → exact transcript → email with the photo attached (after "yes") → reminder; follow-up "email the important points of that page to Suresh" resolved from memory and the earlier photo |
-| Approval gate — every email and call waits for "yes"; a second "yes" never sends twice; "no" sends nothing | LIVE + tests (enforced in code even if the plan forgets) |
-| Exact transcription (`transcribe_image`) | LIVE on 1 test page written in a handwriting FONT (SIMULATED input): 0 word errors. Real handwritten pages + WER eval PENDING |
-| Memory (`remember / recall / forget`, view + delete in Settings) | LIVE. Refuses OTPs/passwords/PINs, card numbers, bank account numbers, government IDs (code rule, tested) |
-| Reminders (one-time / daily / weekly, in app) | LIVE (set + shown on Home); firing tested in code, idempotent. Reminder CALLS not built |
-| Email | Gmail SMTP. Demo safety ON: EMAIL_DEMO_OVERRIDE delivers every email to my own inbox (subject says who it would go to) |
-| Languages — UI + every Chinku message in Telugu / Hindi / Telugu-English mix | LIVE. Numbers guarded in code (a translation that changes a number → English shown instead) |
-| Chinku App (home "What do you need?", Needs you, Recent work, reminders, chat cards, map, 🔊 Listen, Settings) | LIVE at /app?key=… — hold-to-talk mic not yet tested on a real phone |
-| Phone: outbound calls (call tool → proven call engine), inbound "tell Chinku what you need" | Agents renamed to Chinku (read back OK). Chinku call tool NOT yet verified live |
-| Search (OpenAI web search), map card | Wired — NOT yet verified live |
-| Connected services — **Kiwi.com flights** (MCP, no auth) | **LIVE** (Sun 01:30): real HYD→BLR fares in INR, ranked in code (cheapest/fastest/earliest), card with Kiwi's booking link. Chinku never pays — the user books on Kiwi.com |
-| Connected services — **Swiggy Food + Instamart** (official Swiggy MCP, user's own login via OTP) | Login + read-only search **LIVE-tested** (real restaurants, real soap prices; per-100 g computed in code). Not yet in the app; cart/checkout never without the user's tap. Production access is "invite-based" per Swiggy docs — may change |
-| Ola / Uber / Rapido, Zomato | NOT BUILT (rides planned as DEMO adapters, labelled) |
-| Promises + follow-up, Connect me (transfer), language bridge, scam check | NOT BUILT |
+| Planner (one request → steps), conversation + personal memory | **LIVE** — 22/22 eval requests planned correctly, 0 wrong-action plans (builder-written requests) |
+| Approval gate — email, call, Swiggy cart, reminder call | **LIVE** + tests; enforced in code even if the plan forgets; second "yes" never repeats |
+| J1 photo → exact transcript → email → reminder | **LIVE** — email arrived word for word with the photo attached (IMAP-verified) |
+| Exact transcription | **LIVE**; eval on 13 **SIMULATED** font pages (0.8% WER vs 17.5% baseline). Real handwriting NOT yet measured |
+| J3 complaint: official support → email / call → promise → follow-up → escalation | Official contact **LIVE** (Bajaj, code-checked domain); email drafted, waiting for approval; promise/follow-up/escalation tested in code, NOT yet run on a real support call |
+| J2 doctor booking | Clinic search **LIVE** (6 real clinics, sources); map pins are approximate (locality) because OpenStreetMap can't find full Indian addresses; clinic + Mummy calls NOT yet run live |
+| J4 photo → call | **LIVE** to the approval card; the call itself waits for a consenting test (owner's own number) |
+| J7 scam check | **LIVE** — real scam SMS → Likely scam with reasons + official sources; code red flags can't be overridden to "genuine" |
+| J9 flights — Kiwi.com | **LIVE** — real HYD→BLR fares in INR, ranked in code, booking link opens Kiwi; Chinku never pays |
+| J9 groceries — Swiggy Instamart | **LIVE** — real products/prices, recipe → ingredients → packs chosen in code; adds to the user's cart only after approval; checkout/payment/clear-cart blocked in code. Production access is "invite-based" per Swiggy docs — it may be switched off |
+| J9 rides — Ola, Uber, Rapido | **DEMO data** (real road distance, demo fares/ETAs, labelled "Demo data"); real "open in app" links for Uber/Ola |
+| J9 Swiggy Food / Dineout, Zomato | NOT BUILT (Zomato not permitted for third-party apps) |
+| J10 voice-first (tap to talk, silence auto-stop, Talk mode, replies spoken) | Built; checked in a desktop browser; NOT yet tested on a real phone |
+| J11 trip planner (itinerary + rated hotels/restaurants → pick → calls) | **LIVE** search/ranking; the hotel calls NOT yet run (real hotels are only called with consent, never at night) |
+| J5 "Connect me now" live transfer | NOT BUILT — fallback "Talk to them now" one-tap call card |
+| J6 language bridge | Kannada + Tamil enabled on the voice agent (settings read back); a Kannada call is NOT yet verified |
+| J8 group ask | NOT BUILT (the call engine can call several people one after another) |
+| Languages (UI + every message in te / hi / te-en) | **LIVE** — translation that changes a number is rejected → English shown |
+| Persistence | **LIVE** — server restarted mid-task, same pending approval still there (3.2 s) |
+| Email | Gmail SMTP. Demo safety: EMAIL_DEMO_OVERRIDE delivers every email to my own inbox (subject names the real recipient) |
 
-**Simulated:** test page (handwriting font); businesses / support agents will be played by consenting people; shortened
-follow-up timers in the demo (to be labelled); any replayed run.
-**Limits:** no keypad/IVR navigation (OmniDimension has no DTMF option); one concurrent call on our plan; cannot act
-inside other apps or log into accounts; WhatsApp sandbox only reaches joined numbers.
-**Removed:** the earlier "Chinku for Plumbers" code was removed on Sun 00:30 (still in git history).
+**Simulated:** eval pages (handwriting fonts), the visiting card and the to-do page, businesses and support agents in the
+demo (played by consenting people), shortened follow-up timers (labelled "Demo: shortened"), ride fares/ETAs (demo data),
+any replayed run.
+**Limits:** no keypad/IVR menus (OmniDimension has no DTMF); one concurrent call on our plan; cannot log into other apps or
+pay; ride/food platforms without an API are demo data; map pins can be approximate; WhatsApp sandbox only reaches joined
+numbers.
+**Removed:** the earlier "Chinku for Plumbers" code (Sun 00:30) — still in git history.

@@ -400,3 +400,17 @@ never rings the phone during the test.
 - Kiwi.com (Observed): https://mcp.kiwi.com Streamable HTTP, no auth, tool `search-flight` (dd/mm/yyyy, city names resolved, currency param). Real: Hyderabad → Bengaluru Fri 27 Nov, 1 adult → 15 itineraries in INR. Booking link resolves to kiwi.com/en/booking (HTTP 200).
 - Chose: adapter layer app/chinku/adapters (Offer, ProviderAdapter.search/book, rank()). Ranking is code (cheapest/fastest/earliest; unknown price ranks last, never ₹0; failing constraints excluded WITH reason). book() only returns the provider link — Chinku never pays. Fixture = real saved Kiwi response (tests/fixtures/kiwi_hyd_blr.json); 6 adapter tests.
 - Would change: Kiwi price = provider's displayed total; bags/service fees can change at checkout → card says "price as shown by the provider".
+
+## Sun 00:00–01:00 — "Build all the stuff": J3, J7, J2, J10, J11, J9 rides, J5 fallback, eval
+- J3 (Observed): find_support on Bajaj → consumercare@bajajelectricals.com, source bajajelectricals.com → official (code: brand in domain; aggregators excluded). Complaint drafted with [purchase date]/[model] placeholders (never invented). Bug found live: a text-only request re-used an old photo (30-min reuse) → now reuse only when the message refers to a photo.
+- J7 (Observed): electricity-disconnection SMS → Likely scam (cybercrime advisory). Code rule: ≥2 red flags can never come back "Looks genuine".
+- Promises: commitments heard on calls become tracked promises ONLY with an exact quote found in the transcript; follow-up fires once; "no" → escalation ladder (helpline → email → grievance officer → National Consumer Helpline 1915).
+- Calls: per-call language (Telugu for Mummy, Kannada shop); outbound agent now has Kannada + Tamil (read back). Call result card: "Booked" only when a booking field is CONFIRMED (code). Reminder CALLS need approval. Night rule: 21:00–08:00 IST no calls to unsaved numbers — checked BEFORE asking approval.
+- J2 (Observed): search → 6 real clinics with phones + official sources; OpenStreetMap could not geocode full Indian addresses or names → fallback to locality, pins labelled "approx. area"; 1 req/s Nominatim policy.
+- J11 (Observed): Araku 28–29 Nov plan, 6 hotels + 6 restaurants ranked by rating in code; only real mobiles are callable (bug caught by test: "0891-2345678" landline looked like a mobile after dropping the 0). Web search raised to 180 s + low reasoning effort (first run timed out at 60 s).
+- J9 rides: Ola/Uber/Rapido DEMO adapters (real distance, demo fares). Observed: Madhapur → Kukatpally 8.1 km, Rapido Auto ₹122 recommended. Arrive-by compares real times (text compare was fragile).
+- J10: tap-to-talk with silence auto-stop + Talk mode (auto-spoken replies). Not tested on a phone yet.
+- J5: live transfer not switched on → fallback card (CLAUDE.md).
+- Swiggy: tokens moved to the server (~/.chinku, chmod 600); laptop copy parked because refresh tokens rotate.
+- Eval (Observed): transcription 0.8% vs 17.5% WER (same model, plain prompt; baseline mostly ADDS text/translations); planning 22/22, 0 wrong actions (builder-written); restart persistence pass. PIL could not shape Telugu (no raqm) → Telugu pages rendered by Chrome. Removed a test assertion that could never fail ("… or True").
+- Editing pitfall hit again: \b written as backspace chars in a regex (filter silently never ran) — fixed; a fair test now catches it.
