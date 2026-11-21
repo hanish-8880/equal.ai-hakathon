@@ -20,7 +20,7 @@ def check(name):
         try:
             ok, note = fn()
         except Exception as e:  # noqa: BLE001
-            ok, note = False, f"{e.__class__.__name__}: {str(e)[:160]}"
+            ok, note = False, f"{e.__class__.__name__}: {str(e)[:300]}\n{traceback.format_exc()[-900:]}"
         results.append((name, ok, note))
         print(f"{OK if ok else BAD} {name}: {note}", flush=True)
         return fn
@@ -128,6 +128,7 @@ def _():
     # 1) create the job (real understanding + extraction)
     assistant.handle(U, f"Chinku, new job. Customer 98480 12321, kitchen tap repair at Flat 304, Green Park, Kondapur. "
                         f"I'm free tomorrow 11 to 1 or after 4. Bill Sai Facility bills@sai.example under WO-117.", None, out.append)
+    print("   create reply:", (out[-1] if out else "") or (cards[-1][0] if cards else "(none)"), flush=True)
     job = jobs.open_jobs(U)[-1]
     assert job.roles.site_contact.phone == "+919848012321" and len(job.appointment.plumber_available) >= 2, job.model_dump_json()[:400]
     # 2) booking: plumber asks → gate → yes → booking call (simulated answer: second window)
