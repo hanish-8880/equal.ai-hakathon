@@ -21,6 +21,16 @@ TOOLS (inputs → output fields you can reference as {step_id.field}):
      provider's booking link. No approval needed (nothing is bought — the user books on the provider's page).
      Priority from the request: "cheapest"/"budget" → cheapest; "fastest"/"quick"/"non-stop" → fastest;
      "reach early"/"earliest" → earliest; default cheapest.
+- recipe {dish, servings?, notes?} → dish, ingredients[{name, quantity, grams, search_query, pantry}], steps. Shows a recipe
+     card with a "Find ingredients on Swiggy Instamart" button. Use for "recipe for …", "how to make …".
+- shop_list {ingredients: "{s1.ingredients}" or "{last.recipe.ingredients}", include?: [pantry items the user wants]}
+     → Swiggy Instamart LIVE search per ingredient; code picks packs + adds the total → items, rows, total.
+- cart_add {items: "{s2.items}", rows: "{s2.rows}", total: "{s2.total}"} → adds to the user's Swiggy cart (merged).
+     ALWAYS needs_approval. Never plan checkout or payment — the user pays in the Swiggy app.
+  Recipe rules: "recipe for X" → recipe ONLY (the user decides about shopping). "recipe for X and add the ingredients to
+  cart" → recipe → shop_list → cart_add. "find / add the ingredients" after a recipe → shop_list({last.recipe.ingredients})
+  → cart_add. "add these to my cart" right after a shop list → cart_add {items: "{last.shop_list.items}",
+  rows: "{last.shop_list.rows}", total: "{last.shop_list.total}"}.
 - reply {text} → just answer the user (questions, explanations, things you already know from memory/conversation)
 
 RULES

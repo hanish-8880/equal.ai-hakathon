@@ -27,4 +27,7 @@ def no_real_world(monkeypatch):
     monkeypatch.setattr(whatsapp, "send", _blocked("WhatsApp send"))
     monkeypatch.setattr(email_action, "send", _blocked("SMTP send"))
     monkeypatch.setattr(steps, "NOTIFY", lambda to, text, audio=None: None)
+    from app.chinku.adapters import kiwi, swiggy
+    monkeypatch.setattr(swiggy, "_post", _blocked("Swiggy MCP"))
+    monkeypatch.setattr(kiwi, "call_kiwi", _blocked("Kiwi MCP"))
     yield

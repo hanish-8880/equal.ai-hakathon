@@ -19,7 +19,9 @@ MISSING = re.compile(r"\{missing:([^}]*)\}")
 STEP_WORDS = {"analyze": "look at the {what}", "transcribe_image": "type out the page exactly", "extract": "pull out the key details",
               "search": "search: {query}", "map": "show the places on a map", "call": "call {who}", "draft_email": "write the email to {to}",
               "send_email": "send it (I'll ask you first)", "remind": "remind you: {text}", "remember": "remember that",
-              "recall": "check what I remember", "compute": "calculate", "reply": "answer"}
+              "recall": "check what I remember", "compute": "calculate", "reply": "answer",
+              "recipe": "write the recipe", "shop_list": "find the ingredients on Swiggy Instamart", "cart_add": "add them to your Swiggy cart (I'll ask you first)",
+              "compare": "compare options"}
 
 
 # ---------------- persistence ----------------
@@ -102,6 +104,10 @@ def _preview(tool: str, inputs: dict[str, Any]) -> dict[str, Any]:
         d = inputs.get("draft") or inputs
         return {"type": "email", "state": "waiting", "to": d.get("to"), "subject": d.get("subject"), "body": d.get("body"),
                 "attachment": (d.get("attachment") or {}).get("name")}
+    if tool == "cart_add":
+        return {"type": "cart_plan", "state": "waiting", "provider": "Swiggy Instamart", "status": "LIVE", "rows": inputs.get("rows") or [],
+                "total": inputs.get("total"), "count": len(inputs.get("items") or []),
+                "note": "Adds to your Swiggy cart only. You check out and pay in the Swiggy app — Chinku never pays."}
     if tool == "call":
         return {"type": "call_plan", "targets": inputs.get("targets"), "purpose": inputs.get("purpose"), "questions": inputs.get("questions")}
     return {"type": "approval", "tool": tool, "inputs": inputs}
@@ -136,6 +142,7 @@ def run(t: Task, send: Send, card: Card) -> Task:
             save(t)
             store().put("contacts", f"iwait:{t.user}", {"kind": "iwait", "task_id": t.task_id, "step_id": s.id})
             what = {"send_email": f"Send this email to {st.preview.get('to')}?",
+                    "cart_add": f"Add {st.preview.get('count')} items (₹{st.preview.get('total') or 0:,.0f}) to your Swiggy cart?",
                     "call": "Call " + ", ".join(f"{x.get('name') or ''} {x.get('phone') or ''}".strip() for x in inputs.get("targets") or []) + "?"}
             card(f"👉 Needs you: {what.get(s.tool, 'Go ahead?')} (yes / no)", st.preview)
             return t

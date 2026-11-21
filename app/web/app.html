@@ -261,6 +261,13 @@ const I = {
   "Email this photo": ["ఈ ఫోటో ఇమెయిల్ చేయి", "यह फ़ोटो ईमेल करो", "Ee photo email cheyyi"], "Book a doctor": ["డాక్టర్ అపాయింట్‌మెంట్", "डॉक्टर बुक करो", "Doctor book cheyyi"],
   "Complain & follow up": ["ఫిర్యాదు & ఫాలో అప్", "शिकायत और फ़ॉलो अप", "Complaint & follow up"], "Call from a photo": ["ఫోటో నుంచి కాల్", "फ़ोटो से कॉल", "Photo nunchi call"],
   "Is this a scam?": ["ఇది మోసమా?", "क्या यह धोखा है?", "Idi scam aa?"],
+  "Ingredients": ["కావలసినవి", "सामग्री", "Ingredients"], "Steps": ["తయారీ విధానం", "बनाने की विधि", "Steps"], "at home": ["ఇంట్లో ఉంటుంది", "घर पर होगा", "intlo untundi"],
+  "Find ingredients on Swiggy Instamart": ["Swiggy Instamart లో సామాన్లు వెతుకు", "Swiggy Instamart पर सामान ढूँढो", "Swiggy Instamart lo items vethuku"],
+  "for": ["కోసం", "के लिए", "kosam"], "Items total": ["వస్తువుల మొత్తం", "सामान का कुल", "Items total"], "Not found": ["దొరకలేదు", "नहीं मिला", "Dorakaledu"],
+  "Not added (you likely have)": ["జోడించలేదు (ఇంట్లో ఉండొచ్చు)", "नहीं जोड़ा (घर पर होगा)", "Add cheyyaledu (intlo undochu)"],
+  "Add to Swiggy cart": ["Swiggy కార్ట్‌లో వేయి", "Swiggy कार्ट में डालो", "Swiggy cart lo veyyi"], "Added to your Swiggy cart": ["మీ Swiggy కార్ట్‌లో వేశాను", "आपकी Swiggy कार्ट में डाल दिया", "Mee Swiggy cart lo vesanu"],
+  "To pay": ["చెల్లించాల్సింది", "देना है", "To pay"], "Open Swiggy to pay": ["చెల్లించడానికి Swiggy తెరువు", "भुगतान के लिए Swiggy खोलें", "Pay cheyyadaniki Swiggy open cheyyi"],
+  "Chinku never checks out or pays.": ["Chinku ఎప్పుడూ ఆర్డర్ చేయదు, డబ్బు చెల్లించదు.", "Chinku कभी ऑर्डर या भुगतान नहीं करता।", "Chinku eppudu order cheyadu, pay cheyadu."],
   "Recommended": ["సిఫార్సు", "सुझाव", "Recommended"], "Why": ["ఎందుకు", "क्यों", "Enduku"], "Open booking link": ["బుకింగ్ లింక్ తెరువు", "बुकिंग लिंक खोलें", "Booking link open cheyyi"],
   "See all": ["అన్నీ చూడు", "सभी देखें", "Anni chudu"], "Checked": ["చూశాను", "जाँचे", "Check chesa"], "Not shown": ["చూపలేదు", "नहीं दिखाए", "Chupaledu"],
   "options": ["ఎంపికలు", "विकल्प", "options"], "unknown": ["తెలియదు", "पता नहीं", "teliyadu"], "Demo data": ["డెమో డేటా", "डेमो डेटा", "Demo data"],
@@ -411,6 +418,25 @@ function card(c) {
       <div id="${id}" class="hidden"><ol>${(c.rows || []).map(o => `<li><b>${money(o)}</b> · ${esc(o.item)}<br><span class="src">${tm(o.depart)} → ${tm(o.arrive)} · ${hm(o.duration_min)}${o.link ? ` · <a href="${esc(o.link)}" target="_blank" rel="noopener">${L("Open booking link")}</a>` : ""}</span></li>`).join("")}</ol>
         ${(c.excluded || []).length ? `<div class="src">${L("Not shown")}: ${(c.excluded || []).map(x => esc(x.item + " — " + x.why)).join("; ")}</div>` : ""}</div>
       <div class="src">${esc(c.total_found)} ${L("options")} · ${L("checked")} ${(() => { try { return esc(new Date(c.checked).toLocaleString(LOC(), {weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"})); } catch (e) { return esc(c.checked || ""); } })()} · ${L("Price as shown by the provider; you book and pay on their page — Chinku never pays.")}</div></div>`; }
+  if (c.type === "recipe") return `<div class="rc"><h4>🍳 ${esc(c.dish)} <span class="status">${esc(c.servings)} 👤${c.time_minutes ? " · ~" + esc(c.time_minutes) + " min" : ""}</span></h4>
+      <b>${L("Ingredients")}</b><ul style="margin:4px 0 8px;padding-left:20px">${(c.ingredients || []).map(i => `<li>${esc(i.name)}${i.quantity ? " — " + esc(i.quantity) : ""}${i.pantry ? ` <span class="src">(${L("at home")})</span>` : ""}</li>`).join("")}</ul>
+      <b>${L("Steps")}</b><ol>${(c.steps || []).map(s => `<li>${esc(s)}</li>`).join("")}</ol>${c.tip ? `<div class="src">💡 ${esc(c.tip)}</div>` : ""}
+      ${c.can_shop ? `<div class="btns"><button class="btn primary" data-say="Find the ingredients for ${esc(c.dish)} on Swiggy Instamart and add them to my cart">🛒 ${L("Find ingredients on Swiggy Instamart")}</button></div>` : ""}</div>`;
+  if (c.type === "cart_plan") { const rows = c.rows || []; const inr = v => v == null ? L("unknown") : "₹" + Number(v).toLocaleString("en-IN");
+    return `<div class="rc"><h4>🛒 ${esc(c.provider)} <span class="status ok">LIVE</span> ${c.state === "waiting" ? `<span class="status wait">${L("Waiting for you")}</span>` : ""}</h4>
+      <ol>${rows.map(r => `<li><b>${esc(r.product)}</b> · ${esc(r.pack || "")} · <b>${inr(r.price)}</b>${r.mrp && r.price && r.mrp > r.price ? ` <s class="src">${inr(r.mrp)}</s>` : ""}
+        <div class="src">${L("for")} ${esc(r.ingredient)}${r.need ? " (" + esc(r.need) + ")" : ""}${r.per_100 ? ` · ₹${esc(r.per_100)}/100 g` : ""}${r.note ? " · ⚠️ " + esc(r.note) : ""}</div></li>`).join("")}</ol>
+      <div style="font-size:18px;margin-top:6px"><b>${L("Items total")}: ${inr(c.total)}</b></div>
+      ${(c.missing || []).length ? `<div class="src">${L("Not found")}: ${esc(c.missing.join(", "))}</div>` : ""}
+      ${(c.skipped || []).length ? `<div class="src">${L("Not added (you likely have)")}: ${esc(c.skipped.join(", "))}</div>` : ""}
+      <div class="src">${esc(L(c.note || ""))}</div>
+      ${c.state === "waiting" ? `<div class="btns"><button class="btn primary" data-say="yes">${L("Add to Swiggy cart")}</button><button class="btn" data-say="no">${L("Not now")}</button></div>`
+        : `<div class="btns"><button class="btn primary" data-say="Add these items to my Swiggy cart">${L("Add to Swiggy cart")}</button></div>`}</div>`; }
+  if (c.type === "cart_done") return `<div class="rc"><h4>✅ ${L("Added to your Swiggy cart")} <span class="status ok">${esc(c.added)}</span></h4>
+      ${(c.lines || []).length ? `<dl class="kv">${c.lines.map(l => `<dt>${esc(l.label)}</dt><dd>${esc(l.value)}</dd>`).join("")}</dl>` : ""}
+      ${c.to_pay ? `<div style="font-size:18px;margin-top:6px"><b>${L("To pay")}: ₹${esc(c.to_pay)}</b></div>` : ""}
+      <div class="btns"><a class="btn primary" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(c.open_url)}" target="_blank" rel="noopener">${L("Open Swiggy to pay")} ↗</a></div>
+      <div class="src">${L("Chinku never checks out or pays.")}</div></div>`;
   if (c.type === "suggest") return `<div class="rc"><div class="btns" style="margin-top:0">${(c.actions || []).map(a => `<button class="btn" data-say="${esc(a.instruction)}">${esc(a.label)}</button>`).join("")}</div></div>`;
   if (c.type === "memory") return `<div class="rc"><h4>🧠 ${(c.saved || []).map(s => esc(s.key) + " = " + esc(typeof s.value === "string" ? s.value : JSON.stringify(s.value))).join(" · ")}</h4></div>`;
   return "";

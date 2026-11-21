@@ -409,10 +409,126 @@ def compare(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str,
     return {"recommended": w.model_dump(), "why": rec.why, "count": len(offers), "priority": priority, "failed": failed}
 
 
+# ---------------- recipe → ingredients → Swiggy Instamart cart (never checkout) ----------------
+class Ingredient(BaseModel):
+    name: str
+    quantity: str = ""                 # as a cook says it: "500 g", "2 cups", "1 tsp"
+    grams: float | None = None         # rough weight/volume to buy (g or ml) — null if unsure
+    search_query: str                  # simple English shop query: "basmati rice", "chicken curry cut", "biryani masala"
+    pantry: bool = False               # salt, water, sugar — most homes have it; not bought unless asked
+
+
+class Recipe(BaseModel):
+    dish: str
+    servings: int = 4
+    time_minutes: int | None = None
+    ingredients: list[Ingredient] = Field(default_factory=list)
+    steps: list[str] = Field(default_factory=list)
+    tip: str | None = None
+
+
+PANTRY = {"salt", "water", "sugar"}
+
+
+def recipe(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    from app import prefs
+    from app.chinku.planner import LANG
+    lang = LANG.get(prefs.get(user).get("language") or "en", "English")
+    sys = (f"Write a home-style Indian recipe. Language for dish name, quantities and steps: {lang}. "
+           "ingredients[].search_query ALWAYS in simple English as a shopper would search a grocery app (e.g. 'basmati rice', "
+           "'chicken curry cut', 'biryani masala', 'curd', 'ghee', 'mint leaves', 'fried onion'). grams = amount to buy in g or ml "
+           "(null if not a weight, e.g. 2 bay leaves). pantry=true only for salt, water, sugar. Max 14 ingredients, 6-9 short steps. "
+           "Return JSON matching the schema.")
+    r = json_call(settings().openai_model_brain, sys, json.dumps({"dish": inputs.get("dish"), "servings": inputs.get("servings") or 4,
+                                                                 "notes": inputs.get("notes")}, ensure_ascii=False), Recipe, ctx["task"].task_id, "recipe")
+    for i in r.ingredients:
+        i.pantry = i.pantry or i.search_query.strip().lower() in PANTRY
+    from app.chinku.adapters import swiggy
+    ctx["card"](f"🍳 {r.dish} · {r.servings} people" + (f" · ~{r.time_minutes} min" if r.time_minutes else ""),
+                {"type": "recipe", **r.model_dump(), "can_shop": swiggy.connected()})
+    return r.model_dump()
+
+
+def _pick(variants: list[dict[str, Any]], query: str, need_g: float | None) -> tuple[dict[str, Any] | None, str]:
+    """Code chooses the pack: relevant name, enough quantity, then lowest price. Never the model."""
+    words = [w for w in re.findall(r"[a-z]+", query.lower()) if len(w) > 2]
+    rel = [v for v in variants if v["rank"] <= 3 and any(w in (v["name"] or "").lower() for w in words)]
+    pool, note = (rel, "") if rel else ([v for v in variants if v["rank"] == 0], "check: closest match")
+    if not pool:
+        return None, "not found"
+    if need_g:
+        from app.chinku.adapters.swiggy import grams
+        enough = [v for v in pool if (grams(v["pack"]) or 0) >= need_g]
+        if enough:
+            pool = enough
+    best = min(pool, key=lambda v: (v["price"] is None, v["price"] or 0))
+    return best, note
+
+
+def shop_list(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    from app.chinku.adapters import swiggy
+    if not swiggy.connected():
+        raise ToolError("Swiggy isn't connected yet — log in once with your phone + OTP.")
+    ings = inputs.get("ingredients") or []
+    if not isinstance(ings, list) or not ings:
+        raise ToolError("Which ingredients should I look for? Ask me for a recipe first.")
+    extra = {str(x).lower() for x in inputs.get("include") or []}
+    rows, missing, skipped = [], [], []
+    for ing in ings[:14]:
+        ing = ing if isinstance(ing, dict) else {"name": str(ing), "search_query": str(ing)}
+        q = ing.get("search_query") or ing.get("name")
+        if ing.get("pantry") and q.lower() not in extra and ing.get("name", "").lower() not in extra:
+            skipped.append(ing.get("name") or q)
+            continue
+        try:
+            best, note = _pick(swiggy.search(q), q, ing.get("grams"))
+        except swiggy.SwiggyError as e:
+            raise ToolError(str(e)) from e
+        if not best:
+            missing.append(ing.get("name") or q)
+            continue
+        rows.append({"ingredient": ing.get("name") or q, "need": ing.get("quantity"), "product": best["name"], "brand": best["brand"],
+                     "pack": best["pack"], "price": best["price"], "mrp": best["mrp"], "per_100": best["per_100"],
+                     "spinId": best["spinId"], "skuId": best["skuId"], "quantity": 1, "note": note, "eta_min": best["eta_min"]})
+    total = sum(r["price"] for r in rows if r["price"] is not None)  # code adds, never the model
+    unknown = [r["product"] for r in rows if r["price"] is None]
+    card = {"type": "cart_plan", "state": "ready", "provider": "Swiggy Instamart", "status": "LIVE", "rows": rows,
+            "total": total, "unknown_prices": unknown, "missing": missing, "skipped": skipped,
+            "checked": datetime.now(IST).isoformat(timespec="minutes"),
+            "note": "Item prices only — delivery/handling fees are shown in your Swiggy cart. Chinku never checks out."}
+    ctx["card"](f"🛒 Found {len(rows)} of {len(rows) + len(missing)} ingredients on Swiggy Instamart · items ₹{total:,.0f}"
+                + (f" · not found: {', '.join(missing)}" if missing else ""), card)
+    return {"items": [{"spinId": r["spinId"], "skuId": r["skuId"], "quantity": r["quantity"]} for r in rows],
+            "rows": rows, "total": total, "missing": missing, "skipped": skipped}
+
+
+def cart_add(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    from app.chinku.adapters import swiggy
+    items = [i for i in (inputs.get("items") or []) if isinstance(i, dict) and i.get("spinId")]
+    if not items:
+        raise ToolError("There is nothing to add to the cart.")
+    key = f"icart:{ctx['task'].task_id}:{ctx['step_id']}"
+    if not store().claim(key):  # a second "yes" never adds twice
+        return {"added": len(items), "duplicate": True}
+    try:
+        out = swiggy.add_to_cart(items)
+    except (swiggy.SwiggyError, PermissionError) as e:
+        raise ToolError(str(e)) from e
+    cart = out.get("cart") or {}
+    pay = ((cart.get("billBreakdown") or {}).get("toPay") or {}).get("value") or cart.get("cartTotalAmount")
+    ctx["card"](f"✅ Added {len(items)} items to your Swiggy Instamart cart" + (f" · cart total ₹{pay}" if pay else "")
+                + ". Open the Swiggy app to check out and pay — Chinku never pays.",
+                {"type": "cart_done", "added": len(items), "in_cart": out.get("items_in_cart"), "to_pay": pay,
+                 "lines": [{"label": li.get("label"), "value": li.get("value")} for li in (cart.get("billBreakdown") or {}).get("lineItems") or []
+                           if isinstance(li, dict)], "open_url": "https://www.swiggy.com/instamart"})
+    return {"added": len(items), "to_pay": pay}
+
+
 REGISTRY: dict[str, Callable[[str, dict[str, Any], dict[str, Any]], dict[str, Any]]] = {
+    "recipe": recipe, "shop_list": shop_list, "cart_add": cart_add,
     "compare": compare,
     "analyze": analyze, "transcribe_image": transcribe_image, "extract": extract, "search": search, "map": map_,
     "draft_email": draft_email, "send_email": send_email, "remind": remind, "remember": remember, "recall": recall,
     "compute": compute, "reply": reply, "call": call,
 }
-ALWAYS_APPROVE = {"send_email", "call"}  # anything that leaves the device — enforced in code, whatever the plan says
+ALWAYS_APPROVE = {"send_email", "call", "cart_add"}  # anything that leaves the device — enforced in code, whatever the plan says
