@@ -18,6 +18,8 @@ Rules:
   spoken sentences in simple English: who paid or withdrew, how much, on which date, current balance.
   Say amounts the Indian way ("eighteen thousand five hundred rupees"). Max 6 items, most important first.
 - Write everything in simple, clear Indian English.
+- End every call_script with a numeric readback: repeat every number, time, model code and amount collected
+  exactly as heard, and ask for a yes.
 - opening_line must disclose that Chinku is an AI assistant calling for {on_behalf_of}.
 - Never instruct the caller to promise payment, share OTPs, or commit on the user's behalf.
 - call_script: assemble everything into a short brief (under 200 words): who you are calling,

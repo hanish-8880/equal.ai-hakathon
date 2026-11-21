@@ -308,3 +308,21 @@ Language onboarding on first run (English / Telugu / Hindi / Telugu+English) →
 (calls stay English). Light theme only (reference is light; Hanish's PC is in dark mode and the old dark variant hid the theme).
 Render-first (no blank page while the profile loads). Verified by screenshots with true mobile emulation (CDP, 390×844 @2x) + desktop 1280×800.
 Real-data rule: all cards come from the job/call store; empty states otherwise; nothing simulated is shown (Calls marks "Live call").
+
+## [Sat 20:05] INCIDENT: a test dispatched a REAL Omni call to a sample number (+91 98480 12321)
+Observed: after book_visit went live, test_consequential_waits_for_yes_then_runs reached runner.start_spec → steps.DISPATCH (not mocked)
+→ Omni dispatched a real call (log 14:35:17 UTC, task t_56561877) to the test fixture's sample number. Omni: no-answer, 0 s — not
+connected. No retry possible (retry state lived only in the test's in-memory store; AWS has no such task).
+Fix: tests/conftest.py autouse guard — Omni dispatch, OpenAI client, WhatsApp send and SMTP send RAISE in every test unless the test
+mocks them explicitly. Lesson: every outward action must be blocked by default in tests, not mocked per test.
+
+## [Sat 20:10] Call prompts per use case + booking with live slots
+Chose: role-specific call guides app/brain/prompts/calls/{client_booking, shop_part_check, approval_request, client_reschedule,
+visit_confirm}.md appended to the brief writer by step.call_kind; every brief ends with a numeric readback. Base agent persona
+"on behalf of {{on_behalf_of}} (an independent plumber…)".
+Chose: new step type job_op (app/jobs/ops.py: book_slot, notify_client, visit_confirmed) — deterministic code writes call results into
+the job with evidence + call id. Booking spec book_visit (internal, started from a job after the readback gate): booking call (only
+windows still free = live availability) → book_slot (conditional-write lock slot:{plumber}:{start}; taken → offer next free window;
+other time asked → visit pending, plumber decides) → WhatsApp confirmation if the customer has joined the sandbox (tracked from inbound
+messages) else recorded as call-only → schedule → visit_confirm call 1 h before (60 s with DEMO_REMINDER_SECONDS) → result to plumber.
+Tests: slot lock conflict, evidence on booking, pending on other-time, past windows never offered, gate → booking call (82 passing).

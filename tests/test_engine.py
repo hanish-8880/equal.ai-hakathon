@@ -19,7 +19,7 @@ def test_specs_load_and_valid():
     assert {"dealer_quotes", "banner_rate"} <= set(specs)
     for s in specs.values():
         for st in s["steps"]:
-            assert st["type"] in {"call", "wait_for", "email", "schedule", "reply", "compute", "fetch_email", "make_doc"}
+            assert st["type"] in {"call", "wait_for", "email", "schedule", "reply", "compute", "fetch_email", "make_doc", "job_op"}
 
 
 def test_render_keeps_types_and_fills_strings():

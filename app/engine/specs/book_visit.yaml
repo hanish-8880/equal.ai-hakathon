@@ -1,0 +1,58 @@
+name: book_visit
+description: "Plumber job: call the customer of an existing job to book the visit in the plumber's free windows (started from a job, not routed directly)"
+route_examples: []
+internal: true
+inputs:
+  job_id:       {source: job, required: true}
+  client_phone: {source: job, required: true, validate: indian_mobile}
+  client_name:  {source: job}
+  issue:        {source: job}
+  site:         {source: job}
+  windows:      {source: job, required: true, type: list}
+  window_labels: {source: job}
+  plumber_name: {source: job}
+confirm_before: []
+steps:
+  - id: call_client
+    type: call
+    call_kind: client_booking
+    to: "{inputs.client_phone}"
+    callee: {name: "{inputs.client_name}", role: "customer"}
+    goal: "Book a visit by plumber {inputs.plumber_name} for: {inputs.issue} at {inputs.site}. Offer only these free windows: {inputs.window_labels}."
+    must_collect: [chosen_slot, address, flat, access_notes, present_person]
+    language: English
+    max_minutes: 3
+    retry_on_no_answer: 1
+  - id: save
+    type: job_op
+    op: book_slot
+    from_step: call_client
+  - id: tell_client
+    type: job_op
+    op: notify_client
+  - id: wait_confirm
+    type: schedule
+    at_from: {step: save, field: slot_start}
+    offset_min: -60
+  - id: confirm_call
+    type: call
+    call_kind: visit_confirm
+    to: "{inputs.client_phone}"
+    callee: {name: "{inputs.client_name}", role: "customer"}
+    goal: "Confirmation call: plumber {inputs.plumber_name} is coming for {inputs.issue} at the booked time (see prior_results). Check the time is still fine and someone will open the door."
+    must_collect: [still_ok, opener]
+    language: English
+    max_minutes: 1
+    retry_on_no_answer: 1
+  - id: confirmed
+    type: job_op
+    op: visit_confirmed
+    from_step: confirm_call
+result_schema:
+  chosen_slot:    {type: datetime, format: "ISO 8601 with +05:30 of the START time the customer chose, e.g. 2026-11-22T16:00:00+05:30"}
+  address:        {type: string}
+  flat:           {type: string}
+  access_notes:   {type: string}
+  present_person: {type: string}
+  still_ok:       {type: boolean}
+  opener:         {type: string}

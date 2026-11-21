@@ -440,6 +440,9 @@ def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) 
         return run_schedule(step, spec, task, send)
     if step["type"] == "compute":
         return run_compute(step, spec, task, send)
+    if step["type"] == "job_op":
+        from app.jobs import ops
+        return ops.run(step, spec, task, send)
     if step["type"] == "fetch_email":
         return run_fetch_email(step, spec, task, send)
     if step["type"] == "make_doc":

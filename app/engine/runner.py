@@ -384,3 +384,20 @@ def sweep_stuck_calls(now_ts: float | None = None) -> int:
                 finish_call_step(task["task_id"], c["step_id"], notify)
         n += 1
     return n
+
+
+def start_spec(user: str, spec_name: str, inputs: dict[str, Any], send) -> dict[str, Any]:
+    """Start a (job-bound) spec directly — the plumber already confirmed via the understanding gate."""
+    spec = load_specs()[spec_name]
+    task = {"task_id": "t_" + uuid.uuid4().hex[:8], "user": user, "spec": spec_name, "status": "planned", "inputs": inputs,
+            "language": "English", "step_idx": 0, "steps": {}, "created_at": now()}
+    task["inputs"], problems = normalise_inputs(spec, task["inputs"])
+    if problems:
+        task["status"] = "failed"
+        task["problems"] = problems
+        save_task(task, "start_failed")
+        send("I can't start that yet: " + ", ".join(problems))
+        return task
+    save_task(task, "task_created")
+    start(task, send)
+    return task

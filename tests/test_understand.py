@@ -46,16 +46,25 @@ def wired(monkeypatch):
     return st, cards
 
 
-def test_consequential_waits_for_yes_then_runs(wired):
+def test_consequential_waits_for_yes_then_starts_booking_call(wired, monkeypatch):
+    from app.brain.schemas import CallBrief
+    from app.engine import steps
     st, cards = wired
+    dispatched = []
+    monkeypatch.setattr(steps, "DISPATCH", lambda to, ctx: dispatched.append((to, ctx)) or {"requestId": "sim-1"})
+    monkeypatch.setattr(steps.brief_writer, "write_brief", lambda step, *a, **k: CallBrief(
+        on_behalf_of="Hanish", callee_role="customer", language="English", max_minutes=3, opening_line="AI for Hanish",
+        goal=step["goal"], must_collect=[], closing_line="bye", call_script="script"))
     st["res"] = R(Action(intent="create_job", job_ref="new", confidence=0.95))
     out = []
     assistant.handle(ME, "new job", None, out.append)
     st["res"] = R(Action(intent="book_visit", job_ref="J21", confidence=0.95), rb="J21 · call customer · tomorrow 4–7")
     assistant.handle(ME, "J21 customer ki call chesi book chey", None, out.append)
-    assert out[-1].startswith("J21 · call customer") and "shall I go ahead" in out[-1]
+    assert out[-1].startswith("J21 · call customer") and "shall I go ahead" in out[-1] and dispatched == []  # waits for yes
     assistant.handle(ME, "avunu", None, out.append)
-    assert "J21" in out[-1] and "not live yet" in out[-1]  # honest until booking is built
+    assert len(dispatched) == 1 and dispatched[0][0] == "+919848012321"
+    assert "Calling" in cards[-1][0] and "Tomorrow 4–7" in cards[-1][0]
+    assert jobs.get("J21").appointment.state == "proposed"
 
 
 def test_ask_changes_nothing(wired):

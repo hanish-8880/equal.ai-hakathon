@@ -170,6 +170,28 @@ def apply_correction(job: Job, ent: dict[str, Any], user: str) -> str:
     return f"Updated {job.job_id}: {field.replace('_', ' ')} → {new}."
 
 
+def start_booking(user: str, job: Job, send: Send) -> str | None:
+    """Call the customer with ONLY the plumber's windows that are still free (live availability)."""
+    from app.jobs import ops
+    sc = job.roles.site_contact
+    if not sc or not sc.phone:
+        return f"{job.job_id}: I need the customer's phone number first."
+    windows = ops.free_windows(user, [w.model_dump() for w in job.appointment.plumber_available])
+    if not windows:
+        return f"{job.job_id}: none of your free windows are open any more. When are you free?"
+    job.appointment.state = "proposed"
+    job.next_action = NextAction(what=f"Calling {sc.name or 'the customer'} to book ({', '.join(w['label'] for w in windows)})", owner="chinku")
+    jobs.log(job, "booking_call_started", f"Offering {', '.join(w['label'] for w in windows)}", channel="call")
+    jobs.save(job)
+    runner.start_spec(user, "book_visit", {
+        "job_id": job.job_id, "client_phone": sc.phone, "client_name": sc.name or "Customer", "issue": job.issue.value or "plumbing work",
+        "site": " ".join(str(x) for x in (job.flat.value, job.site_address.value) if x) or "the site", "windows": windows,
+        "window_labels": ", ".join(w["label"] for w in windows), "plumber_name": settings().plumber_name}, send)
+    CARD(user, f"📞 Calling {sc.name or 'the customer'} ({mask_phone(sc.phone)}) to book {job.job_id} — offering {', '.join(w['label'] for w in windows)}.",
+         jobs.card(job))
+    return None
+
+
 def _log_understanding(job: Job, heard: Any, readback: str) -> None:
     if heard is not None and getattr(heard, "source", "text") != "text":
         jobs.log(job, "heard", f"Heard ({heard.source}): {heard.text[:200]}", actor="plumber", channel=heard.source, ref=heard.audio_ref)
@@ -203,6 +225,8 @@ def _execute(user: str, action: Any, text: str, image: dict[str, Any] | None, se
         msg = apply_correction(job, action.entities, user)
         CARD(user, msg, jobs.card(job))
         return None
+    if action.intent == "book_visit":
+        return start_booking(user, job, send)
     return f"{job.job_id}: {NEXT_INTENTS.get(action.intent, action.intent)} is being built right now — not live yet."
 
 

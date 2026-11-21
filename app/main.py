@@ -61,6 +61,9 @@ def send_file(to: str, data: bytes, filename: str, caption: str) -> None:
 
 steps.SEND_FILE = send_file
 assistant.CARD = lambda to, text, card: deliver(to, text, None, card)
+from app.jobs import ops as job_ops  # noqa: E402
+job_ops.CARD = assistant.CARD
+job_ops.NOTIFY = lambda to, text, audio=None: notify(to, text, audio)
 
 
 def entry(user: str, text: str, image: dict[str, Any] | None, force_confirm: bool = False, heard: Any = None) -> None:
@@ -128,6 +131,9 @@ def process_whatsapp(msg: dict[str, Any]) -> None:
     store().add_event("-", "wa_in", {"from_last4": user[-4:] if user else None, "body": msg["body"][:500],
                                      "media": [m["type"] for m in msg["media"]]})
     set_channel(user, "whatsapp")
+    ph = validate.indian_mobile((user or "").replace("whatsapp:", ""))
+    if ph:  # this number has joined the sandbox → Chinku may message it on WhatsApp
+        store().put("contacts", f"wajoined:{ph}", {"owner": user, "kind": "wa_joined", "phone": ph})
     chat_log(user, "chat_in", msg["body"] or "(media)")
     media = []
     try:

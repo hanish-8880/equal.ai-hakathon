@@ -9,7 +9,7 @@ from typing import Any
 import yaml
 
 SPEC_DIR = Path(__file__).parent / "specs"
-STEP_TYPES = {"call", "wait_for", "email", "schedule", "reply", "compute", "fetch_email", "make_doc"}
+STEP_TYPES = {"call", "wait_for", "email", "schedule", "reply", "compute", "fetch_email", "make_doc", "job_op"}
 
 
 class SpecError(ValueError):
@@ -53,7 +53,7 @@ def load_specs() -> dict[str, dict[str, Any]]:
 
 def catalog() -> list[dict[str, Any]]:
     return [{"name": s["name"], "description": s["description"], "route_examples": s.get("route_examples", []),
-             "inputs": s["inputs"]} for s in load_specs().values()]
+             "inputs": s["inputs"]} for s in load_specs().values() if not s.get("internal")]
 
 
 _TPL = re.compile(r"\{([a-zA-Z_][\w.]*)\}")
