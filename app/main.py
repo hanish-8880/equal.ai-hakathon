@@ -270,7 +270,8 @@ def _chat_ok(key: str | None) -> bool:
 def chat_page(key: str = "") -> Response:
     if not _chat_ok(key):
         return HTMLResponse("Forbidden", status_code=403)
-    return HTMLResponse((Path(__file__).parent / "web" / "chat.html").read_text(encoding="utf-8"))
+    return HTMLResponse((Path(__file__).parent / "web" / "chat.html").read_text(encoding="utf-8"),
+                        headers={"Cache-Control": "no-store, max-age=0"})  # always the latest app
 
 
 @app.post("/api/chat")
