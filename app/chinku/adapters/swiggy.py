@@ -95,7 +95,7 @@ def call(name: str, args: dict[str, Any], server: str = "im") -> dict[str, Any]:
     if res.get("isError"):
         raise SwiggyError(f"Swiggy: {txt[:200]}")
     if res.get("structuredContent"):
-        return res["structuredContent"]
+        return res["structuredContent"] | ({"_text": txt} if txt else {})  # some tools put the details only in the text
     try:
         return json.loads(txt)
     except (json.JSONDecodeError, TypeError):
