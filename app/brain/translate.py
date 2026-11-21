@@ -67,7 +67,7 @@ def already(text: str, code: str) -> bool:
 def to_lang(text: str, code: str) -> str:
     if not text or not text.strip() or code not in NAMES or already(text, code):
         return text
-    key = f"tr:{code}:{hashlib.sha1(text.encode('utf-8')).hexdigest()}"
+    key = f"tr2:{code}:{hashlib.sha1(text.encode('utf-8')).hexdigest()}"
     hit = store().get("contacts", key)
     if hit and hit.get("text"):
         return hit["text"]
