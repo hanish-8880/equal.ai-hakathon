@@ -201,3 +201,6 @@ Observed: garbled call → router forced "reply to Mr. Casual Mentor" into email
 recording with gpt-4o-transcribe showed the caller's voice is almost absent in the recording (only "Yeah. Okay") → weak/faint caller audio,
 not only ASR settings. Chose: every task from an inbound call waits for a WhatsApp yes (shows what Chinku understood); router returns
 null + "can't do that yet" for requests that match no spec. Gave up: re-transcription of recordings as the intake source (caller audio too faint).
+
+## [Sat 17:15] Twilio upgraded → Full account, $20 balance (VERIFIED: type=Full, test message delivered)
+50/day trial cap removed. Sandbox still used (judges must send the join code once).
