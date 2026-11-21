@@ -335,13 +335,57 @@ async def voice_send(request: Request, bg: BackgroundTasks) -> JSONResponse:
     return JSONResponse({"ok": True})
 
 
-@app.get("/api/chat/messages")
-def chat_messages(key: str = "", since: float = 0) -> JSONResponse:
+def _clears(owner: str) -> list[float]:
+    """Every 'New chat' moment (older builds kept only the latest one)."""
+    lst = list((store().get("contacts", f"chatclears:{owner}") or {}).get("list") or [])
+    c = (store().get("contacts", f"chatclear:{owner}") or {}).get("ts")
+    if c and c not in lst:
+        lst.append(c)
+    return sorted(float(x) for x in lst)
+
+
+GAP_S = 2 * 3600  # 2 hours of silence also starts a new conversation in the history list
+
+
+def chat_sessions_of(ev: list[dict[str, Any]], clears: list[float]) -> list[dict[str, Any]]:
+    """Past conversations (everything before the latest New chat), newest first. Nothing is ever deleted."""
+    cur = clears[-1] if clears else 0
+    past = [e for e in ev if e["ts"] <= cur]
+    out: list[list[dict[str, Any]]] = []
+    for e in past:
+        if out and not any(out[-1][-1]["ts"] <= c < e["ts"] for c in clears) and e["ts"] - out[-1][-1]["ts"] < GAP_S:
+            out[-1].append(e)
+        else:
+            out.append([e])
+    rows = []
+    for grp in out:
+        ins = [x for x in grp if x["kind"] in ("chat_in", "chat_heard") and (x["payload"].get("text") or "").strip()
+               and not str(x["payload"].get("text")).startswith(("✅ ", "✋ "))]
+        title = (ins[0] if ins else grp[0])["payload"].get("text") or "Conversation"
+        rows.append({"start": grp[0]["ts"], "end": grp[-1]["ts"], "count": len(grp), "title": str(title)[:90],
+                     "when": datetime.fromtimestamp(grp[0]["ts"], IST).strftime("%a %d %b, %I:%M %p").replace(" 0", " ")
+                     + " – " + datetime.fromtimestamp(grp[-1]["ts"], IST).strftime("%I:%M %p").lstrip("0")})
+    return rows[::-1]
+
+
+@app.get("/api/chat/sessions")
+def chat_sessions(key: str = "") -> JSONResponse:
     if not _ok(key):
         return _forbidden()
     owner = settings().user_whatsapp
-    cleared = (store().get("contacts", f"chatclear:{owner}") or {}).get("ts", 0)
-    ev = [e for e in store().events(f"chat:{owner}") if e["ts"] > max(since, cleared)]
+    return JSONResponse(chat_sessions_of(store().events(f"chat:{owner}"), _clears(owner)))
+
+
+@app.get("/api/chat/messages")
+def chat_messages(key: str = "", since: float = 0, start: float = 0, end: float = 0) -> JSONResponse:
+    if not _ok(key):
+        return _forbidden()
+    owner = settings().user_whatsapp
+    if end:  # a PAST conversation, read-only view (proof stays forever)
+        ev = [e for e in store().events(f"chat:{owner}") if start - 0.001 <= e["ts"] <= end + 0.001]
+    else:
+        cleared = (_clears(owner) or [0])[-1]
+        ev = [e for e in store().events(f"chat:{owner}") if e["ts"] > max(since, cleared)]
     rows = [{"ts": e["ts"], "dir": {"chat_in": "in", "chat_heard": "heard"}.get(e["kind"], "out"), **e["payload"]} for e in ev]
     _link_old_approvals(owner, rows)
     return JSONResponse(rows)
@@ -384,7 +428,9 @@ async def chat_clear(request: Request) -> JSONResponse:
     if not _ok(form.get("key")):
         return _forbidden()
     owner = settings().user_whatsapp
-    store().put("contacts", f"chatclear:{owner}", {"owner": owner, "kind": "chat_clear", "ts": time.time()})
+    now = time.time()
+    store().put("contacts", f"chatclears:{owner}", {"owner": owner, "kind": "chat_clears", "list": _clears(owner) + [now]})
+    store().put("contacts", f"chatclear:{owner}", {"owner": owner, "kind": "chat_clear", "ts": now})
     return JSONResponse({"ok": True})
 
 

@@ -164,6 +164,7 @@ body.talk .comp textarea { font-size:18px; }
   <button class="btn" id="dnew" style="width:100%;justify-content:center">＋ <span data-i18n>New chat</span></button>
   <div id="dneeds"></div><div id="drems"></div>
   <h3 data-i18n>Recent work</h3><div id="drecent"><div class="empty">—</div></div>
+  <h3 data-i18n>Past conversations</h3><div id="dpast"><div class="empty">—</div></div>
   <h3 data-i18n>Memory & settings</h3><button class="drow" id="settings"><b>⚙️ <span data-i18n>Memory & settings</span></b></button>
 </aside>
 
@@ -203,6 +204,9 @@ const I = {
   "Add photo": ["ఫోటో జోడించండి", "फ़ोटो जोड़ें", "Photo add cheyyandi"],
   "e.g. Email me a copy of this": ["ఉదా: దీని కాపీ నాకు ఇమెయిల్ చేయి", "जैसे: इसकी कॉपी मुझे ईमेल करो", "eg: Idi naaku email cheyyi"],
   "Release to send": ["వదిలితే పంపుతాను", "छोड़ें तो भेजूँ", "Vadilithe pamputha"],
+  "Past conversations": ["పాత సంభాషణలు", "पुरानी बातचीत", "Paata conversations"], "Past conversation": ["పాత సంభాషణ", "पुरानी बातचीत", "Paata conversation"],
+  "messages": ["సందేశాలు", "संदेश", "messages"], "saved — never deleted": ["భద్రంగా ఉంది — ఎప్పటికీ తొలగించబడదు", "सुरक्षित — कभी नहीं मिटता", "saved — eppudu delete avvadu"],
+  "Back to current chat": ["ప్రస్తుత చాట్‌కి", "मौजूदा चैट पर लौटें", "Current chat ki vellu"], "No earlier conversations yet.": ["ఇంకా పాత సంభాషణలు లేవు.", "अभी कोई पुरानी बातचीत नहीं।", "Inka paata conversations levu."],
   "Recent work": ["ఇటీవలి పనులు", "हाल का काम", "Recent work"], "Needs you": ["మీ నిర్ణయం కావాలి", "आपका फ़ैसला चाहिए", "Mee decision kavali"],
   "Active task": ["జరుగుతున్న పని", "चल रहा काम", "Active task"], "Reminders": ["రిమైండర్లు", "रिमाइंडर", "Reminders"],
   "Nothing yet — ask for something above.": ["ఇంకా ఏమీ లేదు — పైన అడగండి.", "अभी कुछ नहीं — ऊपर पूछिए।", "Inka emi ledu — paina adagandi."],
@@ -230,7 +234,7 @@ const I = {
   "Allow the microphone to talk": ["మాట్లాడటానికి మైక్ అనుమతి ఇవ్వండి", "बोलने के लिए माइक की अनुमति दें", "Mic permission ivvandi"],
   "Hold the button and speak": ["బటన్ నొక్కి పట్టి మాట్లాడండి", "बटन दबाकर बोलिए", "Button nokki patti matladandi"],
   "No connection — try again": ["నెట్ లేదు — మళ్ళీ ప్రయత్నించండి", "नेटवर्क नहीं — फिर कोशिश करें", "Net ledu — malli try cheyyandi"],
-  "Saved": ["సేవ్ అయ్యింది", "सेव हो गया", "Save ayyindi"], "Start a new conversation? Your tasks stay saved.": ["కొత్త సంభాషణ మొదలుపెట్టాలా? మీ పనులు సేవ్‌లోనే ఉంటాయి.", "नई बातचीत शुरू करें? आपके काम सेव रहेंगे।", "Kotha conversation start cheyyala? Mee tasks save lone untayi."],
+  "Saved": ["సేవ్ అయ్యింది", "सेव हो गया", "Save ayyindi"], "Start a new conversation? This one stays saved under ☰ → Past conversations.": ["కొత్త సంభాషణ మొదలుపెట్టాలా? ఇది ☰ → పాత సంభాషణలు లో భద్రంగా ఉంటుంది.", "नई बातचीत शुरू करें? यह ☰ → पुरानी बातचीत में सुरक्षित रहेगी।", "Kotha conversation start cheyyala? Idi ☰ → Paata conversations lo save untundi."],
   "Email this photo": ["ఈ ఫోటో ఇమెయిల్ చేయి", "यह फ़ोटो ईमेल करो", "Ee photo email cheyyi"], "Book a doctor": ["డాక్టర్ అపాయింట్‌మెంట్", "डॉक्टर बुक करो", "Doctor book cheyyi"],
   "Complain & follow up": ["ఫిర్యాదు & ఫాలో అప్", "शिकायत और फ़ॉलो अप", "Complaint & follow up"], "Call from a photo": ["ఫోటో నుంచి కాల్", "फ़ोटो से कॉल", "Photo nunchi call"],
   "Is this a scam?": ["ఇది మోసమా?", "क्या यह धोखा है?", "Idi scam aa?"],
@@ -340,7 +344,22 @@ async function loadHome() {
     $("drecent").innerHTML = (h.recent || []).length ? h.recent.map(r => `<button class="drow" data-ask="${esc(r.request)}"><b>${esc(r.request || r.understood)}</b><span>${(r.results || []).map(x => esc(L(x.label))).join(" · ")}</span></button>`).join("")
       : `<div class="empty">—</div>`;
     $("drecent").querySelectorAll("[data-ask]").forEach(b => b.onclick = () => { closeDrawer(); $("chattext").value = b.dataset.ask; $("chattext").focus(); syncChat(); });
+  } catch (e) {}
+  try { const ps = await (await api("/api/chat/sessions")).json();
+    $("dpast").innerHTML = ps.length ? ps.map((p, i) => `<button class="drow" data-past="${i}"><b>💬 ${esc(p.title)}</b><span>${esc(p.when)} · ${p.count} ${L("messages")}</span></button>`).join("")
+      : `<div class="empty">${L("No earlier conversations yet.")}</div>`;
+    $("dpast").querySelectorAll("[data-past]").forEach(b => b.onclick = () => viewPast(ps[+b.dataset.past]));
   } catch (e) {} }
+/* ---------- past conversations: read-only, never deleted (proof) ---------- */
+let viewing = null;
+async function viewPast(p) { closeDrawer(); viewing = p; clearTimeout(ctimer); hideWelcome(); hideTyping(); $("quick").innerHTML = "";
+  const th = $("thread"); th.innerHTML = `<div class="card fade" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;background:var(--soft)">
+    <div style="flex:1 1 200px"><b>🗂️ ${L("Past conversation")}</b><div class="src" style="margin:2px 0 0">${esc(p.when)} · ${p.count} ${L("messages")} · ${L("saved — never deleted")}</div></div>
+    <button class="btn sm primary" id="pastback">${L("Back to current chat")}</button></div>`;
+  $("pastback").onclick = backToCurrent;
+  try { const rows = await (await api(`/api/chat/messages?start=${p.start}&end=${p.end}`)).json(); rows.forEach(m => th.appendChild(row(m))); } catch (e) { toast(L("No connection — try again")); }
+  window.scrollTo(0, 0); }
+function backToCurrent() { viewing = null; rerenderThread(); }
 $("dnew").onclick = () => { closeDrawer(); $("newchat").click(); };
 
 /* ---------- welcome ---------- */
@@ -371,6 +390,7 @@ function showTyping(label) { if (!typingEl) { typingEl = document.createElement(
 const hideTyping = () => { if (typingEl && typingEl.parentNode) typingEl.remove(); };
 async function sendMsg(text, files, voice) {
   text = (text || "").trim(); files = files || []; if (!text && !files.length && !voice) return; $("quick").innerHTML = ""; hideWelcome();
+  if (viewing) { viewing = null; $("thread").innerHTML = ""; since = 0; first = true; }  // typing in an old chat → back to the current one
   waiting = true; showTyping(voice ? "Listening…" : files.length ? "Reading your photo…" : "Thinking…"); schedChat(700);
   const fd = new FormData(); fd.append("key", key);
   if (voice) fd.append("file", voice, voice.name); else { fd.append("text", text); files.forEach(f => fd.append("file", f, f.name)); }
@@ -554,6 +574,7 @@ function setQuick(m) { const q = $("quick"); q.innerHTML = ""; const t = (m && m
     b.className = "btn" + (p ? " primary" : ""); b.textContent = L(l); b.onclick = () => sendMsg(v); q.appendChild(b); }); }
 function schedChat(ms) { clearTimeout(ctimer); ctimer = setTimeout(pollChat, ms); }
 async function pollChat() {
+  if (viewing) { schedChat(5000); return; }  // reading an old conversation — don't mix in new messages
   try { const r = await api(`/api/chat/messages?since=${since}`); if (r.ok) { const rows = await r.json(); const near = (document.body.scrollHeight - window.scrollY - innerHeight) < 260 || first; let last = null;
       for (const m of rows) { since = Math.max(since, m.ts); hideTyping(); hideWelcome(); $("thread").appendChild(row(m)); if (m.dir === "out") last = m; }
       if (last) { waiting = false; setQuick(last); loadHome();
@@ -562,7 +583,7 @@ async function pollChat() {
   schedChat(waiting ? 900 : (!$("chat").classList.contains("hidden") ? 2500 : 7000));
 }
 function rerenderThread() { $("thread").innerHTML = ""; since = Math.max(0, since - 1e10); first = true; pollChat(); }
-$("newchat").onclick = async () => { if (!confirm(L("Start a new conversation? Your tasks stay saved."))) return; await post("/api/chat/clear", {}); $("thread").innerHTML = ""; $("quick").innerHTML = ""; since = Date.now() / 1000; welcome(); };
+$("newchat").onclick = async () => { if (!confirm(L("Start a new conversation? This one stays saved under ☰ → Past conversations."))) return; await post("/api/chat/clear", {}); $("thread").innerHTML = ""; $("quick").innerHTML = ""; since = Date.now() / 1000; welcome(); };
 
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 function holdToTalk(btn, bar, timeEl, canvas, onBefore) {
@@ -620,7 +641,7 @@ holdToTalk($("cmic"), $("chatrec"), $("chatrectime"), $("chatwave"));
     const me = await r.json(); const ql = new URLSearchParams(location.search).get("lang"); setLang(ql || me.language || "en");
     if (!me.language && !ls.get("chinku_onboarded") && !new URLSearchParams(location.search).get("shot")) { pick = null; langCards($("langs"), null); $("langsheet").classList.add("on"); }
   } catch (e) {}
-  if (new URLSearchParams(location.search).get("shot")) window.__c = {row, welcome, hideWelcome, openDrawer, $};  // screenshot hook only
+  if (new URLSearchParams(location.search).get("shot")) window.__c = {row, welcome, hideWelcome, openDrawer, viewPast, $};  // screenshot hook only
   pollChat();
   document.addEventListener("visibilitychange", () => { if (!document.hidden) schedChat(50); });
 })();

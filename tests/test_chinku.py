@@ -217,3 +217,16 @@ def test_yes_after_a_question_is_read_with_the_chat(monkeypatch):
     store().add_event(f"chat:{ME}", "chat_in", {"text": "yes"})
     executor.handle(ME, "yes", [], send, card)
     assert seen == ["yes"]
+
+
+def test_past_conversations_are_kept_and_listed():
+    """Proof never disappears: New chat only starts a new view; old conversations stay listed and readable."""
+    import app.main as m
+    ev = lambda ts, kind, text: {"ts": ts, "kind": kind, "payload": {"text": text}}
+    events = [ev(100, "chat_in", "find Usha support"), ev(110, "chat_out", "found"),         # conversation 1
+              ev(200, "chat_in", "plan a trip"), ev(210, "chat_out", "ok"),                 # New chat at 150 → conversation 2
+              ev(210 + m.GAP_S + 5, "chat_in", "hotels in goa"), ev(210 + m.GAP_S + 9, "chat_out", "ok"),  # 2 h later → 3
+              ev(99999, "chat_in", "current chat")]                                          # after the latest New chat
+    rows = m.chat_sessions_of(events, [150, 99000])
+    assert [r["title"] for r in rows] == ["hotels in goa", "plan a trip", "find Usha support"]   # newest first
+    assert all(r["count"] == 2 for r in rows)
