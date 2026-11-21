@@ -424,6 +424,23 @@ def _mask_job(j: dict[str, Any]) -> dict[str, Any]:
     return j
 
 
+@app.get("/api/jobs/{job_id}/pdf")
+def api_job_pdf(job_id: str, kind: str = "invoice", key: str = "") -> Response:
+    """Download the invoice / estimate PDF (built from the saved job, so drafts and old bills always work)."""
+    if not _chat_ok(key):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    from app.jobs import billing
+    job = job_store.get(job_id)
+    if not job or job.plumber_id != settings().user_whatsapp or kind not in ("invoice", "estimate"):
+        return JSONResponse({"error": "not found"}, status_code=404)
+    inv = job.invoice if kind == "invoice" else job.estimate
+    if not inv or inv.state in (None, "none"):
+        return JSONResponse({"error": f"no {kind} for {job_id}"}, status_code=404)
+    data = billing._pdf(job, inv, kind, billing.pricebook(job.plumber_id)[1])
+    name = f"{inv.number or (job.job_id + '-' + kind + '-draft')}.pdf"
+    return Response(data, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
 @app.get("/api/jobs")
 def api_jobs(key: str = "") -> JSONResponse:
     if not _chat_ok(key):

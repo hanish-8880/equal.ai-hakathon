@@ -222,6 +222,8 @@
     <button class="typebar press fade" style="--i:3" id="typebar" aria-label="Type or talk to Chinku">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1-5.2A8 8 0 1 1 21 12Z"/></svg>
       <span>Type or talk to Chinku…</span></button>
+    <button class="typebar press fade" style="--i:3;margin-top:8px" id="nearme" aria-label="Plumbing shops near me">
+      <span aria-hidden="true">📍</span><span>Plumbing shops near me</span></button>
     <h2 class="fade" style="--i:3">Your jobs</h2>
     <div class="bento" id="bento"></div>
   </section>
@@ -439,7 +441,8 @@ function renderBills() {
     .filter(x => x.inv && x.inv.state && x.inv.state !== "none");
   $("billlist").innerHTML = bills.length ? bills.map(({j, inv, kind}, i) => `<article class="item ${kind === "Invoice" ? "c-mint" : "c-sky"} fade" style="--i:${i}"><div class="top">${chip(kind)}${chip(inv.state)}<span class="chip solid">${esc(j.job_id)}</span></div>
       <h3>${esc(inr(inv.total))}</h3><p class="meta">${esc(inv.number || "Draft")} · ${esc(inv.date || "")}</p>
-      <dl class="kv">${(inv.lines || []).map(l => `<dt>${esc(l.item)}</dt><dd>${esc(l.qty)} × ${esc(inr(l.unit_rate))} = <b>${esc(inr(l.amount))}</b></dd>`).join("")}${inv.labour ? `<dt>Labour</dt><dd>${esc(inr(inv.labour))}</dd>` : ""}</dl></article>`).join("")
+      <dl class="kv">${(inv.lines || []).map(l => `<dt>${esc(l.item)}</dt><dd>${esc(l.qty)} × ${esc(inr(l.unit_rate))} = <b>${esc(inr(l.amount))}</b></dd>`).join("")}${inv.labour ? `<dt>Labour</dt><dd>${esc(inr(inv.labour))}</dd>` : ""}</dl>
+      <a class="file" href="/api/jobs/${encodeURIComponent(j.job_id)}/pdf?kind=${kind.toLowerCase()}&key=${encodeURIComponent(key)}" download>⬇️ Download PDF</a></article>`).join("")
     : `<div class="item c-mint fade"><h3>No bills yet</h3><p>When a job is finished, send me a closing voice note — I'll read back the total and make the invoice.</p></div>`;
 }
 function openJob(id) { const j = jobs.find(x => x.job_id === id); if (!j) return; $("sheetbody").innerHTML = jobItem(j, 0); document.body.classList.add("sheet-open"); }
@@ -465,6 +468,15 @@ function go(v) {
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => go(b.dataset.go));
 $("back").onclick = () => go("today");
 $("typebar").onclick = () => { go("chat"); setTimeout(() => $("text").focus(), 60); };
+$("nearme").onclick = () => {
+  go("chat");
+  if (!navigator.geolocation) { $("text").value = "shops near "; $("text").focus(); return; }
+  toast("Getting your location…");
+  navigator.geolocation.getCurrentPosition(
+    p => sendMsg(`nearby shops @${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`),
+    () => { toast("Location is off — type an area"); $("text").value = "shops near "; $("text").focus(); },
+    {enableHighAccuracy: true, timeout: 12000, maximumAge: 60000});
+};
 $("searchbtn").onclick = () => { const sb = $("searchbox"); sb.classList.toggle("on"); if (sb.classList.contains("on")) $("search").focus(); };
 $("search").oninput = e => { jobQuery = e.target.value.trim().toLowerCase(); if (jobQuery) { go("jobs"); } renderJobs(); };
 
@@ -510,7 +522,8 @@ function billCard(c) {
   return `<div class="card ${col}"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip(c.type === "invoice" ? "Invoice" : "Estimate")}${chip(c.state)}${c.demo_rates ? chip("Demo rates", "dash") : ""}</div>
     <h3>${esc(inr(c.total))}</h3><dl class="kv bill">${lines}${c.labour ? `<dt>Labour</dt><dd>${esc(inr(c.labour))}</dd>` : ""}</dl>
     ${c.number ? `<p class="meta">${esc(c.number)}${c.bill_to ? " · " + esc(c.bill_to) : ""}${c.wo ? " · " + esc(c.wo) : ""}</p>` : ""}
-    ${c.pdf_url ? `<a class="file" href="${esc(c.pdf_url)}" target="_blank" rel="noopener">📄 Open PDF</a>` : ""}</div>`;
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${c.pdf_url ? `<a class="file" href="${esc(c.pdf_url)}" target="_blank" rel="noopener">📄 Open PDF</a>` : ""}
+    <a class="file" href="/api/jobs/${encodeURIComponent(c.job_id)}/pdf?kind=${esc(c.type)}&key=${encodeURIComponent(key)}" download>⬇️ Download</a></div></div>`;
 }
 function chatCard(c) {
   if (c && (c.type === "invoice" || c.type === "estimate")) return billCard(c);

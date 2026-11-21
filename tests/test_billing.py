@@ -90,3 +90,35 @@ def test_owner_number_counts_as_whatsapp_joined(monkeypatch):
     assert ops.wa_joined("+919989683607") and not ops.wa_joined("+919000000000")
     store().put("contacts", "wajoined:+919000000000", {"phone": "+919000000000"})
     assert ops.wa_joined("+919000000000")
+
+
+def test_invoice_pdf_download_needs_key_and_returns_pdf(monkeypatch):
+    from fastapi.testclient import TestClient
+    import app.main as m
+    monkeypatch.setattr(m.settings(), "user_whatsapp", ME)
+    monkeypatch.setattr(m.settings(), "chat_key", "k123")
+    j = _job()
+    j.invoice, _, _ = billing.compute_invoice(ME, j, DRAFT)
+    j.invoice.state = "sent"; j.invoice.number = "INV-TEST-1"
+    jobs.save(j)
+    c = TestClient(m.app)
+    assert c.get("/api/jobs/J24/pdf?kind=invoice&key=wrong").status_code == 403
+    r = c.get("/api/jobs/J24/pdf?kind=invoice&key=k123")
+    assert r.status_code == 200 and r.content[:4] == b"%PDF" and "INV-TEST-1.pdf" in r.headers["content-disposition"]
+    assert c.get("/api/jobs/J24/pdf?kind=estimate&key=k123").status_code == 404  # no estimate on this job
+
+
+def test_nearby_shops_by_gps_area_or_job(monkeypatch):
+    import threading
+    from app.jobs import assistant, sourcing
+    calls = []
+    monkeypatch.setattr(sourcing, "nearby_at", lambda *a: calls.append(("at",) + a))
+    monkeypatch.setattr(sourcing, "_nearby_card", lambda user, job: calls.append(("job", job.job_id)))
+    monkeypatch.setattr(threading, "Thread", lambda target, args, daemon=True: type("T", (), {"start": lambda self: target(*args)})())
+    out = []
+    assistant.handle(ME, "nearby shops @17.45880,78.37310", None, out.append)
+    assistant.handle(ME, "shops near Madhapur", None, out.append)
+    _job()
+    assistant.handle(ME, "nearby shops", None, out.append)
+    assert calls[0] == ("at", ME, "your location", 17.4588, 78.3731)
+    assert calls[1] == ("at", ME, "Madhapur") and calls[2] == ("job", "J24")

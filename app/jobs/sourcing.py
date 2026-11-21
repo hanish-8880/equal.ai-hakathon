@@ -54,6 +54,28 @@ def _resolve_shops(user: str, names: list[str]) -> tuple[list[dict[str, str]], l
     return found, missing
 
 
+def nearby_at(user: str, label: str, lat: float | None = None, lon: float | None = None, job_id: str = "") -> None:
+    """Background: shops near the plumber's own location (phone GPS) or a named area. Shown only; never called unasked."""
+    from app.actions import maps
+    try:
+        if lat is None or lon is None:
+            g = maps.geocode(f"{label}, Hyderabad") or maps.geocode(label)
+            if not g:
+                ops.CARD(user, f"🗺️ I couldn't find “{label}” on the map. Try a nearby area or landmark name.", {"type": "note"})
+                return
+            lat, lon = g[0], g[1]
+        rows = maps.nearby_shops(lat, lon)
+    except Exception as e:  # noqa: BLE001
+        store().add_event("-", "maps_error", {"error": str(e)[:200]})
+        ops.CARD(user, "🗺️ The map service is slow right now. Try “nearby shops” again in a minute.", {"type": "note"})
+        return
+    if not rows:
+        ops.CARD(user, f"🗺️ No plumbing / hardware shops listed on OpenStreetMap within 4 km of {label}.", {"type": "note"})
+        return
+    ops.CARD(user, f"🗺️ Plumbing / hardware shops near {label} (OpenStreetMap — tap Map for directions). Say “call <shop> <number>” to add one.",
+             {"type": "shops", "job_id": job_id or "Near you", "rows": rows})
+
+
 def _nearby_card(user: str, job: Job) -> None:
     """Background: shops near the job site from OpenStreetMap (address, distance, map link)."""
     from app.actions import maps

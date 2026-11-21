@@ -302,15 +302,29 @@ def handle(user: str, text: str, image: dict[str, Any] | None, send: Send, force
             return
     # 2c) "nearby shops" → map card for the active job
     if re.search(r"\b(near(by)?\s+shops?|shops?\s+near|map)\b", text, re.I) and not image:
+        import threading
+        from app.jobs import sourcing
+        gps = re.search(r"@\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)", text)
+        if gps:  # the app's "📍 Shops near me" button sends the phone's location
+            send("🗺️ Looking for plumbing shops near you…")
+            threading.Thread(target=sourcing.nearby_at, args=(user, "your location", float(gps.group(1)), float(gps.group(2))),
+                             daemon=True).start()
+            return
+        area = re.search(r"\b(?:near|in|at|around)\s+(?!me\b|by\b|my\b)([A-Za-z][A-Za-z .'-]{2,40})$", text.strip(), re.I)
+        if area and not re.match(r"(?i)J\s*\d+", area.group(1)):
+            name = area.group(1).strip(" .")
+            send(f"🗺️ Looking for plumbing shops near {name}…")
+            threading.Thread(target=sourcing.nearby_at, args=(user, name), daemon=True).start()
+            return
         open_ = jobs.open_jobs(user)
         ref = re.search(r"\bJ\s*(\d+)\b", text, re.I)
         job = jobs.get(f"J{ref.group(1)}") if ref else (open_[-1] if open_ else None)
-        if job:
-            import threading
-            from app.jobs import sourcing
-            send(f"🗺️ Looking for plumbing shops near {job.site_address.value or job.flat.value or 'the site'} ({job.job_id})…")
-            threading.Thread(target=sourcing._nearby_card, args=(user, job), daemon=True).start()
+        if re.search(r"\bnear\s+me\b", text, re.I) or not job:
+            send("📍 Tap “Shops near me” on the Today screen (it uses your phone's location), or say “shops near <area>”, e.g. “shops near Madhapur”.")
             return
+        send(f"🗺️ Looking for plumbing shops near {job.site_address.value or job.flat.value or 'the site'} ({job.job_id})…")
+        threading.Thread(target=sourcing._nearby_card, args=(user, job), daemon=True).start()
+        return
     # 3) answer to a question Chinku asked about a job (e.g. which number)
     ans = _answer_pending_question(user, text)
     if ans:
