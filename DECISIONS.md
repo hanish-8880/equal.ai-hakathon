@@ -372,3 +372,11 @@ never rings the phone during the test.
 - After the call: brain reads the transcript (caller_kind, fields with evidence, chosen slot id); CODE maps the slot to a real window and books only if read back/confirmed AND the conditional-write lock wins. Otherwise pending + plumber asked. WhatsApp confirmation only if the caller's number joined the sandbox.
 - The owner's number can test as a customer (routed by what was said; tasks are still accepted only from the owner's number). 5 new tests (98 total).
 - UNVERIFIED until a real customer-style call is made.
+
+## Sat ~23:00 — Languages for real (te / hi / te-en)
+- App UI: every label, chip, empty state, toast and date in the chosen language (dictionary in app.html; `&lang=xx` = view-only override for demos).
+- Chinku's messages: translated at the single outbound point `deliver()` by the fast model. CODE GUARD: the multiset of digits must be identical and the "(yes …)" answer hint must survive, else retry with the brain model, else the English original is shown. Cached per text (tr3:). VERIFIED live on the ₹1,400 readback in te / hi / te-en (all numbers exact). First attempt was too timid (left "Total", "labour" in English; Hindi transliterated "Sai Facility"; "against WO-117" → "के खिलाफ") — fixed with explicit rules + per-language examples.
+- Jobs API translates next steps in the background (never blocks the screen; first version blocked ~20 s).
+- Yes/No: Hindi words added (haan, theek hai, bhejo, nahi, हाँ, नहीं…); app quick-reply buttons show the language but send "yes"/"no".
+- NOT translated (honest): phone calls (English — Telugu voice was choppy earlier), customer WhatsApp messages (customer's language unknown), invoice PDF (English for the billing company; the PDF font has no Telugu), job data the plumber/customer said (issue, address) and timeline evidence.
+- Incident: a dropped 22 s customer call created job J33 ("application"). Rule now: job only if problem AND (address or agreed slot); else "Missed enquiry" card. J33 cancelled (kept) with the reason.
