@@ -130,6 +130,11 @@ CACHE_S = 20 * 60
 _cool: dict[str, float] = {}  # per account
 
 
+def _address_rows(data: Any) -> list[Any]:
+    rows = data if isinstance(data, list) else next((v for v in data.values() if isinstance(v, list)), []) if isinstance(data, dict) else []
+    return [r for r in rows if isinstance(r, dict) and (r.get("id") or r.get("addressId"))]
+
+
 def call(name: str, args: dict[str, Any], server: str = "im") -> dict[str, Any]:
     if name not in ALLOWED.get(server, set()):
         raise PermissionError(f"Chinku never calls Swiggy's “{name}” (checkout, payment and clearing the cart are yours to do).")
@@ -141,6 +146,8 @@ def call(name: str, args: dict[str, Any], server: str = "im") -> dict[str, Any]:
         if hit and time.time() - hit.get("ts", 0) < CACHE_S:
             return hit["data"]
     out = _call_live(name, args, server)
+    if key and name == "get_addresses" and not _address_rows(out):
+        key = None  # never remember "no address": the user may add one in the Swiggy app a minute later
     if key:
         from app.store.dynamo import store
         store().put("contacts", key, {"kind": "swcache", "ts": time.time(), "data": out})

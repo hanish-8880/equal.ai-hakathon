@@ -208,3 +208,10 @@ def test_grocery_search_shows_options_ranked_by_value(monkeypatch):
     assert card["type"] == "grocery" and out["recommended"]["spinId"] and "₹4.5/100 g" in card["why"]
     out2 = tools.grocery_search(ME, {"query": "potato", "priority": "cheapest", "max_price": 40}, ctx)
     assert [r["price"] for r in out2["rows"]] == [28, 30]
+
+
+def test_empty_address_list_is_never_cached(monkeypatch):
+    replies = [{"addresses": []}, {"addresses": [{"id": "A1", "label": "Home"}]}]
+    monkeypatch.setattr(swiggy, "_call_live", lambda name, args, server: replies.pop(0))
+    assert swiggy._address_rows(swiggy.call("get_addresses", {})) == []
+    assert swiggy._address_rows(swiggy.call("get_addresses", {}))[0]["id"] == "A1"   # added in the app → seen at once
