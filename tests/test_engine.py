@@ -175,3 +175,14 @@ def test_no_answer_retry_then_report(fake, monkeypatch):
     runner.on_call_result({"call_id": retry["omni_call_id"], "transcript": ""}, lambda u, m: out.append(m))
     runner.on_call_result({"call_id": c2["omni_call_id"], "transcript": "385"}, lambda u, m: out.append(m))
     assert store().scan("tasks")[0]["status"] == "done" and out == [f"best={c2['callee']['name']}"]
+
+
+def test_parse_omni_log_row_verified_shape():
+    from app.voice.omni import parse_webhook
+    row = {"call_request_id": {"id": 11127484, "type_of_request": "Call"}, "call_status": "completed",
+           "call_conversation": "LLM: Namaste, I am Chinku.<br/>User: Rate 385.<br/>",
+           "call_duration_in_seconds": 18.0,
+           "custom_variables": {"task_id": "t1", "step_id": "s1", "chinku_call_id": "c_x"}}
+    p = parse_webhook(row)
+    assert p["call_id"] == "11127484" and p["chinku_call_id"] == "c_x" and p["task_id"] == "t1"
+    assert p["transcript"] == "assistant: Namaste, I am Chinku.\nuser: Rate 385."

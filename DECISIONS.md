@@ -41,3 +41,16 @@ Ravi 385 + transport 2000 (confirmed); Sai "moodu vandala tombhai" = 390, transp
 Deterministic rank: Sai 19500 < Ravi 21250 (transport-extra pair flips winner). Reply led with best total, marked "(not confirmed)", quoted evidence.
 Chose: keep extraction guard (confirmed without quote → tentative).
 Would change if: live Omni transcripts have a different shape.
+
+## [Sat 13:12] Omni context injection — VERIFIED live (requestId 11127484, log 11681947)
+Observed: dispatch {agent_id, to_number, from_number_id, call_context} → {"success":true,"requestId":11127484,"status":"dispatched","custom_variables_count":6}.
+Agent said: "Namaste, I am Chinku, an AI assistant calling for Hanish." then "Chinku test number four seven two." and ended the call itself (18 s, $0.032).
+=> {{on_behalf_of}} filled in welcome message AND {{call_script}} filled in system prompt. Syntax = {{name}}. Values arrive as strings (max_minutes "1").
+Call-log row shape (GET /calls/logs?agentid=): call_conversation "LLM: ..<br/>User: ..", custom_variables = our call_context, call_request_id.id = requestId, call_status, call_duration_in_seconds, hangup_reason.
+Chose: one generic agent + per-call call_context (primary design, no fallback needed). Correlate by custom_variables.chinku_call_id; also requestId. Polling fallback = omni.fetch_log(requestId).
+Webhook payload shape: still UNVERIFIED (needs PUBLIC_BASE_URL); parser accepts both log-row and webhook-style keys.
+Would change if: webhook payload lacks custom_variables → correlate on requestId only.
+
+## [Sat 13:12] Twilio — creds VERIFIED, sandbox NOT joined
+Observed: account active (Trial). Test send to +91…3607 → failed 63015 (recipient not in sandbox).
+Next: user sends "join <code>" to +14155238886.
