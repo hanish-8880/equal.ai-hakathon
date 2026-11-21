@@ -20,6 +20,15 @@ def mem():
     yield
 
 
+def fake_oai(R):
+    class O:
+        responses = type("X", (), {"create": staticmethod(lambda **k: R())})()
+
+        def with_options(self, **k):
+            return self
+    return O()
+
+
 def ctx(tid="i_t"):
     return {"task": Task(task_id=tid, user=ME, request="x", plan=Plan(understood="x"), created_at=0, updated_at=0),
             "card": lambda t, c: CARDS.append((t, c)), "step_id": "s1", "send": OUT.append}
@@ -36,7 +45,7 @@ def test_official_is_decided_by_domain(brand, url, ok):
 def test_scam_two_red_flags_never_pass_as_genuine(monkeypatch):
     class R:
         output_text = json.dumps({"verdict": "Looks genuine", "reasons": ["looks fine"], "what_to_do": [], "official_sources": []})
-    monkeypatch.setattr("app.brain.client.oai", lambda: type("O", (), {"responses": type("X", (), {"create": staticmethod(lambda **k: R())})()})())
+    monkeypatch.setattr("app.brain.client.oai", lambda: fake_oai(R))
     msg = "Dear customer your electricity will be disconnected tonight. Update KYC immediately, share OTP at bit.ly/xyz"
     out = tools.scam_check(ME, {"text": msg}, ctx())
     assert out["verdict"] == "Unsure" and len(out["red_flags"]) >= 2
@@ -95,7 +104,7 @@ def test_trip_sorted_by_rating_and_only_real_numbers_callable(monkeypatch):
                                   "hotels": [{"name": "A", "rating": 3.9, "phone": "9876543210"}, {"name": "B", "rating": 4.6, "phone": "+91 98490 11111"},
                                              {"name": "C", "rating": None, "phone": None}],
                                   "restaurants": [{"name": "R1", "rating": 4.1, "phone": "0891-2345678"}], "sources": ["https://x"]})
-    monkeypatch.setattr("app.brain.client.oai", lambda: type("O", (), {"responses": type("X", (), {"create": staticmethod(lambda **k: R())})()})())
+    monkeypatch.setattr("app.brain.client.oai", lambda: fake_oai(R))
     monkeypatch.setattr(tools, "map_", lambda *a, **k: {})
     out = tools.trip_plan(ME, {"destination": "Araku", "days": 2, "people": 4}, ctx())
     assert [h["name"] for h in out["hotels"]] == ["B", "A", "C"]

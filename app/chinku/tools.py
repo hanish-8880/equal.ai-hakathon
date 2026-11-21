@@ -161,8 +161,8 @@ def search(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, 
     if not q:
         raise ToolError("What should I search for?")
     official = bool(inputs.get("official_only"))
-    r = oai().responses.create(
-        model=settings().openai_model_brain, tools=[{"type": "web_search"}],
+    r = oai().with_options(timeout=180).responses.create(
+        model=settings().openai_model_brain, tools=[{"type": "web_search"}], reasoning={"effort": "low"},
         input=(f"Today is {datetime.now(IST):%d %b %Y} (India). Research: {q}\n"
                + ("Use ONLY the company's official website / official domain for contact details. " if official else "")
                + "Return ONLY JSON {\"answer\": short answer, \"items\": [{\"name\", \"address\", \"phone\", \"email\", \"url\", \"note\"}], "
@@ -598,7 +598,7 @@ def find_support(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict
     brand, product = inputs.get("brand"), inputs.get("product") or ""
     if not brand:
         raise ToolError("Which company is it? I couldn't see the brand.")
-    r = oai().responses.create(model=settings().openai_model_brain, tools=[{"type": "web_search"}], input=(
+    r = oai().with_options(timeout=180).responses.create(model=settings().openai_model_brain, tools=[{"type": "web_search"}], reasoning={"effort": "low"}, input=(
         f"Find the OFFICIAL customer-support contact in India for {brand} {product}. Use ONLY {brand}'s own official website "
         "(their own domain). Return ONLY JSON {\"email\", \"phone\", \"whatsapp\", \"web_form\", \"source_url\" (the exact official page), "
         "\"note\"}. null for anything not found on the official site. Never guess an email or number."))
@@ -706,7 +706,7 @@ def scam_check(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[s
     if not text.strip():
         raise ToolError("Send me the message text or a screenshot to check.")
     flags = sorted({why for rx, why in RED_FLAGS if re.search(rx, text, re.I)})
-    r = oai().responses.create(model=settings().openai_model_brain, tools=[{"type": "web_search"}], input=(
+    r = oai().with_options(timeout=180).responses.create(model=settings().openai_model_brain, tools=[{"type": "web_search"}], reasoning={"effort": "low"}, input=(
         "You check if a message received in India is a scam. Search official sources (the real company's or bank's own site, "
         "RBI, cybercrime.gov.in, PIB Fact Check) when useful. Return ONLY JSON {\"verdict\": \"Likely scam\"|\"Looks genuine\"|\"Unsure\", "
         "\"reasons\": [short], \"what_to_do\": [short], \"sender\": str|null, \"official_sources\": [urls]}.\nMESSAGE:\n" + text[:3000]))
@@ -761,7 +761,7 @@ def trip_plan(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[st
         raise ToolError("Where do you want to go?")
     days, people = int(inputs.get("days") or 2), int(inputs.get("people") or 2)
     start = inputs.get("start_date")
-    r = oai().responses.create(model=settings().openai_model_brain, tools=[{"type": "web_search"}], input=(
+    r = oai().with_options(timeout=180).responses.create(model=settings().openai_model_brain, tools=[{"type": "web_search"}], reasoning={"effort": "low"}, input=(
         f"Plan a {days}-day trip to {dest} (India) for {people} people"
         + (f" starting {start}" if start else "") + (f", total budget ₹{inputs.get('budget')}" if inputs.get("budget") else "")
         + (f", interests: {inputs.get('interests')}" if inputs.get("interests") else "") + ". Use current web sources. "
@@ -779,8 +779,10 @@ def trip_plan(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[st
     def prep(rows: list[TripPlace], kind: str) -> list[dict[str, Any]]:
         out = []
         for p in sorted(rows, key=lambda x: (x.rating is None, -(x.rating or 0))):  # code ranks by rating; unknown rating last
-            ph = indian_mobile(p.phone or "") or (re.sub(r"[^\d+]", "", p.phone or "") or None)
-            out.append(p.model_dump() | {"kind": kind, "phone": ph, "callable": bool(ph and indian_mobile(ph))})
+            raw = (p.phone or "").strip()
+            landline = bool(re.match(r"^0\d{2,4}[-\s]\d{6,8}$", raw))  # 0891-2345678 is an STD landline, not a mobile
+            mob = None if landline else indian_mobile(raw)
+            out.append(p.model_dump() | {"kind": kind, "phone": mob or (raw or None), "callable": bool(mob)})
         return out
     hotels, restaurants = prep(t.hotels, "hotel"), prep(t.restaurants, "restaurant")
     checked = datetime.now(IST).strftime("%d %b %Y")
