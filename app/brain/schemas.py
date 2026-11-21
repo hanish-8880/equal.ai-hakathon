@@ -127,7 +127,7 @@ class SlideDeck(BaseModel):
 
 # ---------- plumber mode (CLAUDE.md v2 §8) ----------
 Intent = Literal["create_job", "book_visit", "source_part", "set_dependency", "request_approval", "approval_response",
-                 "close_job_invoice", "correct_detail", "report_delay", "cancel", "status_query", "small_talk", "other"]
+                 "close_job_invoice", "make_estimate", "correct_detail", "report_delay", "cancel", "status_query", "small_talk", "other"]
 
 
 class PlumberRoute(BaseModel):

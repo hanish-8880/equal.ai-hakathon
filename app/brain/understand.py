@@ -14,7 +14,7 @@ from app.store.dynamo import store
 PLUMBING_VOCAB = ("angle valve, ball valve, pillar cock, bib cock, health faucet, flush tank, geyser, CPVC, UPVC, PVC, elbow, tee, "
                   "reducer, union, hose, connection pipe, teflon tape, half inch, three-fourth inch, 15 mm, 20 mm")
 BRANDS = "Jaquar, Cera, Hindware, Parryware, Astral, Supreme, Ashirvad, Finolex, Prince"
-CONSEQUENTIAL = {"book_visit", "request_approval", "close_job_invoice", "source_part", "set_dependency", "cancel"}
+CONSEQUENTIAL = {"book_visit", "request_approval", "source_part", "set_dependency", "cancel"}  # invoice/estimate: drafting acts, SENDING needs its own yes
 CONFIDENCE_MIN = 0.8
 
 

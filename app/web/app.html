@@ -324,6 +324,11 @@ function slots() { const out = []; for (const j of jobs) { const s = j.full && j
 
 /* ---------------- TODAY ---------------- */
 function heroData() {
+  const nowT = new Date();
+  const live = slots().find(x => new Date(x.slot.start) <= nowT && nowT <= new Date(new Date(x.slot.end).getTime() + 3 * 3600e3)
+                              && !(x.job.full.invoice && ["sent", "paid"].includes(x.job.full.invoice.state)));
+  if (live) return {k: "Visit now", t: `${live.job.site || live.job.issue}`, s: `${live.job.issue || ""} · ${fmtTime(live.slot.start)}–${fmtTime(live.slot.end)}. When you finish, tell me what you did — I'll make the bill.`,
+                    b: "Finish & invoice", go: () => { go("chat"); $("text").placeholder = "e.g. Fitted 2 angle valves at 350 each, hose 300, labour 400…"; }};
   const blocked = openJobs().find(j => j.next_action && j.next_action.owner === "plumber" && j.next_action.blocked_by);
   if (blocked) return {k: "Decision needed", t: `${blocked.job_id} · ${blocked.site || blocked.issue || ""}`, s: blocked.next_action.what, b: "Open job", go: () => openJob(blocked.job_id)};
   const now = new Date(); const next = slots().filter(x => new Date(x.slot.end || x.slot.start) >= now).sort((a, b) => new Date(a.slot.start) - new Date(b.slot.start))[0];
@@ -423,8 +428,9 @@ function renderCalls() {
 
 /* ---------------- BILLS ---------------- */
 function renderBills() {
-  const bills = jobs.map(j => ({j, inv: j.full && j.full.invoice})).filter(x => x.inv && x.inv.state && x.inv.state !== "none");
-  $("billlist").innerHTML = bills.length ? bills.map(({j, inv}, i) => `<article class="item c-mint fade" style="--i:${i}"><div class="top">${chip(inv.state)}<span class="chip solid">${esc(j.job_id)}</span></div>
+  const bills = jobs.flatMap(j => [{j, inv: j.full && j.full.invoice, kind: "Invoice"}, {j, inv: j.full && j.full.estimate, kind: "Estimate"}])
+    .filter(x => x.inv && x.inv.state && x.inv.state !== "none");
+  $("billlist").innerHTML = bills.length ? bills.map(({j, inv, kind}, i) => `<article class="item ${kind === "Invoice" ? "c-mint" : "c-sky"} fade" style="--i:${i}"><div class="top">${chip(kind)}${chip(inv.state)}<span class="chip solid">${esc(j.job_id)}</span></div>
       <h3>${esc(inr(inv.total))}</h3><p class="meta">${esc(inv.number || "Draft")} · ${esc(inv.date || "")}</p>
       <dl class="kv">${(inv.lines || []).map(l => `<dt>${esc(l.item)}</dt><dd>${esc(l.qty)} × ${esc(inr(l.unit_rate))} = <b>${esc(inr(l.amount))}</b></dd>`).join("")}${inv.labour ? `<dt>Labour</dt><dd>${esc(inr(inv.labour))}</dd>` : ""}</dl></article>`).join("")
     : `<div class="item c-mint fade"><h3>No bills yet</h3><p>When a job is finished, send me a closing voice note — I'll read back the total and make the invoice.</p></div>`;
@@ -490,7 +496,16 @@ function shopsCard(c) {
     ${(c.rows || []).map(r => `<div class="offer"><b>${esc(r.name)}</b> <span class="meta">${esc(r.kind)} · ${esc(r.distance_km)} km</span>
       <div class="meta">${r.address ? "📍 " + esc(r.address) + " · " : ""}${r.phone ? "☎ " + esc(r.phone) + " · " : "no phone listed · "}<a href="${esc(r.map_url)}" target="_blank" rel="noopener">🗺️ Map</a></div></div>`).join("")}</div>`;
 }
+function billCard(c) {
+  const col = c.type === "invoice" ? "c-mint" : "c-sky";
+  const lines = (c.lines || []).map(l => `<dt>${esc(l.qty)} × ${esc(l.item)}<br><span class="meta">${esc(l.source || "")}</span></dt><dd>${esc(inr(l.amount))}</dd>`).join("");
+  return `<div class="card ${col}"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip(c.type === "invoice" ? "Invoice" : "Estimate")}${chip(c.state)}${c.demo_rates ? chip("Demo rates", "dash") : ""}</div>
+    <h3>${esc(inr(c.total))}</h3><dl class="kv">${lines}${c.labour ? `<dt>Labour</dt><dd>${esc(inr(c.labour))}</dd>` : ""}</dl>
+    ${c.number ? `<p class="meta">${esc(c.number)}${c.bill_to ? " · " + esc(c.bill_to) : ""}${c.wo ? " · " + esc(c.wo) : ""}</p>` : ""}
+    ${c.pdf_url ? `<a class="file" href="${esc(c.pdf_url)}" target="_blank" rel="noopener">📄 Open PDF</a>` : ""}</div>`;
+}
 function chatCard(c) {
+  if (c && (c.type === "invoice" || c.type === "estimate")) return billCard(c);
   if (c && c.type === "offers") return offersCard(c);
   if (c && c.type === "shops") return shopsCard(c);
   if (!c || c.type !== "job") return "";

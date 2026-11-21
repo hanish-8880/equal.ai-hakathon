@@ -230,6 +230,14 @@ def _execute(user: str, action: Any, text: str, image: dict[str, Any] | None, se
     if action.intent == "source_part":
         from app.jobs import sourcing
         return sourcing.start_sourcing(user, job, text, image, send)
+    if action.intent == "close_job_invoice":
+        from app.jobs import billing
+        billing.start_invoice(user, job, text)
+        return None
+    if action.intent == "make_estimate":
+        from app.jobs import billing
+        billing.start_estimate(user, job, text, image)
+        return None
     if action.intent == "set_dependency":
         return None  # the rule is read together with the part request (sourcing.extract_part)
     return f"{job.job_id}: {NEXT_INTENTS.get(action.intent, action.intent)} is being built right now — not live yet."
@@ -260,6 +268,21 @@ def handle(user: str, text: str, image: dict[str, Any] | None, send: Send, force
         if runner.NO.match(text):
             store().put("contacts", f"pendingact:{user}", {"owner": user, "actions": []})
             send("Okay, I won't do that.")
+            return
+    # 2b) an invoice / estimate is waiting: yes → send; no → keep as draft; anything else on an invoice → correction
+    pb = store().get("contacts", f"pendingbill:{user}")
+    if pb and pb.get("job_id") and time.time() - pb.get("ts", 0) < 7200 and not image:
+        from app.jobs import billing
+        if runner.YES.match(text):
+            billing.send_pending(user, send)
+            return
+        if runner.NO.match(text):
+            store().put("contacts", f"pendingbill:{user}", {"owner": user, "kind": "done"})
+            send("Okay — kept as a draft, nothing sent.")
+            return
+        if pb["kind"] == "invoice" and len(text) < 160:
+            job = jobs.get(pb["job_id"])
+            billing.start_invoice(user, job, text, previous=pb.get("draft"))
             return
     # 3) answer to a question Chinku asked about a job (e.g. which number)
     ans = _answer_pending_question(user, text)

@@ -126,6 +126,41 @@ def set_channel(user: str, channel: str) -> None:
     store().put("contacts", f"chan:{user}", {"owner": user, "kind": "channel", "channel": channel})
 
 
+EMERGENCY_WORDS = ("flood", "burst", "overflow", "water everywhere", "pipe broke", "leaking a lot", "gushing")
+
+
+def process_customer(msg: dict[str, Any], media: list[tuple[bytes, str]]) -> None:
+    """A customer (not the plumber) messaged the Chinku number: receptionist + estimate from photos (CLAUDE.md feature: WhatsApp receptionist)."""
+    from app.jobs import billing
+    owner, plumber = settings().user_whatsapp, settings().plumber_name
+    sender = msg["from"]
+    phone = validate.indian_mobile(sender.replace("whatsapp:", ""))
+    text = msg["body"] or ""
+    for data, mtype in media:
+        if mtype.startswith("audio"):
+            text = (text + " " + perceive.transcribe(data, "voice.ogg").text).strip()
+    image = next((perceive.read_image(d, t).model_dump() for d, t in media if t.startswith("image")), None)
+    job = next((job_store.Job.model_validate(j) for j in store().scan("jobs", plumber_id=owner)
+                if j.get("status") not in ("closed", "cancelled") and ((j.get("roles") or {}).get("site_contact") or {}).get("phone") == phone), None)
+    if job:
+        job_store.log(job, "customer_message", f"Customer: {text[:120] or '(photo)'}", actor="client", channel="whatsapp")
+        job_store.save(job)
+        if image:
+            billing.start_estimate(owner, job, text or "customer photo of the problem", image, from_customer=True)
+            whatsapp.send(sender, f"Thank you! {plumber} will look at the photo and send you an estimate shortly. — Chinku")
+        else:
+            assistant.CARD(owner, f"💬 {job.job_id} customer ({mask_phone(phone)}) says: {text}", job_store.card(job))
+            whatsapp.send(sender, f"Got it — I've passed this to {plumber}. — Chinku")
+        return
+    urgent = any(w in text.lower() for w in EMERGENCY_WORDS)
+    reply = (f"Hi! This is Chinku, the assistant of plumber {plumber}. "
+             + ("If water is flooding, please turn off the main valve now. " if urgent else "")
+             + "Please send a photo of the problem and your address — " + plumber + " will get back to you shortly.")
+    whatsapp.send(sender, reply)
+    seen = f" Photo: {image.get('fields', {}).get('visible_problem') or image.get('image_type')}." if image else ""
+    deliver(owner, f"📩 New enquiry{' — EMERGENCY' if urgent else ''} from {mask_phone(phone)}: {text or '(photo)'}.{seen} Reply “new job …” to take it.")
+
+
 def process_whatsapp(msg: dict[str, Any]) -> None:
     user = msg["from"]
     store().add_event("-", "wa_in", {"from_last4": user[-4:] if user else None, "body": msg["body"][:500],
@@ -141,6 +176,13 @@ def process_whatsapp(msg: dict[str, Any]) -> None:
             media.append((whatsapp.download(m["url"]), m["type"]))
     except Exception as e:  # noqa: BLE001
         store().add_event("-", "error", {"where": "wa_media", "error": str(e)[:300]})
+    owner = settings().user_whatsapp
+    if settings().mode == "plumber" and owner and user != owner:
+        try:
+            process_customer(msg, media)
+        except Exception as e:  # noqa: BLE001
+            store().add_event("-", "error", {"where": "customer", "error": str(e)[:300]})
+        return
     process_message(user, msg["body"], media, source="whatsapp_voice" if any(t.startswith("audio") for _, t in media) else "text")
 
 

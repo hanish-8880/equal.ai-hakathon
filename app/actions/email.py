@@ -5,7 +5,7 @@ from email.message import EmailMessage
 from app.config import settings
 
 
-def send(to: str, subject: str, body: str, image: tuple[bytes, str] | None = None) -> str:
+def send(to: str, subject: str, body: str, image: tuple[bytes, str] | None = None, filename: str | None = None) -> str:
     """Returns the address actually used. EMAIL_DEMO_OVERRIDE (default on) delivers to the user's own inbox."""
     s = settings()
     real_to = to
@@ -19,7 +19,7 @@ def send(to: str, subject: str, body: str, image: tuple[bytes, str] | None = Non
     if image:
         data, mime = image
         maintype, subtype = mime.split("/", 1)
-        msg.add_attachment(data, maintype=maintype, subtype=subtype, filename=f"product.{subtype}")
+        msg.add_attachment(data, maintype=maintype, subtype=subtype, filename=filename or f"attachment.{subtype}")
     last: Exception | None = None
     for _ in range(2):
         try:

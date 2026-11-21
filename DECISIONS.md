@@ -336,3 +336,17 @@ record_offers (evidence + call id; newer call supersedes older offer), rank_offe
 unknown; conditional price only if condition met), dependency check (met → next action book; not met → reasons, visit pending, ask
 plumber: wait / take other model / another shop), offers + nearby-shops cards in the app. Bug caught by tests: ₹0 delivery treated as
 unknown (0 == False) → fixed.
+
+## [Sat 21:00] Price list, estimates, invoices, customer WhatsApp receptionist
+Chose: DEMO price list (clearly labelled on cards + PDF; plumber's own list in prefs overrides). Spoken rates always win.
+Invoice (§6.6): LLM lists lines only → code prices (spoken rate > price list), excludes returned parts, reconciles approvals
+(unapproved / different amount flagged) and spoken total, computes total → readback → "yes" → number + PDF (fpdf2) → idempotent
+sends (claim per number/key/channel/recipient): email to billing contact (demo override → own inbox), WhatsApp to customer if joined.
+Drafting acts without the understanding gate; SENDING always needs its own yes. Corrections re-draft from the previous draft.
+Estimate: photo reading (visible_problem, parts_visible) → estimate_extract (physical parts, labour hours, urgency, questions) →
+price list → card "Estimate · Demo rates" → yes → customer. Customer WhatsApp (sender ≠ plumber): known customer photo → estimate for
+their job + plumber card; text → forwarded; unknown → receptionist reply (+ "turn off the main valve" on emergency words) + lead alert.
+Today hero: "Visit now · … — Finish & invoice" during/just after a booked slot.
+VERIFIED LIVE (real brain): CLAUDE.md closing note → "2 angle valves ₹700, 1 hose ₹300, labour ₹400. Total ₹1,400. Not billed: 1 ×
+angle valve (returned)" in 7.5 s. Leak photo → problem read correctly → estimate; fixed double-counting (service line + labour).
+Tests: ₹1,400 case, spoken-total conflict, unapproved extra work, idempotent send, receptionist emergency reply (91 passing).

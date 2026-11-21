@@ -161,5 +161,6 @@ class Job(BaseModel):
     dependencies: list[Dependency] = Field(default_factory=list)
     extra_work: list[ApprovalRequest] = Field(default_factory=list)
     invoice: Invoice = Field(default_factory=Invoice)
+    estimate: Invoice = Field(default_factory=Invoice)  # pre-visit estimate (photo-based, price list rates)
     timeline: list[Event] = Field(default_factory=list)
     next_action: NextAction | None = None

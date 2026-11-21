@@ -10,7 +10,7 @@ what Chinku last asked or read back).
 Return UnderstandResult:
 - actions: one entry per thing the plumber asked, IN ORDER (one note can hold several). Each:
   intent: create_job | book_visit | source_part | set_dependency | request_approval | approval_response |
-          close_job_invoice | correct_detail | report_delay | cancel | status_query | small_talk | other
+          close_job_invoice | make_estimate | correct_detail | report_delay | cancel | status_query | small_talk | other
   job_ref: explicit job ("J24") wins; else match by site / client / part to ONE open job; else the only open job;
            "new" for create_job; "ambiguous" if two or more jobs could match — never guess.
   entities: the facts, using the normalised digits and model codes EXACTLY as given (never "fix" a model code).
@@ -22,5 +22,7 @@ Return UnderstandResult:
   Flat 210 geyser?"); else null.
 - readback: 1-2 lines of what Chinku understood, compact, e.g. "Job 24 · 2 angle valves · Srinivas, Ravi · limit ₹500".
 Write clarifying_question and readback in {language} (short, plain). small_talk / unclear → intent small_talk, no state change.
+close_job_invoice = the job is finished and he describes what he did ("make me invoice", "bill pampu").
+make_estimate = estimate / quotation for a job from a photo or a description BEFORE the work.
 "other" = not a plumber office task (v1 features: warranty mail, PDF report, dealer quotes for non-job items).
 Output only valid JSON.
