@@ -246,3 +246,13 @@ Meaning: on clear transcripts a plain gpt-5.5 prompt reads values as well as Chi
 Defensible claim: Chinku returns machine-usable status + evidence per field, which drives the confirm gates, deterministic ranking and
 "(not confirmed)" marks; the baseline returns prose. Would change if: harder REAL role-play calls (noisy, mixed language, ranges,
 conflicting answers) show a gap — that is the next eval step (needs volunteers).
+
+## [Sat 18:45] Conversation-state bugs from a live run (banner → "ask for price" asked for dealer numbers repeatedly)
+Observed: banner photo, then "ask for price" → router chose dealer_quotes (not banner_rate) → asked item/quantity/dealer number one by one,
+ignored the number on the photo, then asked the builder about "delivery and transport" for a flat. An old dealer task from 17:35 stayed
+"running" (no webhook) and old planned tasks kept capturing new messages.
+Chose: (1) router — attached image type decides the spec (banner+price → banner_rate, never dealer_quotes for property);
+(2) phone numbers read from a photo fill list inputs (dealers) deterministically; (3) pending tasks expire after 30 min of no activity;
+(4) CLAUDE.md §9 timeout implemented: dispatched call with no webhook for 10 min → poll Omni log once (same idempotency key) → else failed,
+step finishes and the user gets the report; (5) last Telugu hint removed from dealer_quotes.
+Verified live: banner photo + "ask for price" → banner_rate plan with the banner's number, no extra questions.

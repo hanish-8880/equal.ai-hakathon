@@ -452,3 +452,37 @@ def test_web_chat_key_and_delivery(monkeypatch):
     m.set_channel("whatsapp:+919989683607", "whatsapp")
     m.deliver("whatsapp:+919989683607", "x")
     assert wa == ["x"]  # WhatsApp user → mirrored to web AND sent on WhatsApp
+
+
+def test_stale_pending_task_expires_and_does_not_capture(monkeypatch):
+    routed = []
+    monkeypatch.setattr(runner.router, "route", lambda msg, *a, **k: routed.append(msg) or RouteResult(spec=None, clarifying_question="?"))
+    store().put("tasks", "old", {"task_id": "old", "user": "u", "spec": "dealer_quotes", "status": "planned", "inputs": {},
+                                 "steps": {}, "created_at": 0})
+    store().data["tasks"]["old"]["updated_at"] = 0  # 1970 → stale
+    runner.handle_message("u", "new request", None, lambda m: None)
+    assert "[PENDING TASK" not in routed[0] and store().get("tasks", "old")["status"] == "cancelled"
+
+
+def test_photo_numbers_fill_dealers(fake, monkeypatch):
+    monkeypatch.setattr(runner.router, "route", lambda *a, **k: RouteResult(spec="dealer_quotes", inputs={"item": "chairs", "quantity": 3}))
+    out = []
+    img = {"image_type": "other", "fields": {"contacts": [{"label": "Shop", "phone": "9876543210"}]}}
+    runner.handle_message("u", "ask chair price from this shop", img, out.append)
+    t = store().scan("tasks")[0]
+    assert t["inputs"]["dealers"][0]["phone"] == "+919876543210" and "Shall I call" in out[-1]
+
+
+def test_stuck_call_times_out_and_task_finishes(fake, monkeypatch):
+    monkeypatch.setattr(steps.decider, "compose_reply", lambda *a, **k: "report")
+    import app.voice.omni as om
+    monkeypatch.setattr(om, "fetch_log", lambda rid: None)
+    out = []
+    runner.handle_message("u", "cement", None, out.append)
+    runner.handle_message("u", "yes", None, out.append)
+    notes = []
+    monkeypatch.setattr(steps, "NOTIFY", lambda to, text, audio=None: notes.append(text))
+    later = max(c["created_at"] for c in store().scan("calls")) + 700
+    assert runner.sweep_stuck_calls(later) == 2
+    assert all(c["status"] == "failed" for c in store().scan("calls"))
+    assert store().scan("tasks")[0]["status"] == "done" and notes == ["report"]

@@ -32,9 +32,17 @@ def save_task(t: dict[str, Any], kind: str = "task_update") -> None:
     store().add_event(t["task_id"], kind, {"status": t["status"], "step_idx": t.get("step_idx")})
 
 
+PENDING_TTL_S = 1800  # a task waiting for the user's answer stops capturing new messages after 30 min
+
+
 def open_task(user: str) -> dict[str, Any] | None:
     ts = [t for t in store().scan("tasks", user=user) if t["status"] in ("planned", "awaiting_confirm")]
-    return max(ts, key=lambda t: t["created_at"]) if ts else None
+    fresh = [t for t in ts if now() - (t.get("updated_at") or t["created_at"]) < PENDING_TTL_S]
+    for t in ts:  # expire stale ones so they never hijack a new request
+        if t not in fresh:
+            t["status"] = "cancelled"
+            save_task(t, "expired_pending")
+    return max(fresh, key=lambda t: t["created_at"]) if fresh else None
 
 
 # ---------------- inbound ----------------
@@ -131,6 +139,11 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send, for
     for name, cfg in load_specs()[task["spec"]]["inputs"].items():
         if cfg.get("media") and image and cfg["media"] in (image.get("image_type"), "any"):
             task["inputs"][name] = image
+        if (cfg.get("source") == "image_or_text" and cfg.get("type") == "list" and image
+                and not task["inputs"].get(name)):
+            found = (image.get("fields") or {}).get("contacts") or image.get("contacts") or []
+            if found:
+                task["inputs"][name] = [{"name": c.get("label") or f"Number {i + 1}", "phone": c.get("phone")} for i, c in enumerate(found)]
         if cfg.get("source") == "media_contacts" and image:
             found = (image.get("fields") or {}).get("contacts") or image.get("contacts") or []
             if found:
@@ -326,4 +339,41 @@ def tick_schedules() -> int:
     n = 0
     for task_id, step_id in steps.due_schedules():
         n += fire_schedule(task_id, step_id)
+    return n
+
+
+CALL_TIMEOUT_S = 600  # CLAUDE.md §9: no webhook in 10 min → poll Omni call logs once → mark failed
+
+
+def sweep_stuck_calls(now_ts: float | None = None) -> int:
+    """Calls dispatched >10 min ago with no webhook: look them up in Omni's call log once; else mark failed.
+    Uses the same idempotency key as the webhook, so a late webhook is never processed twice."""
+    from app.voice import omni
+    now_ts = now_ts or now()
+    n = 0
+    for c in store().scan("calls", status="dispatched"):
+        if now_ts - c["created_at"] < CALL_TIMEOUT_S or c.get("swept"):
+            continue
+        c["swept"] = True
+        store().put("calls", c["call_id"], c)
+        task = store().get("tasks", c["task_id"])
+        owner = (task or {}).get("user")
+        notify = (lambda m: steps.NOTIFY(owner, m, None)) if owner else (lambda m: None)
+        row = None
+        try:
+            row = omni.fetch_log(c.get("omni_call_id") or "")
+        except Exception as e:  # noqa: BLE001
+            store().add_event(c["task_id"], "call_log_poll_error", {"call_id": c["call_id"], "error": str(e)[:200]})
+        if row and store().claim(f"omni:{c.get('omni_call_id')}"):
+            parsed = omni.parse_webhook(row)
+            parsed["chinku_call_id"] = c["call_id"]
+            store().add_event(c["task_id"], "call_recovered_from_log", {"call_id": c["call_id"]})
+            on_call_result(parsed, lambda user, m: steps.NOTIFY(user, m, None))
+        elif not row:
+            c["status"], c["outcome"], c["error"] = "failed", "no_result", "no call result after 10 min"
+            store().put("calls", c["call_id"], c)
+            store().add_event(c["task_id"], "call_timed_out", {"call_id": c["call_id"]})
+            if task:
+                finish_call_step(task["task_id"], c["step_id"], notify)
+        n += 1
     return n

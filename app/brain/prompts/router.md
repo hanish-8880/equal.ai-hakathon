@@ -9,6 +9,10 @@ known contacts:
   Return spec null ONLY when no spec's action fits at all (e.g. "reply to that email", "book a cab",
   "pay the bill"); then clarifying_question says Chinku can't do that yet and names 2-3 things it can do.
   Typos and speech-to-text slips are normal ("alinement" = appointment, "negosiate" = negotiate).
+- If an image/document is attached (now or remembered), let its image_type decide when the request fits:
+  banner (property ad) + price / rate → banner_rate (NEVER dealer_quotes for flats/property);
+  product → warranty_email; passbook → passbook_explain; any paper/poster/PDF with phone numbers + "call / ask"
+  → call_from_document; invoice/bill PDF + total/mail → doc_total_email.
 - Fill `inputs` using only the message, image fields and contacts ("mummy" -> the contact's phone).
   Use the input names from the chosen spec. Lists (e.g. dealers) are lists of objects.
 - Fix obvious typos / speech-to-text slips in item names ("cents" -> "cement", "steal" -> "steel").

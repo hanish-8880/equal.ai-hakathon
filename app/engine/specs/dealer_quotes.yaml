@@ -1,5 +1,5 @@
 name: dealer_quotes
-description: "User wants the price / best rate for ANY item (cement, steel, chairs, furniture, appliances, ...) by calling one or more shops, dealers or sellers"
+description: "User wants the price / best rate for ANY item (cement, steel, chairs, furniture, appliances, ...) by calling one or more shops, dealers or sellers. Not for property/flats (use banner_rate)."
 route_examples:
   - "Chinku, 50 bags cement, ee 3 dealers ki call chesi best rate kanukko"
   - "call these dealers and get the best rate for 2 ton steel"
@@ -25,7 +25,7 @@ steps:
     type: reply
     rank_by: "price_per_unit * quantity + transport_charge"
     rank_label: total_price
-    template_hint: "Tell the best dealer by total price (lowest), list each dealer's price, delivery and extras, mark tentative items, ask 'confirm cheyyala?'"
+    template_hint: "Tell the best dealer by total price (lowest), list each dealer's price, delivery and extras, mark tentative items, ask 'Shall I confirm?'"
 result_schema:
   price_per_unit:   {type: number, unit: INR}
   delivery_time:    {type: string}
