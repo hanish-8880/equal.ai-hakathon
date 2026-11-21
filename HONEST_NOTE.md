@@ -14,7 +14,7 @@
 | Phone number, voice, live call execution | REUSED — OmniDimension (one generic agent, per-call brief injected) |
 | WhatsApp transport | REUSED — Twilio sandbox |
 | Transcription, vision, TTS | REUSED — OpenAI APIs |
-| Storage | Local JSON-file store (same interface as planned DynamoDB) — DynamoDB NOT yet connected |
+| Storage | REUSED — AWS DynamoDB (us-west-2), accessed by the server through an IAM instance role. LIVE |
 | Scheduler | Schedules persisted in task state + 15 s tick loop (survives restart); /internal/fire endpoint ready for EventBridge — EventBridge NOT connected. Retries/wait reminders use in-process timers (lost on restart) |
-| Public URL | Cloudflare quick tunnel (temporary) |
+| Hosting | AWS EC2 (us-west-2) + Caddy HTTPS on sslip.io, stable URL https://16-145-161-18.sslip.io. LIVE |
 | Test calls / mock banner / mock passbook | SIMULATED inputs, played by consenting people (me so far) |

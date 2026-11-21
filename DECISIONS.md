@@ -154,3 +154,11 @@ Chose: DynamoDB on the server ONLY via an instance role (chinku-ec2, dynamodb:* 
   server keeps the local JSON file store. The server NEVER receives the temporary keys (stripped from the copied .env), so nothing breaks when they expire.
 Gave up: Mumbai region (not allowed); EventBridge for now.
 Would change if: role creation blocked AND judges want DynamoDB → short-lived demo only.
+
+## [Sat 15:30] DEPLOYED to AWS — https://16-145-161-18.sslip.io (VERIFIED)
+Observed: workshop identity = assumed-role/WSParticipantRole. iam:CreateRole + PassRole ALLOWED → instance role chinku-ec2 attached.
+EC2 i-0ac92410a0ded5cfa (t3.small, us-west-2), Elastic IP 16.145.161.18, Caddy auto-HTTPS on sslip.io → /health 200 over HTTPS.
+Server .env has 0 AWS keys; STORE_BACKEND=dynamo; DynamoStore write via role OK. Tables chinku_{tasks,calls,contacts,events,seen} (on-demand).
+Both Omni agents' webhooks → https://16-145-161-18.sslip.io/webhooks/omni. Local server + Cloudflare tunnel retired.
+Note: local JSON data (old tasks, contacts) was NOT migrated — contacts must be re-added on WhatsApp.
+Deploy after each commit: git push && python -m scripts.aws_deploy push
