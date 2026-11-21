@@ -590,6 +590,7 @@ def shop_list(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[st
             skipped.append(ing.get("name") or q)
             continue
         try:
+            time.sleep(0.4)  # be gentle with Swiggy: many searches in a row
             found, used = _search_with_fallback(swiggy, q)
             best, qty, note = _pick(found, used, ing.get("grams"))
             if best and best.get("fallback"):

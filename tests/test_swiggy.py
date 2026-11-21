@@ -123,3 +123,21 @@ def test_food_search_tries_alternatives_filters_and_ranks_in_code(monkeypatch):
     whys = {e["item"].split(" · ")[0]: e["why"] for e in out["excluded"]}
     assert whys["Veg platter"].startswith("₹399") and whys["Chicken thali"] == "not veg" and "55 min" in whys["Veg biryani"]
     assert calls[:2] == ["veg meals", "veg thali"] and len(calls) <= 4                 # tried alternatives, at most 4 searches
+
+
+
+ORIG_POST = swiggy._post  # captured at import, before the conftest guard replaces it
+
+
+def test_429_is_retried_after_waiting(monkeypatch):
+    import httpx
+    posts, sleeps = [], []
+
+    class R:
+        def __init__(self, code):
+            self.status_code, self.headers = code, {"retry-after": "2"}
+            self.text = '{"jsonrpc":"2.0","id":5,"result":{"ok":true}}'
+    monkeypatch.setattr(swiggy.time, "sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: posts.append(1) or R(429 if len(posts) < 3 else 200))
+    out, _ = ORIG_POST({"jsonrpc": "2.0", "id": 5, "method": "x"}, "tok", None)
+    assert out["result"]["ok"] is True and len(posts) == 3 and len(sleeps) == 2 and all(s >= 1.5 for s in sleeps)

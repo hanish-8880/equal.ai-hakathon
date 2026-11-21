@@ -58,7 +58,15 @@ def _post(msg: dict[str, Any], tok: str, sid: str | None, server: str = "im") ->
     h = {"Authorization": f"Bearer {tok}", "Accept": "application/json, text/event-stream", "Content-Type": "application/json"}
     if sid:
         h["Mcp-Session-Id"] = sid
-    r = httpx.post(f"{BASE}/{server}", json=msg, headers=h, timeout=60)
+    for attempt in range(4):  # Swiggy's gateway returns 429 + Retry-After when we go too fast → wait and retry (their guidance)
+        r = httpx.post(f"{BASE}/{server}", json=msg, headers=h, timeout=60)
+        if r.status_code != 429 or attempt == 3:
+            break
+        try:
+            wait = float(r.headers.get("retry-after") or 0)
+        except ValueError:
+            wait = 0
+        time.sleep(min(8.0, max(1.5 * (attempt + 1), wait)))
     sid = r.headers.get("mcp-session-id") or sid
     if r.status_code == 401:
         raise SwiggyError("Swiggy login expired — please log in again.")
