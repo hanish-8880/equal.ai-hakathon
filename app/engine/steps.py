@@ -45,6 +45,11 @@ def inr(v: float) -> str:
     return ("-" if neg else "") + s
 
 
+def _daemon(t: "threading.Timer") -> None:
+    t.daemon = True  # never keep the process alive just for a pending reminder/retry
+    t.start()
+
+
 def call_targets(spec: dict[str, Any], task: dict[str, Any], step: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     step = step or next(s for s in spec["steps"] if s["type"] == "call")
     items = task["inputs"].get(step["for_each"], []) if step.get("for_each") else [None]
@@ -168,7 +173,7 @@ def maybe_retry(call: dict[str, Any], step: dict[str, Any], task: dict[str, Any]
     call["superseded"] = True
     store().put("calls", call["call_id"], call)
     target = {"to": call["to_number"], "callee": call["callee"]}
-    threading.Timer(RETRY_DELAY_S, dispatch_one, args=(task, step, target, call["attempt"] + 1)).start()
+    _daemon(threading.Timer(RETRY_DELAY_S, dispatch_one, args=(task, step, target, call["attempt"] + 1)))
     store().add_event(task["task_id"], "call_retry_scheduled", {"call_id": call["call_id"], "in_s": RETRY_DELAY_S})
     return True
 
@@ -244,8 +249,8 @@ def run_wait_for(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any
     timeout_s = int(step.get("timeout_min", 120)) * 60
     frm = render(step["from"], {"inputs": task["inputs"]})
     state = {"status": "waiting", "from": frm, "kind": step.get("kind", "image"), "deadline": time.time() + timeout_s}
-    threading.Timer(timeout_s / 2, _wait_remind, args=(task["task_id"], step)).start()
-    threading.Timer(timeout_s, _wait_timeout, args=(task["task_id"], step)).start()
+    _daemon(threading.Timer(timeout_s / 2, _wait_remind, args=(task["task_id"], step)))
+    _daemon(threading.Timer(timeout_s, _wait_timeout, args=(task["task_id"], step)))
     store().add_event(task["task_id"], "waiting_for", {"from_last4": frm[-4:], "kind": state["kind"]})
     return state
 
