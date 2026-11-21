@@ -953,7 +953,7 @@ def food_cart_add(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dic
             mid = str(x.get("menu_item_id") or x.get("menuItemId") or x.get("id") or "")
             if mid and mid not in merged:
                 merged[mid] = {"menu_item_id": mid, "quantity": int(x.get("quantity") or 1)}
-        sw.call("update_food_cart", {"restaurantId": rid, "cartItems": list(merged.values())}, "food")
+        sw.call("update_food_cart", {"restaurantId": rid, "cartItems": list(merged.values()), "addressId": aid}, "food")
         cart = sw.call("get_food_cart", {"addressId": aid, "restaurantName": inputs.get("restaurant") or ""}, "food")
     except sw.SwiggyError as e:
         raise ToolError(str(e)) from e
