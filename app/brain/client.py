@@ -31,7 +31,7 @@ def _log(task_id: str | None, kind: str, payload: dict[str, Any]) -> None:
 
 
 def json_call(model: str, system: str, user: str | list[dict[str, Any]], schema: type[T],
-              task_id: str | None = None, tag: str = "llm") -> T:
+              task_id: str | None = None, tag: str = "llm", effort: str | None = None) -> T:
     schema_hint = json.dumps(schema.model_json_schema())
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": f"{system}\n\nReturn ONLY a JSON object matching this JSON schema:\n{schema_hint}"},
@@ -39,7 +39,8 @@ def json_call(model: str, system: str, user: str | list[dict[str, Any]], schema:
     ]
     last_err = ""
     for attempt in range(2):
-        r = oai().chat.completions.create(model=model, messages=messages, response_format={"type": "json_object"})
+        extra = {"reasoning_effort": effort} if effort and model.startswith(("gpt-5", "o")) else {}
+        r = oai().chat.completions.create(model=model, messages=messages, response_format={"type": "json_object"}, **extra)
         raw = r.choices[0].message.content or ""
         try:
             out = schema.model_validate_json(raw)

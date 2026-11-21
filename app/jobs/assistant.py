@@ -135,47 +135,126 @@ def _summary_line(job: Job) -> str:
     return f"{job.job_id} · {job.issue.value or '?'} · {job.flat.value or job.site_address.value or '?'} · next: {na}"
 
 
+CORRECTABLE = {"issue": "issue", "flat": "flat", "site_address": "site_address", "address": "site_address", "access_notes": "access_notes"}
+
+
+def apply_correction(job: Job, ent: dict[str, Any], user: str) -> str:
+    """Voice/text correction updates ONLY that field (CLAUDE.md §3A step 5)."""
+    field, new = str(ent.get("field", "")).lower().replace(" ", "_"), ent.get("new_value")
+    if new in (None, ""):
+        return "What should it be changed to?"
+    if field in CORRECTABLE:
+        setattr(job, CORRECTABLE[field], Fact(value=new, status="confirmed", evidence_quote=str(new), source="correction"))
+    elif field in ("work_order", "wo"):
+        job.roles.work_order = str(new)
+    elif "phone" in field or "number" in field:
+        ph = indian_mobile(new)
+        if not ph:
+            return f"{new} doesn't look like a mobile number — please send it again."
+        job.roles.site_contact = job.roles.site_contact or Person()
+        job.roles.site_contact.phone = ph
+        new = f"…{ph[-4:]}"
+    elif "name" in field or "customer" in field:
+        job.roles.site_contact = job.roles.site_contact or Person()
+        job.roles.site_contact.name = str(new)
+    elif "bill" in field:
+        job.roles.billing_to = job.roles.billing_to or Person()
+        if "@" in str(new):
+            job.roles.billing_to.email = str(new)
+        else:
+            job.roles.billing_to.name = str(new)
+    else:
+        return f"I can't change '{field}' yet. Which detail should I change?"
+    jobs.log(job, "detail_corrected", f"{field} → {new}", actor="plumber")
+    jobs.save(job)
+    return f"Updated {job.job_id}: {field.replace('_', ' ')} → {new}."
+
+
+def _log_understanding(job: Job, heard: Any, readback: str) -> None:
+    if heard is not None and getattr(heard, "source", "text") != "text":
+        jobs.log(job, "heard", f"Heard ({heard.source}): {heard.text[:200]}", actor="plumber", channel=heard.source, ref=heard.audio_ref)
+    if readback:
+        jobs.log(job, "understood", readback)
+
+
+def _execute(user: str, action: Any, text: str, image: dict[str, Any] | None, send: Send, msg_ref: str, heard: Any,
+             readback: str, force_confirm: bool) -> str | None:
+    """Run one understood action. Returns a reply line (or None if a card/other message was already sent)."""
+    if action.intent == "create_job":
+        job, ask = create_job(user, text, msg_ref)
+        _log_understanding(job, heard, readback)
+        jobs.save(job)
+        CARD(user, f"{readback}\n\nCreated {job.job_id}. {ask}" if readback else f"Created {job.job_id}. {ask}", jobs.card(job))
+        return None
+    if action.intent == "small_talk":
+        return "I'm Chinku, your office assistant. Tell me a new job, ask me to book a visit, find a part, get an approval or make an invoice."
+    if action.intent == "other":
+        runner.handle_message(user, text, image, send, force_confirm=force_confirm)
+        return None
+    job, err = resolve_job(user, action)
+    if err:
+        return err
+    _log_understanding(job, heard, readback)
+    jobs.save(job)
+    if action.intent == "status_query":
+        CARD(user, _summary_line(job), jobs.card(job))
+        return None
+    if action.intent == "correct_detail":
+        msg = apply_correction(job, action.entities, user)
+        CARD(user, msg, jobs.card(job))
+        return None
+    return f"{job.job_id}: {NEXT_INTENTS.get(action.intent, action.intent)} is being built right now — not live yet."
+
+
 def handle(user: str, text: str, image: dict[str, Any] | None, send: Send, force_confirm: bool = False,
-           msg_ref: str | None = None) -> None:
+           msg_ref: str | None = None, heard: Any = None) -> None:
+    """Every channel lands here (CLAUDE.md §3A): understand → gate → act; the reply starts with the readback."""
+    from app.brain import understand as U
     msg_ref = msg_ref or f"msg:{int(time.time())}"
-    # 1) an engine task (call/email) is waiting for yes/no/correction → the v1 engine owns that gate
+    text = text or ""
+    # 1) an engine task (call/email) is waiting for yes/no → the v1 engine owns that gate
     pending = runner.open_task(user)
-    if pending and pending["status"] == "awaiting_confirm" and not image and (runner.YES.match(text or "") or runner.NO.match(text or "")):
+    if pending and pending["status"] == "awaiting_confirm" and not image and (runner.YES.match(text) or runner.NO.match(text)):
         runner.handle_message(user, text, image, send, force_confirm=force_confirm)
         return
-    # 2) answer to a question Chinku asked about a job (e.g. which number)
-    ans = _answer_pending_question(user, text or "")
+    # 2) a consequential action read back earlier is waiting for yes / no
+    pa = store().get("contacts", f"pendingact:{user}")
+    if pa and pa.get("actions") and time.time() - pa.get("ts", 0) < 1800 and not image:
+        if runner.YES.match(text):
+            store().put("contacts", f"pendingact:{user}", {"owner": user, "actions": []})
+            from app.brain.schemas import Action
+            replies = [r for a in pa["actions"] if (r := _execute(user, Action.model_validate(a), pa["text"], None, send,
+                                                                  msg_ref, None, pa["readback"], force_confirm))]
+            if replies:
+                send("\n".join(replies))
+            return
+        if runner.NO.match(text):
+            store().put("contacts", f"pendingact:{user}", {"owner": user, "actions": []})
+            send("Okay, I won't do that.")
+            return
+    # 3) answer to a question Chinku asked about a job (e.g. which number)
+    ans = _answer_pending_question(user, text)
     if ans:
         job, reply = ans
         CARD(user, reply, jobs.card(job))
         return
-    r = route(user, text or "", image)
-    store().add_event("-", "plumber_routed", r.model_dump())
-    if r.intent == "create_job":
-        job, ask = create_job(user, text or "", msg_ref)
-        CARD(user, f"Created {job.job_id}: {job.issue.value or 'new job'}. {ask}", jobs.card(job))
+    # 4) normalise + understand + gate
+    norm, res = U.understand(user, text, image)
+    g = U.gate(res)
+    store().add_event("-", "gate", {"decision": g, "readback": res.readback})
+    if g == "ask":
+        send(res.clarifying_question or (f"{res.readback}\nDid I get that right?" if res.readback else "Sorry, could you say that again?"))
         return
-    if r.intent == "status_query":
-        if r.job_ref:
-            job, err = resolve_job(user, r)
-            if err:
-                send(err)
-                return
-            CARD(user, _summary_line(job), jobs.card(job))
-            return
-        open_ = jobs.open_jobs(user)
-        send("Open jobs:\n" + "\n".join(_summary_line(j) for j in open_) if open_ else "No open jobs.")
+    if g == "confirm":
+        store().put("contacts", f"pendingact:{user}", {"owner": user, "actions": [a.model_dump() for a in res.actions],
+                                                         "readback": res.readback, "text": text, "ts": time.time()})
+        send(f"{res.readback} — shall I go ahead? (yes / no)")
         return
-    if r.intent == "small_talk":
-        send(r.clarifying_question or "I'm Chinku, your office assistant. Tell me a new job, ask me to book a visit, find a part, "
-                                       "get an approval or make an invoice.")
-        return
-    if r.intent in NEXT_INTENTS:
-        job, err = resolve_job(user, r)
-        if err:
-            send(err)
-            return
-        send(f"{job.job_id}: {NEXT_INTENTS[r.intent]} is being built right now — not live yet.")
-        return
-    # 3) not a plumber-office task → v1 features (dealer quotes, warranty, PDF report, ...)
-    runner.handle_message(user, text, image, send, force_confirm=force_confirm)
+    replies = []
+    for a in res.actions:
+        r = _execute(user, a, text, image, send, msg_ref, heard, res.readback, force_confirm)
+        if r:
+            replies.append(r)
+    if replies:
+        lead = res.readback if res.readback and len(res.actions) > 0 and res.actions[0].intent not in ("small_talk",) else ""
+        send("\n".join(([lead] if lead else []) + replies))

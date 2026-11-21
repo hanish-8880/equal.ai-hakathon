@@ -63,10 +63,10 @@ steps.SEND_FILE = send_file
 assistant.CARD = lambda to, text, card: deliver(to, text, None, card)
 
 
-def entry(user: str, text: str, image: dict[str, Any] | None, force_confirm: bool = False) -> None:
-    """One router for every channel (CLAUDE.md v2 §3)."""
+def entry(user: str, text: str, image: dict[str, Any] | None, force_confirm: bool = False, heard: Any = None) -> None:
+    """One router for every channel (CLAUDE.md v2 §3, §3A)."""
     if settings().mode == "plumber":
-        assistant.handle(user, text, image, reply_to(user), force_confirm=force_confirm)
+        assistant.handle(user, text, image, reply_to(user), force_confirm=force_confirm, heard=heard)
     else:
         runner.handle_message(user, text, image, reply_to(user), force_confirm=force_confirm)
 
@@ -135,31 +135,53 @@ def process_whatsapp(msg: dict[str, Any]) -> None:
             media.append((whatsapp.download(m["url"]), m["type"]))
     except Exception as e:  # noqa: BLE001
         store().add_event("-", "error", {"where": "wa_media", "error": str(e)[:300]})
-    process_message(user, msg["body"], media)
+    process_message(user, msg["body"], media, source="whatsapp_voice" if any(t.startswith("audio") for _, t in media) else "text")
 
 
-def process_message(user: str, text: str, media: list[tuple[bytes, str]]) -> None:
-    """Shared by WhatsApp and the web chat: perceive media, then run the engine."""
-    image = None
+def _save_audio(data: bytes, mtype: str) -> str:
+    """Keep the original audio (evidence + re-transcription, CLAUDE.md §3A step 1)."""
+    import uuid
+    whatsapp.MEDIA_DIR.mkdir(exist_ok=True)
+    ext = {"ogg": "ogg", "webm": "webm", "mpeg": "mp3", "mp4": "m4a", "x-m4a": "m4a", "wav": "wav"}.get(mtype.split("/")[-1].split(";")[0], "webm")
+    name = f"voice_{uuid.uuid4().hex[:10]}.{ext}"
+    (whatsapp.MEDIA_DIR / name).write_bytes(data)
+    return name
+
+
+def process_message(user: str, text: str, media: list[tuple[bytes, str]], source: str = "text") -> None:
+    """Shared by WhatsApp, the Chinku App and /api/voice: capture → transcribe → (normalise → understand → act)."""
+    from app.brain import understand as U
+    from app.brain.normalise import normalise
+    image, heard = None, None
     try:
         for data, mtype in media:
-            m = {"type": mtype}
-            if m["type"].startswith("audio"):
-                tr = perceive.transcribe(data, "voice." + (m["type"].split("/")[-1].split(";")[0] or "ogg"))
-                text = f"{text}\n{tr.text}".strip()
-                store().add_event("-", "transcribed", {"text": tr.text})
-                chat_log(user, "chat_heard", tr.text)  # show the plumber what Chinku heard
-            elif m["type"].startswith("image"):
-                image = perceive.read_image(data, m["type"]).model_dump()
+            if mtype.startswith("audio") or mtype.startswith("video/webm"):
+                name = _save_audio(data, mtype)
+                audio_ref = f"{settings().public_base_url}/media/{name}"
+                if settings().mode == "plumber":
+                    heard = U.transcribe(data, name, user, source if source != "text" else "voice", audio_ref)
+                    if heard is None:
+                        deliver(user, "I didn't hear anything, try again.")
+                        return
+                    said = heard.text
+                else:
+                    said = perceive.transcribe(data, name).text
+                text = f"{text}\n{said}".strip()
+                store().add_event("-", "transcribed", {"text": said, "audio_ref": audio_ref})
+                spans = [sp.model_dump() for sp in normalise(said).spans if sp.kind in ("number", "money", "model_code", "phone")]
+                store().add_event(f"chat:{user}", "chat_heard", {"text": said, "media_url": audio_ref, "card": None, "spans": spans,
+                                                                "low": (heard.low_confidence_spans if heard else [])})
+            elif mtype.startswith("image"):
+                image = perceive.read_image(data, mtype).model_dump()
                 store().add_event("-", "image_read", image)
-            elif m["type"] == "application/pdf" or m["type"].endswith("/pdf"):
+            elif mtype == "application/pdf" or mtype.endswith("/pdf"):
                 image = perceive.read_document(data, "document.pdf").model_dump()
                 store().add_event("-", "document_read", {k: image.get(k) for k in ("doc_type", "title", "stated_total")}
                                   | {"items": len(image.get("line_items", []))})
-        entry(user, text, image)
+        entry(user, text, image, heard=heard)
     except Exception as e:  # noqa: BLE001
         store().add_event("-", "error", {"where": "message", "error": str(e)[:500]})
-        deliver(user, "Sorry, something went wrong. Please try again.")
+        deliver(user, "Sorry, something went wrong — please try again.")
 
 
 @app.post("/webhooks/whatsapp")
@@ -189,7 +211,8 @@ def process_inbound_call(parsed: dict[str, Any]) -> None:
     if not said.strip():
         return
     text = f"[Hanish phone call lo cheppadu]\n{said}\n\n[Call summary: {parsed.get('summary') or '-'}]"
-    entry(owner, text, None, force_confirm=True)
+    from app.brain.schemas import Heard
+    entry(owner, text, None, force_confirm=True, heard=Heard(text=said, source="phone", model="omni-live-asr"))
 
 
 def process_omni(parsed: dict[str, Any]) -> None:
@@ -267,6 +290,24 @@ async def chat_send(request: Request, bg: BackgroundTasks) -> JSONResponse:
     set_channel(owner, "web")
     chat_log(owner, "chat_in", text or f"(file: {getattr(f, 'filename', '')})")
     bg.add_task(process_message, owner, text, media)
+    return JSONResponse({"ok": True})
+
+
+@app.post("/api/voice")
+async def voice_send(request: Request, bg: BackgroundTasks) -> JSONResponse:
+    """Chinku App hold-to-talk (webm/opus, max 90 s)."""
+    form = await request.form()
+    if not _chat_ok(form.get("key")):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    f = form.get("file")
+    if f is None:
+        return JSONResponse({"error": "no audio"}, status_code=400)
+    data = await f.read()
+    if len(data) > 3_000_000:  # ~90 s of opus
+        return JSONResponse({"error": "too long — max 90 seconds"}, status_code=413)
+    owner = settings().user_whatsapp
+    set_channel(owner, "web")
+    bg.add_task(process_message, owner, "", [(data, f.content_type or "audio/webm")], "app_voice")
     return JSONResponse({"ok": True})
 
 

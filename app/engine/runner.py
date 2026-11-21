@@ -15,8 +15,8 @@ from app.engine.specs_loader import catalog, load_specs
 from app.engine.validate import VALIDATORS, mask_phone
 from app.store.dynamo import store
 
-YES = re.compile(r"^\s*(yes|y|ok|okay|avunu|haa|ha|sare|cheyyi|confirm|go|done|👍)\b", re.I)
-NO = re.compile(r"^\s*(no|vaddu|cancel|stop|ledu)\b", re.I)
+YES = re.compile(r"^\s*(yes|y|ok|okay|avunu|haa|ha|sare|cheyyi|chey|confirm|go ahead|go|done|pampu|send|👍|అవును|సరే|హా)(\b|\s|$)", re.I)
+NO = re.compile(r"^\s*(no|vaddu|cancel|stop|ledu|వద్దు|ఆపు)(\b|\s|$)", re.I)
 OPEN = ("planned", "awaiting_confirm", "running", "waiting_input")
 EMAIL_IN_TEXT = re.compile(r"[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}")
 CONTACT_CMD = re.compile(r"^\s*(?:save\s+)?contact\s+([A-Za-zఀ-౿]+)\s+(.+?)\s*$", re.I)

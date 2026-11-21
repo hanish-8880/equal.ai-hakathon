@@ -1,6 +1,7 @@
 import pytest
 
-from app.brain.schemas import FactOut, JobDraft, PersonOut, PlumberRoute, WindowOut
+from app.brain import understand as U
+from app.brain.schemas import Action, FactOut, JobDraft, PersonOut, PlumberRoute, UnderstandResult, WindowOut
 from app.jobs import assistant
 from app.jobs import store as jobs
 from app.store.dynamo import MemoryStore, set_store, store
@@ -27,11 +28,10 @@ def draft(phones, windows=True):
 
 @pytest.fixture
 def brain(monkeypatch):
-    state = {"route": PlumberRoute(intent="create_job", job_ref="new"), "draft": draft(["98480 12321"])}
-
-    def fake_json_call(model, system, user, schema, task_id=None, tag=""):
-        return state["route"] if schema is PlumberRoute else state["draft"]
-    monkeypatch.setattr(assistant, "json_call", fake_json_call)
+    state = {"route": UnderstandResult(actions=[Action(intent="create_job", job_ref="new", confidence=0.95)], readback="New job"),
+             "draft": draft(["98480 12321"])}
+    monkeypatch.setattr(assistant, "json_call", lambda model, system, user, schema, task_id=None, tag="", **kw: state["draft"])
+    monkeypatch.setattr(U, "json_call", lambda model, system, user, schema, task_id=None, tag="", **kw: state["route"])
     out, cards = [], []
     monkeypatch.setattr(assistant, "CARD", lambda to, text, card: cards.append((text, card)))
     return state, out, cards
@@ -86,7 +86,7 @@ def test_resolve_job_never_guesses_with_several_open(brain):
 
 def test_other_intent_falls_through_to_v1_engine(brain, monkeypatch):
     state, out, cards = brain
-    state["route"] = PlumberRoute(intent="other")
+    state["route"] = UnderstandResult(actions=[Action(intent="other", confidence=0.9)], readback="")
     seen = []
     monkeypatch.setattr(assistant.runner, "handle_message", lambda user, text, image, send, **kw: seen.append(text))
     assistant.handle(ME, "mixer warranty mail pettu", None, out.append)

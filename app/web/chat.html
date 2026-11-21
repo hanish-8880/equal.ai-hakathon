@@ -19,7 +19,11 @@
   .msg { max-width:min(86%,560px); padding:7px 10px 18px; border-radius:8px; position:relative; white-space:pre-wrap; word-wrap:break-word;
          box-shadow:0 1px .5px rgba(0,0,0,.13); }
   .in { align-self:flex-end; background:var(--me); } .out { align-self:flex-start; background:var(--bot); }
-  .heard { align-self:flex-end; background:transparent; box-shadow:none; color:var(--mut); font-size:13px; font-style:italic; padding:0 4px 4px; }
+  .heard { align-self:flex-end; background:var(--panel); box-shadow:none; color:var(--ink); font-size:13px; padding:6px 10px 16px; border:1px dashed var(--line); }
+  .heard .lbl { color:var(--mut); font-size:11px; display:block; margin-bottom:2px; }
+  .hl { background:rgba(255,196,0,.28); border-bottom:2px solid var(--warn); border-radius:3px; padding:0 2px; cursor:pointer; }
+  .hl.low { background:rgba(255,80,80,.22); border-bottom-color:var(--bad); }
+  .play { font-size:11px; color:var(--acc); text-decoration:none; margin-left:6px; }
   .t { position:absolute; right:8px; bottom:3px; font-size:11px; color:var(--mut); }
   .msg img { max-width:100%; border-radius:6px; display:block; margin-top:6px; }
   .msg audio { width:100%; margin-top:6px; }
@@ -85,7 +89,20 @@ function media(url) {
 }
 function add(m) {
   const d = document.createElement("div");
-  if (m.dir === "heard") { d.className = "msg heard"; d.textContent = "🎙️ heard: " + m.text; log.appendChild(d); return; }
+  if (m.dir === "heard") {
+    d.className = "msg heard";
+    let html = esc(m.text);
+    const marks = [...(m.spans || []).map(s => [String(s.raw), "", s.kind]), ...(m.low || []).map(x => [String(x), "low", "check"])]
+      .filter(([r]) => r && r.trim().length > 0).sort((a, b) => b[0].length - a[0].length);
+    const done = new Set();
+    for (const [raw, cls, kind] of marks) {
+      const e = esc(raw); if (done.has(e) || !html.includes(e)) continue; done.add(e);
+      html = html.split(e).join(`<span class="hl ${cls}" data-raw="${esc(raw)}" title="${esc(kind)} — tap to correct">${e}</span>`);
+    }
+    d.innerHTML = `<span class="lbl">🎙️ Chinku heard${m.media_url ? ` <a class="play" href="${esc(m.media_url)}" target="_blank" rel="noopener">▶ play</a>` : ""}</span>${html}`;
+    d.querySelectorAll(".hl").forEach(h => h.onclick = () => { $("text").value = `kaadu, ${h.dataset.raw} → `; $("text").focus(); });
+    log.appendChild(d); return;
+  }
   d.className = "msg " + (m.dir === "in" ? "in" : "out");
   const t = new Date(m.ts * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
   d.innerHTML = esc(m.text) + media(m.media_url) + (m.card && m.card.type === "job" ? jobCard(m.card) : "") + `<span class="t">${t}</span>`;
@@ -126,7 +143,8 @@ async function send(text, file) {
   const fd = new FormData(); fd.append("key", key); fd.append("text", text || "");
   if (file) fd.append("file", file, file.name || "voice.webm");
   $("quick").innerHTML = "";
-  await fetch("/api/chat", {method: "POST", body: fd});
+  const isVoice = file && /^voice/.test(file.name || "");
+  await fetch(isVoice ? "/api/voice" : "/api/chat", {method: "POST", body: fd});
   poll(); log.scrollTop = log.scrollHeight;
 }
 fileIn.onchange = () => { $("fname").textContent = fileIn.files[0] ? fileIn.files[0].name : ""; };
@@ -145,6 +163,7 @@ async function startRec(e) {
       if (blob.size > 1500) send("", new File([blob], "voice.webm", {type: blob.type}));
       $("mic").classList.remove("rec"); $("recbar").style.display = "none"; };
     rec.start(); $("mic").classList.add("rec"); $("recbar").style.display = "block";
+    setTimeout(() => { if (rec && rec.state === "recording") rec.stop(); }, 90000);  // max 90 s
   } catch (err) { alert("Microphone not available: " + err.message); }
 }
 function stopRec(e) { e.preventDefault(); if (rec && rec.state === "recording") rec.stop(); }

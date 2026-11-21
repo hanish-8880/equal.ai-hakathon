@@ -273,3 +273,18 @@ customer numbers → asks which; missing windows → asks only for windows. Job 
 Chinku App (/chat?key=): job chip, job cards, hold-to-talk mic (MediaRecorder → upload → gpt-4o-transcribe), "🎙️ heard:" transcript,
 quick replies, text-labelled status chips. Language conflict: new CLAUDE.md §8 says Telugu-English replies; Hanish asked for English
 earlier today → kept DEFAULT_LANGUAGE=English (router still understands Telugu-English). Flagged to Hanish.
+
+## [Sat 20:45] §3A listening pipeline — transcription model, normaliser, understand + gate (VERIFIED pieces)
+Transcription (16 s synthetic Telugu-English plumber note, gpt-4o-mini-tts → models, vocabulary prompt on/off):
+gpt-4o-transcribe + vocabulary prompt was best: "రెండు యాంగిల్ వాల్వ్స్ … ALD-0517 … మూడు వందల యాబై"; gpt-transcribe spells numbers
+("ట్వెంటీ ఫోర్", "zero five one seven"); gpt-4o-mini-transcribe garbled. All mis-heard "4 to 6" in the synthetic clip → numbers always "check".
+Chose OPENAI_MODEL_TRANSCRIBE=gpt-4o-transcribe with per-request vocabulary (domain + plumber's names/shops/jobs/WOs/models) and logprobs
+(low-probability tokens → whole-word "check" highlights). First synthetic clip was broken TTS (0.36 s) — detected and redone.
+Normaliser (code, 24 unit tests): Telugu script + romanized + English + Hindi number words, "two fifty"=250, lakh/crore, ₹/units,
+self-corrections (last value wins), job refs, phones, model codes protected (ALD-0517 never becomes 517); ambiguous short words
+("do", "char", "teen") are numbers only next to a number word/unit.
+Understand: structured multi-action UnderstandResult (intent, job_ref, entities, missing, confidence) + readback + one clarifying question.
+Gate in code: confidence < 0.8 / missing / ambiguous job → ask (no state change); consequential intents → readback + wait for yes
+(haa / avunu / yes / pampu / అవును); else act, reply starts with the readback. Corrections update only that field.
+Latency: understand on gpt-5.5 default 14.6 s vs reasoning_effort=low 3.7 s with the same actions/readback → low for understand only.
+End-to-end on the synthetic note: 2 actions in order (source_part 0.92, conditional ask 0.62) → gate = ask → readback + "Did I get that right?".

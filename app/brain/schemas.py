@@ -158,6 +158,31 @@ class PersonOut(BaseModel):
     evidence_quote: str | None = None
 
 
+# ---------- listening pipeline (CLAUDE.md §3A) ----------
+class Heard(BaseModel):
+    text: str
+    languages: list[str] = Field(default_factory=list)
+    low_confidence_spans: list[str] = Field(default_factory=list)
+    duration_s: float | None = None
+    model: str | None = None
+    audio_ref: str | None = None
+    source: str = "text"  # app_voice | whatsapp_voice | phone | text
+
+
+class Action(BaseModel):
+    intent: Intent
+    job_ref: str | None = None  # "J24" | "new" | "ambiguous" | null
+    entities: dict[str, Any] = Field(default_factory=dict)
+    missing: list[str] = Field(default_factory=list)
+    confidence: float = 1.0
+
+
+class UnderstandResult(BaseModel):
+    actions: list[Action] = Field(default_factory=list)
+    clarifying_question: str | None = None
+    readback: str = ""
+
+
 class JobDraft(BaseModel):
     issue: FactOut
     site_address: FactOut
