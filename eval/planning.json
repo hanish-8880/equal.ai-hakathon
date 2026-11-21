@@ -1,0 +1,349 @@
+{
+ "run_at": "2026-11-22T00:50+05:30",
+ "n": 22,
+ "rows": [
+  {
+   "request": "Transcribe this, email me a copy, and remind me tomorrow at 9 to review it.",
+   "lang": "en",
+   "expected": [
+    "transcribe_image",
+    "draft_email",
+    "send_email",
+    "remind"
+   ],
+   "got": [
+    "transcribe_image",
+    "draft_email",
+    "send_email",
+    "remind"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Email the important points of this page to Suresh",
+   "lang": "en",
+   "expected": [
+    "draft_email",
+    "send_email"
+   ],
+   "got": [
+    "analyze",
+    "draft_email",
+    "send_email"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "ee photo lo unna number ki call chesi 2BHK price adugu",
+   "lang": "te-en",
+   "expected": [
+    "analyze",
+    "call"
+   ],
+   "got": [
+    "analyze",
+    "call"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Remind me every day at 8 PM to take my BP tablet",
+   "lang": "en",
+   "expected": [
+    "remind"
+   ],
+   "got": [
+    "remind"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Remember Kiran's email is kiran@example.com",
+   "lang": "en",
+   "expected": [
+    "remember"
+   ],
+   "got": [
+    "remember"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Book a dermatologist for Mummy tomorrow evening near Kukatpally and tell her",
+   "lang": "en",
+   "expected": [
+    "search",
+    "map"
+   ],
+   "got": [
+    "search",
+    "map"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "My Bajaj mixer grinder is leaking. Raise a complaint with the company.",
+   "lang": "en",
+   "expected": [
+    "find_support",
+    "draft_email",
+    "send_email"
+   ],
+   "got": [
+    "find_support",
+    "draft_email",
+    "send_email"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Is this a scam? 'Your KYC is expiring today, update now at bit.ly/kyc-upd or your account will be blocked'",
+   "lang": "en",
+   "expected": [
+    "scam_check"
+   ],
+   "got": [
+    "scam_check"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Cheapest flight from Hyderabad to Bengaluru next Friday for 1 adult",
+   "lang": "en",
+   "expected": [
+    "compare"
+   ],
+   "got": [
+    "compare"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Fastest cab from Madhapur to home",
+   "lang": "en",
+   "expected": [
+    "compare"
+   ],
+   "got": [
+    "compare"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Give recipe for chicken biryani",
+   "lang": "en",
+   "expected": [
+    "recipe"
+   ],
+   "got": [
+    "recipe"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Plan a 2-day trip to Araku for 4 people next weekend, budget 15000",
+   "lang": "en",
+   "expected": [
+    "trip_plan"
+   ],
+   "got": [
+    "trip_plan"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Email the report to Ramesh",
+   "lang": "en",
+   "expected": [],
+   "got": [],
+   "clarifying": "What is Ramesh’s email address, and which report should I send?",
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Repu udayam 7 ki nannu lepu",
+   "lang": "te-en",
+   "expected": [
+    "remind"
+   ],
+   "got": [
+    "remind"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Kal shaam 6 baje doctor appointment yaad dilana",
+   "lang": "hi",
+   "expected": [
+    "remind"
+   ],
+   "got": [
+    "remind"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "What's 714 times 50?",
+   "lang": "en",
+   "expected": [
+    "compute"
+   ],
+   "got": [
+    "compute"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Mummy ki call chesi repu sayantram 6 ki doctor appointment undi ani cheppu",
+   "lang": "te-en",
+   "expected": [
+    "call"
+   ],
+   "got": [
+    "call"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Find Samsung's official customer support email in India",
+   "lang": "en",
+   "expected": [
+    "find_support"
+   ],
+   "got": [
+    "find_support"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Hi Chinku, how are you?",
+   "lang": "en",
+   "expected": [],
+   "got": [
+    "reply"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Log into my SBI net banking and pay the electricity bill",
+   "lang": "en",
+   "expected": [],
+   "got": [],
+   "clarifying": null,
+   "cannot_do": [
+    "Log into SBI net banking and pay the electricity bill"
+   ],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "నాకు చికెన్ బిర్యానీ రెసిపీ చెప్పు",
+   "lang": "te",
+   "expected": [
+    "recipe"
+   ],
+   "got": [
+    "recipe"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  },
+  {
+   "request": "Call 9876543210 and ask if the shop is open today",
+   "lang": "en",
+   "expected": [
+    "call"
+   ],
+   "got": [
+    "call"
+   ],
+   "clarifying": null,
+   "cannot_do": [],
+   "steps_ok": true,
+   "fields_ok": true,
+   "wrong_actions": []
+  }
+ ],
+ "steps_correct": 22,
+ "fields_correct": 22,
+ "both_correct": 22,
+ "wrong_action_plans": 0
+}

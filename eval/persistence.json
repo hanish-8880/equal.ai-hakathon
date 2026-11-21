@@ -1,0 +1,9 @@
+{
+ "run_at": "2026-11-22T00:51+05:30",
+ "restart_rc": 0,
+ "back_after_s": 3.2,
+ "pending_before": true,
+ "pending_after_restart": true,
+ "same_task": true,
+ "task_id": "i_2d26bac4"
+}

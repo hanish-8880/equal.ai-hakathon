@@ -1,0 +1,308 @@
+[
+ {
+  "page": "p01_shopping",
+  "kind": "simulated (font)",
+  "truth_words": 20,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Shopping - Saturday\n\nRice 5 kg\n\nToor dal 2 kg\n\nMilk 3 packets\n\nCurd 500 g\n\nOnions 2 kg - Rs 70"
+  },
+  "baseline": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Shopping - Saturday\n\n- Rice 5 kg\n- Toor dal 2 kg\n- Milk 3 packets\n- Curd 500 g\n- Onions 2 kg - Rs 70"
+  }
+ },
+ {
+  "page": "p02_meds",
+  "kind": "simulated (font)",
+  "truth_words": 19,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Amma medicines\n\nBP tablet 5 mg - morning\n\nSugar tablet - after lunch\n\nCalcium - night\n\nDoctor visit 28 Nov 6:30 pm"
+  },
+  "baseline": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Amma medicines\n\n- BP tablet 5 mg – morning\n- Sugar tablet – after lunch\n- Calcium – night\n- Doctor visit 28 Nov 6:30 pm"
+  }
+ },
+ {
+  "page": "p03_bills",
+  "kind": "simulated (font)",
+  "truth_words": 21,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Bills this month\n\nElectricity Rs 1,840 due 28 Nov\n\nWater Rs 320\n\nInternet Rs 799 auto-debit 5th\n\nGas cylinder Rs 905"
+  },
+  "baseline": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Bills this month\n\n- Electricity: Rs 1,840 — due 28 Nov\n- Water: Rs 320\n- Internet: Rs 799 — auto-debit 5th\n- Gas cylinder: Rs 905"
+  }
+ },
+ {
+  "page": "p04_class",
+  "kind": "simulated (font)",
+  "truth_words": 19,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Tuition notes 21/11\n\nChapter 4 Photosynthesis\n\nTest on Monday 9 am\n\nBring geometry box\n\nFee Rs 1,500 by 30th"
+  },
+  "baseline": {
+   "wer": 0.158,
+   "errors": 3,
+   "hallucinated": 3,
+   "hallucinated_words": [
+    "the",
+    "image",
+    "reads"
+   ],
+   "unclear_marks": 0,
+   "output": "The image reads:\n\n- **Tuition notes 21/11**\n- **Chapter 4 Photosynthesis**\n- **Test on Monday 9 am**\n- **Bring geometry box**\n- **Fee Rs 1,500 by 30th**"
+  }
+ },
+ {
+  "page": "p05_contacts",
+  "kind": "simulated (font)",
+  "truth_words": 14,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Important numbers\n\nRavi plumber 98480 22222\n\nSai electrician 99490 11111\n\nSociety office 040-2345 6789"
+  },
+  "baseline": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Important numbers\n\n- Ravi plumber: 98480 22222\n- Sai electrician: 99490 11111\n- Society office: 040-2345 6789"
+  }
+ },
+ {
+  "page": "p06_trip",
+  "kind": "simulated (font)",
+  "truth_words": 20,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Araku trip plan.\n\nLeave 5:30 am Saturday\n\nBorra caves 10 am\n\nCoffee museum 3 pm\n\nBudget Rs 15,000 for 4"
+  },
+  "baseline": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Araku trip plan\n\n- Leave 5:30 am Saturday\n- Borra caves 10 am\n- Coffee museum 3 pm\n- Budget Rs 15,000 for 4"
+  }
+ },
+ {
+  "page": "p07_meeting",
+  "kind": "simulated (font)",
+  "truth_words": 15,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Meeting with Suresh\n\nDiscuss invoice INV-2207\n\nAsk for 15 percent advance\n\nSend quote by Tuesday"
+  },
+  "baseline": {
+   "wer": 0.067,
+   "errors": 1,
+   "hallucinated": 1,
+   "hallucinated_words": [
+    "75"
+   ],
+   "unclear_marks": 0,
+   "output": "Meeting with Suresh\n\nDiscuss invoice INV-2207\n\nAsk for 75 percent advance\n\nSend quote by Tuesday"
+  }
+ },
+ {
+  "page": "p08_recipe",
+  "kind": "simulated (font)",
+  "truth_words": 16,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Tomato rasam\n\n4 tomatoes\n\n1 tsp pepper\n\n2 cups water\n\nTamarind small ball\n\nBoil 10 minutes"
+  },
+  "baseline": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Tomato rasam\n\n- 4 tomatoes  \n- 1 tsp pepper  \n- 2 cups water  \n- Tamarind small ball  \n\nBoil 10 minutes."
+  }
+ },
+ {
+  "page": "p09_te_list",
+  "kind": "simulated (font)",
+  "truth_words": 13,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "సరుకులు\n\nబియ్యం 5 కిలోలు\n\nపాలు 2 ప్యాకెట్లు\n\nఉల్లిపాయలు 1 కిలో\n\nకూరగాయలు 200 రూపాయలు"
+  },
+  "baseline": {
+   "wer": 1.077,
+   "errors": 14,
+   "hallucinated": 10,
+   "hallucinated_words": [
+    "english",
+    "groceries",
+    "rice",
+    "kg",
+    "milk",
+    "packets",
+    "onions",
+    "kg",
+    "vegetables",
+    "rs"
+   ],
+   "unclear_marks": 0,
+   "output": "సరుకులు\n\nబియ్యం 5 కిలోలు  \nపాలు 2 ప్యాకెట్లు  \nఉల్లిపాయలు 1 కిలో  \nకూరగాయలు 200 రూపాయలు  \n\nEnglish: Groceries — Rice 5 kg, Milk 2 packets, Onions 1 kg, Vegetables ₹200."
+  }
+ },
+ {
+  "page": "p10_te_note",
+  "kind": "simulated (font)",
+  "truth_words": 13,
+  "chinku": {
+   "wer": 0.154,
+   "errors": 2,
+   "hallucinated": 2,
+   "hallucinated_words": [
+    "మాత్రం",
+    "మరిచిపోవద్దు"
+   ],
+   "unclear_marks": 0,
+   "output": "అమ్మకు గుర్తు\nరేపు ఉదయం 9 గంటలకు డాక్టర్\nBP మాత్రం మరిచిపోవద్దు\nఫోన్ 98480 22222"
+  },
+  "baseline": {
+   "wer": 2.0,
+   "errors": 26,
+   "hallucinated": 22,
+   "hallucinated_words": [
+    "text",
+    "in",
+    "the",
+    "image",
+    "మరిచిపోవద్దు",
+    "english",
+    "meaning",
+    "reminder",
+    "for",
+    "mom",
+    "doctor",
+    "tomorrow"
+   ],
+   "unclear_marks": 0,
+   "output": "Text in the image:\n\nఅమ్మకు గుర్తు  \nరేపు ఉదయం 9 గంటలకు డాక్టర్  \nBP మాత్ర మరిచిపోవద్దు  \nఫోన్ 98480 22222\n\nEnglish meaning:\n\nReminder for mom:  \nDoctor tomorrow morning at 9 o’clock.  \nDon’t forget the BP tablet.  \nPhone: 98480 22222."
+  }
+ },
+ {
+  "page": "p11_mixed",
+  "kind": "simulated (font)",
+  "truth_words": 21,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "To do (Sunday)\n\nCall Kiran re: car service\n\nPay LIC premium Rs 12,450\n\nBook Tatkal ticket 10 am\n\nGym 6 PM"
+  },
+  "baseline": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "To do (Sunday)\n\n- Call Kiran re: car service\n- Pay LIC premium Rs 12,450\n- Book Tatkal ticket 10 am\n- Gym 6 pm"
+  }
+ },
+ {
+  "page": "p12_receipt",
+  "kind": "simulated (font)",
+  "truth_words": 21,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Sri Balaji Kirana\n\nBill no 4471   22-11-2026\n\nSunflower oil 1 L   Rs 155\n\nSugar 1 kg   Rs 46\n\nTotal Rs 201"
+  },
+  "baseline": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Sri Balaji Kirana\n\nBill no 4471     22-11-2026\n\nSunflower oil 1 L     Rs 155\n\nSugar 1 kg     Rs 46\n\nTotal Rs 201"
+  }
+ },
+ {
+  "page": "todo_page",
+  "kind": "simulated (font)",
+  "truth_words": 40,
+  "chinku": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Sunday 22 Nov - to do\n\n1. Pay electricity bill Rs 1,840 before 28 Nov\n\n2. Call Ravi about the plumber visit\n\n3. Buy 2 kg rice, 1 L oil\n\n4. Mummy BP tablets - refill\n\nMeeting at Equal HQ 10:30 am"
+  },
+  "baseline": {
+   "wer": 0.0,
+   "errors": 0,
+   "hallucinated": 0,
+   "hallucinated_words": [],
+   "unclear_marks": 0,
+   "output": "Sunday 22 Nov - to do\n\n1. Pay electricity bill Rs 1,840 before 28 Nov  \n2. Call Ravi about the plumber visit  \n3. Buy 2 kg rice, 1 L oil  \n4. Mummy BP tablets - refill  \n\nMeeting at Equal HQ 10:30 am"
+  }
+ }
+]
