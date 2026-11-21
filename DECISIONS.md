@@ -186,3 +186,12 @@ Observed: after 50 outbound messages today, every reply fails with 63038 "exceed
 Chose: send failures are non-fatal (logged as wa_send_failed; reply stays in task state + dashboard); removed 2 acknowledgement messages
 ("calls start chestunna", "call lo cheppindi ardham ayyindi"); voice note + text sent as ONE message.
 Real fix needs Hanish: upgrade Twilio (add balance, removes trial cap) or a second Twilio account for the demo. Decision pending.
+
+## [Sat 16:55] Inbound call mis-hearing ("Mr. Casual mentor") — causes + fixes
+Observed (call 11:18 UTC, 59 s): ASR fragments ("Can you.", "Sent a WhatsApp.") and garbled phrases; the agent confirmed garbled
+content as a task and accepted an unsupported one ("reply to his mail"). Outbound Telugu calls were clean.
+Cause 1: inbound silence_timeout = 200 ms (outbound 400) → utterances cut at short pauses. Fix: 700 ms (VERIFIED in agent config).
+Cause 2: no ASR context terms. Fix: asr_context_terms = Chinku, Hanish, WhatsApp, PDF, PPT, mail, Suresh, mummy, invoice, ... (VERIFIED).
+Cause 3: prompt let the agent repeat garbled words as facts. Fix: inbound prompt — if it sounds wrong, ask again (max 2) then
+"WhatsApp lo type cheyyandi"; never guess names; emails via WhatsApp; explicit capability list; unsupported → say so.
+Not fixable via API: Soniox language order stays [en, te, hi] (outbound has te first). Temperature 0.3 → 0.2.
