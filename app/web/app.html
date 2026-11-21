@@ -570,17 +570,17 @@ const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2,
 function holdToTalk(btn, bar, timeEl, canvas, onBefore) {
   /* J10: TAP to talk (stops by itself after ~1.5 s of silence, or on a second tap) — or press and HOLD, release to send. */
   let rec = null, chunks = [], stream = null, t0 = 0, tick = null, maxT = null, raf = null, actx = null;
-  let pressAt = 0, tapMode = false, spoke = false, lastVoice = 0, busy = false;
+  let pressAt = 0, tapMode = false, spoke = false, lastVoice = 0, busy = false, metered = false;
   async function start() { if (busy) return; busy = true;
     if (!navigator.mediaDevices || !window.MediaRecorder) { busy = false; toast(L("Allow the microphone to talk")); return; }
     try { stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); } catch (err) { busy = false; toast(L("Allow the microphone to talk")); return; }
     if (audio) { try { audio.pause(); } catch (e) {} }
     const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
     rec = new MediaRecorder(stream, mime ? {mimeType: mime} : undefined); chunks = []; rec.ondataavailable = ev => ev.data.size && chunks.push(ev.data); rec.onstop = stop2;
-    rec.start(250); t0 = Date.now(); spoke = false; lastVoice = Date.now(); vib(20); btn.classList.add("rec"); bar.classList.remove("hidden");
+    rec.start(250); t0 = Date.now(); spoke = false; metered = false; lastVoice = Date.now(); vib(20); btn.classList.add("rec"); bar.classList.remove("hidden");
     tick = setInterval(() => timeEl.textContent = fmt((Date.now() - t0) / 1000), 200); maxT = setTimeout(end, 90000); wave(); }
   function wave() { try { actx = new (window.AudioContext || window.webkitAudioContext)(); const an = actx.createAnalyser(); an.fftSize = 256; actx.createMediaStreamSource(stream).connect(an);
-    const g = canvas.getContext("2d"), d = new Uint8Array(an.frequencyBinCount), bars = [];
+    const g = canvas.getContext("2d"), d = new Uint8Array(an.frequencyBinCount), bars = []; metered = true;
     const loop = () => { const w = canvas.clientWidth, h = canvas.clientHeight, r = devicePixelRatio || 1; if (canvas.width !== w * r) { canvas.width = w * r; canvas.height = h * r; }
       an.getByteTimeDomainData(d); let pk = 0; for (const v of d) pk = Math.max(pk, Math.abs(v - 128));
       if (pk > 9) { spoke = true; lastVoice = Date.now(); }
@@ -595,6 +595,7 @@ function holdToTalk(btn, bar, timeEl, canvas, onBefore) {
     btn.classList.remove("rec"); bar.classList.add("hidden"); timeEl.textContent = "0:00"; busy = false; tapMode = false; const secs = (Date.now() - t0) / 1000; vib(15);
     if (cancelled) { cancelled = false; toast(L("I didn't hear anything — tap and speak")); return; }
     if (secs < 0.7) { toast(L("Tap the mic and speak")); return; }
+    if (metered && !spoke) { toast(L("I didn't hear anything — tap and speak")); return; }  // no voice → never upload (silence makes speech models invent words)
     const type = rec.mimeType || "audio/webm"; onBefore && onBefore(); voiceUsed();
     sendMsg("", [], new File([new Blob(chunks, {type})], `voice.${type.includes("mp4") ? "m4a" : "webm"}`, {type})); }
   btn.addEventListener("pointerdown", e => { e.preventDefault(); btn.setPointerCapture && btn.setPointerCapture(e.pointerId);

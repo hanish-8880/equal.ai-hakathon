@@ -20,6 +20,20 @@ def vocabulary(user: str) -> str:
             "transcribe, Mummy, Nanna, Akka. " + (f"Names and places: {known}." if known else ""))
 
 
+LEAK = re.compile(r"context\s*:|###|the speaker mixes|common words|names and places", re.I)
+
+
+def phantom(text: str, prompt: str, low_words: list[str]) -> bool:
+    """Observed Sun 02:55: on SILENCE or NOISE the model returns our own hint ("context: ### The speaker mixes…") or a
+    single hint word ("complaint", "email") with low confidence. Real speech is kept — even short commands like
+    "call Mummy" — because clearly spoken words come back with high confidence."""
+    if LEAK.search(text):
+        return True
+    words = [w.lower() for w in re.findall(r"[\wఀ-౿ऀ-ॿ]+", text)]
+    hint = {w.lower() for w in re.findall(r"[\wఀ-౿ऀ-ॿ]+", prompt)}
+    return bool(words) and all(w in hint for w in words) and bool(low_words)
+
+
 def _languages(text: str) -> list[str]:
     langs = []
     if re.search(r"[ఀ-౿]", text):
@@ -60,6 +74,13 @@ def transcribe(data: bytes, filename: str, user: str, source: str, audio_ref: st
         hit = next((w for w in words if frag and frag in w), None)
         if hit and hit not in low_words:
             low_words.append(hit)
+    lps = [getattr(t, "logprob", 0) for t in getattr(r, "logprobs", None) or []]
+    mean_lp = sum(lps) / len(lps) if lps else 0.0
+    # Measured Sun 03:00: real speech mean logprob −0.09…−0.17; silence/noise phantoms −0.87…−2.73
+    # (one was "మమ్మీకి call చేయు" from pure silence). Below −0.7 = not trusted as speech.
+    if mean_lp < -0.7 or phantom(text, vocabulary(user), low_words):
+        store().add_event("-", "heard_rejected", {"text": text[:200], "source": source, "mean_logprob": round(mean_lp, 2)})
+        return None  # caller says "I didn't hear anything — try again"
     heard = Heard(text=text, languages=_languages(text), low_confidence_spans=low_words,
                   model=s.openai_model_transcribe, audio_ref=audio_ref, source=source)
     store().add_event("-", "heard", heard.model_dump())
