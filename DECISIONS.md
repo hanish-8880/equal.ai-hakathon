@@ -394,3 +394,9 @@ never rings the phone during the test.
 - Omni agents renamed to Chinku (welcome + prompts pushed by scripts/omni_sync_agents.py, read back OK). Inbound = owner tells Chinku what they need → same planner + approval.
 - New Chinku App: home + chat cards + Leaflet map + 🔊 Listen (/api/tts, cached). Observed: J1 via the app — email arrived with the photo attached (IMAP: att_….jpg, 107 KB).
 - 97 tests pass (plumber tests removed with the code).
+
+## Sun 01:30 — Swiggy MCP login test + Kiwi.com flights LIVE adapter
+- Swiggy (Observed): discovery live; DCR POST /auth/register → 201 (shared client_id "swiggy-mcp"); phone+OTP on Swiggy's page; token 200. /food 20 tools, /im 17 tools. Real results: search_restaurants("veg lunch") → 3 restaurants (literal match, so J9 must query food words like "veg meals"/"thali"); search_products("soap") → 20 products with offerPrice/MRP/unitLevelPrice; my per-100 g in code matched Swiggy's. Read-only script (cart/checkout/payment blocked in code), tokens in %USERPROFILE%\.chinku (outside repo). Docs say production is "invite-based" → keep demo fallback. Gave up for now: menu prices / final payable (cart tools) — 9:30 AM checkpoint.
+- Kiwi.com (Observed): https://mcp.kiwi.com Streamable HTTP, no auth, tool `search-flight` (dd/mm/yyyy, city names resolved, currency param). Real: Hyderabad → Bengaluru Fri 27 Nov, 1 adult → 15 itineraries in INR. Booking link resolves to kiwi.com/en/booking (HTTP 200).
+- Chose: adapter layer app/chinku/adapters (Offer, ProviderAdapter.search/book, rank()). Ranking is code (cheapest/fastest/earliest; unknown price ranks last, never ₹0; failing constraints excluded WITH reason). book() only returns the provider link — Chinku never pays. Fixture = real saved Kiwi response (tests/fixtures/kiwi_hyd_blr.json); 6 adapter tests.
+- Would change: Kiwi price = provider's displayed total; bags/service fees can change at checkout → card says "price as shown by the provider".

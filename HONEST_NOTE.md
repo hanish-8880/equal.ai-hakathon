@@ -17,6 +17,9 @@ Gmail SMTP/IMAP, AWS (EC2, DynamoDB via instance role), OpenStreetMap + Leaflet,
 | Chinku App (home "What do you need?", Needs you, Recent work, reminders, chat cards, map, 🔊 Listen, Settings) | LIVE at /app?key=… — hold-to-talk mic not yet tested on a real phone |
 | Phone: outbound calls (call tool → proven call engine), inbound "tell Chinku what you need" | Agents renamed to Chinku (read back OK). Chinku call tool NOT yet verified live |
 | Search (OpenAI web search), map card | Wired — NOT yet verified live |
+| Connected services — **Kiwi.com flights** (MCP, no auth) | **LIVE** (Sun 01:30): real HYD→BLR fares in INR, ranked in code (cheapest/fastest/earliest), card with Kiwi's booking link. Chinku never pays — the user books on Kiwi.com |
+| Connected services — **Swiggy Food + Instamart** (official Swiggy MCP, user's own login via OTP) | Login + read-only search **LIVE-tested** (real restaurants, real soap prices; per-100 g computed in code). Not yet in the app; cart/checkout never without the user's tap. Production access is "invite-based" per Swiggy docs — may change |
+| Ola / Uber / Rapido, Zomato | NOT BUILT (rides planned as DEMO adapters, labelled) |
 | Promises + follow-up, Connect me (transfer), language bridge, scam check | NOT BUILT |
 
 **Simulated:** test page (handwriting font); businesses / support agents will be played by consenting people; shortened
