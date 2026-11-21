@@ -199,7 +199,7 @@ def run(t: Task, send: Send, card: Card) -> Task:
     if len(t.plan.steps) > 1:
         ok = sum(1 for x in states if x == "done")
         send(f"✅ Done — {ok} of {len(states)} steps finished." if t.status == "done"
-             else f"Finished {ok} of {len(states)} steps. " + "; ".join(f"{k}: {v.error}" for k, v in t.steps.items() if v.error)[:400])
+             else f"Finished {ok} of {len(states)} steps." + (" Nothing was sent or booked." if ok == 0 else ""))  # reasons were already shown
     return t
 
 
