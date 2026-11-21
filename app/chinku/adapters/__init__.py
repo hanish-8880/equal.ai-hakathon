@@ -118,5 +118,7 @@ def rank(offers: list[Offer], priority: Priority, max_stops: int | None = None, 
 
 def registry() -> dict[str, list[ProviderAdapter]]:
     from app.chinku.adapters.kiwi import KiwiFlights
+    from app.chinku.adapters.onestay import OneStayHotels
     from app.chinku.adapters.rides import DemoRides
-    return {"flight": [KiwiFlights()], "ride": [DemoRides("Rapido"), DemoRides("Ola"), DemoRides("Uber")]}
+    return {"flight": [KiwiFlights()], "hotel": [OneStayHotels()],
+            "ride": [DemoRides("Rapido"), DemoRides("Ola"), DemoRides("Uber")]}

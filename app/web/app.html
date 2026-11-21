@@ -293,6 +293,7 @@ Object.assign(I, {
   "Already decided": ["ఇప్పటికే నిర్ణయించారు", "पहले ही तय हो चुका", "Already decide chesaru"],   "Swiggy account": ["Swiggy ఖాతా", "Swiggy खाता", "Swiggy account"], "Active": ["వాడుతున్నది", "चालू", "Active"], "Tap to use": ["వాడటానికి నొక్కండి", "चुनने के लिए दबाएँ", "Use cheyyadaniki nokkandi"],
   "No Swiggy account connected yet.": ["ఇంకా Swiggy ఖాతా కలపలేదు.", "अभी कोई Swiggy खाता नहीं जुड़ा।", "Inka Swiggy account connect cheyyaledu."],
   "Each account logs in once with its own phone + OTP. Use it for a real second person — not to get around Swiggy's limits.": ["ప్రతి ఖాతా దాని ఫోన్ + OTP తో ఒక్కసారి లాగిన్ అవుతుంది. నిజమైన ఇంకో వ్యక్తి కోసం వాడండి — Swiggy పరిమితులను తప్పించుకోవడానికి కాదు.", "हर खाता अपने फ़ोन + OTP से एक बार लॉगिन होता है। इसे असली दूसरे व्यक्ति के लिए इस्तेमाल करें — Swiggy की सीमा से बचने के लिए नहीं।", "Prathi account daani phone + OTP tho okkasari login avutundi. Nijamaina inko person kosam vaadandi — Swiggy limits tappinchukovadaniki kadu."],
+  "per night": ["ఒక రాత్రికి", "प्रति रात", "per night"], "nights": ["రాత్రులు", "रातें", "nights"],
   "Working on it…": ["చేస్తున్నా…", "कर रहा हूँ…", "Chestunna…"], "How many guests?": ["ఎంత మంది?", "कितने लोग?", "Entha mandi?"], "New chat": ["కొత్త చాట్", "नई चैट", "New chat"],
   "Complain on a toll-free line": ["టోల్-ఫ్రీకి ఫిర్యాదు", "टोल-फ़्री पर शिकायत", "Toll-free ki complaint"], "Order food": ["ఫుడ్ ఆర్డర్", "खाना ऑर्डर", "Food order"],
   "How can I help today?": ["ఈ రోజు ఏం చేయమంటారు?", "आज क्या मदद करूँ?", "Ee roju em cheyyamantaru?"],
@@ -411,16 +412,18 @@ function card(c) {
     const hm = m => m == null ? L("unknown") : (m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m` : `${m}m`);
     const tm = s => { try { return new Date(s).toLocaleTimeString(LOC(), {hour: "numeric", minute: "2-digit"}); } catch (e) { return s || "?"; } };
     const chip = (c.status || []).includes("DEMO") ? `<span class="status sim">${L("Demo data")}</span>` : `<span class="status ok">LIVE · ${esc((c.providers || []).join(", "))}</span>`;
-    const others = (c.rows || []).slice(1, 4).map(o => `${esc((o.details && o.details.airlines || []).join("+") || o.provider)} ${money(o)}`).join(" · ");
-    return `<div class="rc"><h4>${c.category === "flight" ? "✈️" : "🛒"} ${esc(c.title)} ${chip}</h4>
+    const others = (c.rows || []).slice(1, 4).map(o => `${esc(c.category === "hotel" ? o.item : ((o.details && o.details.airlines || []).join("+") || o.provider))} ${money(o)}`).join(" · ");
+    const sub = o => c.category === "hotel" ? `${o.details && o.details.nightly != null ? "₹" + Number(o.details.nightly).toLocaleString("en-IN") + " " + L("per night") : ""}${o.details && o.details.nights ? " · " + o.details.nights + " " + L("nights") : ""}${o.details && o.details.address ? " · " + esc(o.details.address) : ""}`
+      : `${tm(o.depart)} → ${tm(o.arrive)} · ${hm(o.duration_min)}`;
+    return `<div class="rc"><h4>${{flight: "✈️", hotel: "🏨", ride: "🛺"}[c.category] || "🛒"} ${esc(c.title)} ${chip}</h4>
       <div class="card" style="margin:6px 0;background:var(--blue-l);border-color:var(--me-line)"><div class="src" style="margin:0 0 2px">${L("Recommended")} · ${esc(L(c.priority))}</div>
-        <b style="font-size:20px">${money(w)}</b> · ${esc(w.item)}<div>${tm(w.depart)} → ${tm(w.arrive)} · ${hm(w.duration_min)}</div>
+        <b style="font-size:20px">${money(w)}</b> · ${esc(w.item)}<div>${sub(w)}</div>
         <div class="src">${L("Why")}: ${esc((c.why || []).join(" · "))}</div>
         ${c.change ? `<div class="src">${esc(c.change)}</div>` : ""}
         <div class="btns">${w.link ? `<a class="btn primary" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(w.link)}" target="_blank" rel="noopener">${L("Open booking link")} ↗</a>` : ""}
           <button class="btn" data-toggle="${id}">${L("See all")} (${(c.rows || []).length})</button></div></div>
       ${others ? `<div class="src">${L("Checked")}: ${others}</div>` : ""}
-      <div id="${id}" class="hidden"><ol>${(c.rows || []).map(o => `<li><b>${money(o)}</b> · ${esc(o.item)}<br><span class="src">${tm(o.depart)} → ${tm(o.arrive)} · ${hm(o.duration_min)}${o.link ? ` · <a href="${esc(o.link)}" target="_blank" rel="noopener">${L("Open booking link")}</a>` : ""}</span></li>`).join("")}</ol>
+      <div id="${id}" class="hidden"><ol>${(c.rows || []).map(o => `<li><b>${money(o)}</b> · ${esc(o.item)}<br><span class="src">${sub(o)}${o.link ? ` · <a href="${esc(o.link)}" target="_blank" rel="noopener">${L("Open booking link")}</a>` : ""}</span></li>`).join("")}</ol>
         ${(c.excluded || []).length ? `<div class="src">${L("Not shown")}: ${(c.excluded || []).map(x => esc(x.item + " — " + x.why)).join("; ")}</div>` : ""}</div>
       <div class="src">${esc(c.total_found)} ${L("options")} · ${L("checked")} ${(() => { try { return esc(new Date(c.checked).toLocaleString(LOC(), {weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"})); } catch (e) { return esc(c.checked || ""); } })()} · ${L("Price as shown by the provider; you book and pay on their page — Chinku never pays.")}</div></div>`; }
   if (c.type === "connect") return `<div class="rc"><h4>📞 ${L("Talk to them now")}</h4><b>${esc(c.name || "")}</b> · ${esc(c.phone)}${c.ticket ? ` · ${L("Ticket")} <b>${esc(c.ticket)}</b>` : ""}

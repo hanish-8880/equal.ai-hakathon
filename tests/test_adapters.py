@@ -86,3 +86,29 @@ def test_rides_demo_rank_and_arrive_by_excludes_with_reason():
     by = adapters.rank(offers, "cheapest", arrive_by=(now + timedelta(minutes=35)).isoformat())
     assert by is None or all(adapters._dt(o.arrive) <= now + timedelta(minutes=35) for o in by.table)
     assert offers[2].link.startswith("https://m.uber.com/ul/") and "dropoff[latitude]" in offers[2].link
+
+
+def test_hotels_1stay_ranked_cheapest_total_in_code(monkeypatch):
+    from app.chinku import tools
+    from app.chinku.adapters import onestay
+    data = {"results": [
+        {"hotel_id": "A", "name": "Citadines Arpora", "total_stay": 31857.64, "avg_nightly_rate": 15928.82, "nights": 2, "currency": "INR", "address": {"line1": "", "city": "Arpora"}},
+        {"hotel_id": "B", "name": "Fortune Resort Benaulim", "total_stay": 22420, "avg_nightly_rate": 11210, "nights": 2, "currency": "INR", "address": {"line1": "Calwaddo"}},
+        {"hotel_id": "C", "name": "No price hotel", "total_stay": None, "currency": "INR"}]}
+    seen = []
+    monkeypatch.setattr(onestay, "call_1stay", lambda name, args: seen.append((name, args)) or data)
+    cards = []
+    ctx = {"card": lambda t, c: cards.append((t, c))}
+    out = tools.compare("u", {"category": "hotel", "location": "Goa, India", "check_in": "2099-11-28", "check_out": "2099-11-30", "guests": 2}, ctx)
+    assert seen == [("search_hotels", {"location": "Goa, India", "check_in": "2099-11-28", "check_out": "2099-11-30", "guests": 2})]
+    assert out["recommended"]["item"] == "Fortune Resort Benaulim" and out["recommended"]["final_payable"] == 22420
+    c = cards[-1][1]
+    assert c["category"] == "hotel" and c["rows"][-1]["final_payable"] is None       # unknown price ranks last, never 0
+    assert "🏨" in cards[-1][0]
+
+
+def test_hotel_dates_checked_in_code():
+    import pytest
+    from app.chinku import tools
+    with pytest.raises(tools.ToolError, match="Check-out must be after"):
+        tools.compare("u", {"category": "hotel", "location": "Goa", "check_in": "2099-11-30", "check_out": "2099-11-28"}, {"card": lambda *a: None})

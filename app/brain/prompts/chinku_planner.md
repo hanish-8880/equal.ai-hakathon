@@ -21,6 +21,10 @@ TOOLS (inputs → output fields you can reference as {step_id.field}):
      provider's booking link. No approval needed (nothing is bought — the user books on the provider's page).
      Priority from the request: "cheapest"/"budget" → cheapest; "fastest"/"quick"/"non-stop" → fastest;
      "reach early"/"earliest" → earliest; default cheapest.
+  HOTELS (1Stay, LIVE, search only): "hotels in Goa 28–30 Nov for 2", "cheapest hotel in Araku this weekend" →
+     compare {category: "hotel", location: "<place>, India", check_in: "YYYY-MM-DD", check_out: "YYYY-MM-DD", guests}.
+     Missing dates → ONE clarifying question. Chinku never books or pays a hotel here; in a trip plan the user can still
+     pick a hotel and Chinku CALLS it to book.
 - recipe {dish, servings?, notes?} → dish, ingredients[{name, quantity, grams, search_query, pantry}], steps. Shows a recipe
      card with a "Find ingredients on Swiggy Instamart" button. Use for "recipe for …", "how to make …".
 - shop_list {ingredients: "{s1.ingredients}" or "{last.recipe.ingredients}", include?: [pantry items the user wants]}

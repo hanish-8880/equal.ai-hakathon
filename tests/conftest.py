@@ -30,4 +30,6 @@ def no_real_world(monkeypatch):
     from app.chinku.adapters import kiwi, swiggy
     monkeypatch.setattr(swiggy, "_post", _blocked("Swiggy MCP"))
     monkeypatch.setattr(kiwi, "call_kiwi", _blocked("Kiwi MCP"))
+    from app.chinku.adapters import onestay
+    monkeypatch.setattr(onestay, "call_1stay", _blocked("1Stay MCP"))
     yield
