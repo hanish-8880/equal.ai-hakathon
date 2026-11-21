@@ -66,6 +66,7 @@ def _scheduler_loop() -> None:
         try:
             runner.tick_schedules()
             runner.sweep_stuck_calls()
+            runner.fire_due_retries()
         except Exception as e:  # noqa: BLE001
             store().add_event("-", "error", {"where": "scheduler", "error": str(e)[:300]})
         time.sleep(15)

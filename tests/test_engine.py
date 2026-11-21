@@ -160,16 +160,15 @@ def test_no_cancels(fake):
 
 
 def test_no_answer_retry_then_report(fake, monkeypatch):
-    timers = []
-    monkeypatch.setattr(steps.threading, "Timer", lambda d, fn, args: type("T", (), {"start": lambda s: timers.append((fn, args))})())
     sent, out = [], []
     runner.handle_message("u", "cement", None, sent.append)
     runner.handle_message("u", "yes", None, sent.append)
     c1, c2 = sorted(store().scan("calls"), key=lambda c: c["created_at"])
     runner.on_call_result({"call_id": c1["omni_call_id"], "transcript": ""}, lambda u, m: out.append(m))
-    assert len(timers) == 1  # retry scheduled
-    fn, args = timers[0]
-    fn(*args)  # fire retry now
+    assert store().get("calls", c1["call_id"])["status"] == "retry_scheduled"  # persisted, not an in-memory timer
+    assert not steps.step_calls_terminal(c1["task_id"], c1["step_id"]) and runner.fire_due_retries() == 0  # not due yet
+    later = c1["created_at"] + 10_000
+    assert runner.fire_due_retries(later) == 1 and runner.fire_due_retries(later) == 0  # fires once
     assert len(fake) == 3
     retry = [c for c in store().scan("calls") if c["attempt"] == 1][0]
     runner.on_call_result({"call_id": retry["omni_call_id"], "transcript": ""}, lambda u, m: out.append(m))

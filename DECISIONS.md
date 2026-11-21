@@ -256,3 +256,9 @@ Chose: (1) router — attached image type decides the spec (banner+price → ban
 (4) CLAUDE.md §9 timeout implemented: dispatched call with no webhook for 10 min → poll Omni log once (same idempotency key) → else failed,
 step finishes and the user gets the report; (5) last Telugu hint removed from dealer_quotes.
 Verified live: banner photo + "ask for price" → banner_rate plan with the banner's number, no extra questions.
+
+## [Sat 18:55] Retries persisted (were in-memory timers lost on every deploy)
+Observed: chair task t_e4b4ac9a stuck "running" 40+ min: one call no_answer → retry scheduled with threading.Timer → server redeployed →
+timer lost → step waited forever. Chose: the no-answer call record becomes status "retry_scheduled" with retry_at (DynamoDB);
+the 15 s loop fires due retries (idempotent claim retry:{call_id}); a retry_scheduled call keeps the step non-terminal.
+Stuck task closed manually (status failed, note). Remaining in-memory timers: wait_for remind/timeout only (logged as a limit).

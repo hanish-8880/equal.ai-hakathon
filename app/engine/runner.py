@@ -342,6 +342,13 @@ def tick_schedules() -> int:
     return n
 
 
+def fire_due_retries(now_ts: float | None = None) -> int:
+    n = 0
+    for c in steps.due_retries(now_ts):
+        n += bool(steps.fire_retry(c))
+    return n
+
+
 CALL_TIMEOUT_S = 600  # CLAUDE.md §9: no webhook in 10 min → poll Omni call logs once → mark failed
 
 

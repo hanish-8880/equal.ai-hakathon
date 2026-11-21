@@ -186,12 +186,31 @@ def record_call_result(parsed: dict[str, Any]) -> dict[str, Any] | None:
 def maybe_retry(call: dict[str, Any], step: dict[str, Any], task: dict[str, Any]) -> bool:
     if call["status"] != "no_answer" or call["attempt"] >= int(step.get("retry_on_no_answer", 0)):
         return False
-    call["superseded"] = True
+    # Persisted retry (survives restarts): the call record itself waits as "retry_scheduled" until retry_at;
+    # runner.fire_due_retries() (15 s loop) dispatches it. Until then the step is not terminal.
+    call["status"], call["retry_at"] = "retry_scheduled", time.time() + RETRY_DELAY_S
     store().put("calls", call["call_id"], call)
-    target = {"to": call["to_number"], "callee": call["callee"]}
-    _daemon(threading.Timer(RETRY_DELAY_S, dispatch_one, args=(task, step, target, call["attempt"] + 1)))
     store().add_event(task["task_id"], "call_retry_scheduled", {"call_id": call["call_id"], "in_s": RETRY_DELAY_S})
     return True
+
+
+def due_retries(now_ts: float | None = None) -> list[dict[str, Any]]:
+    now_ts = now_ts or time.time()
+    return [c for c in store().scan("calls", status="retry_scheduled") if c.get("retry_at", 0) <= now_ts]
+
+
+def fire_retry(call: dict[str, Any]) -> dict[str, Any] | None:
+    """Dispatch the retry for a call in retry_scheduled (idempotent)."""
+    if not store().claim(f"retry:{call['call_id']}"):
+        return None
+    from app.engine.specs_loader import load_specs
+    task = store().get("tasks", call["task_id"])
+    if not task:
+        return None
+    step = next(s for s in load_specs()[task["spec"]]["steps"] if s["id"] == call["step_id"])
+    call["status"], call["superseded"] = "no_answer", True
+    store().put("calls", call["call_id"], call)
+    return dispatch_one(task, step, {"to": call["to_number"], "callee": call["callee"]}, call["attempt"] + 1)
 
 
 def step_calls_terminal(task_id: str, step_id: str) -> bool:
