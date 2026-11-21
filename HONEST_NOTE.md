@@ -2,6 +2,7 @@
 
 | Component | Status |
 |---|---|
+| **Plumber flows** — call prompts per use case; booking with live slot lock + confirmation call; parts sourcing (OSM nearby shops shown, plumber's shops called, offers compared in code, part-before-visit rule); price list + photo estimate; voice-to-invoice (code reconciliation, PDF, idempotent Gmail/WhatsApp send); customer WhatsApp receptionist | BUILT by me — verified end to end on AWS with the real brain + DynamoDB and SIMULATED call answers (scripts/check_links.py 9/9); invoice ₹1,400 case verified live. Real phone runs of booking/parts/invoice PENDING. Price list = DEMO rates (labelled). Map shops: OSM has no phone numbers in Hyderabad. |
 | **Chinku for Plumbers** — job model, §3A listening pipeline (vocab transcription, number normaliser, multi-action understand, confidence gate), create job, Chinku App v3 (Today/Jobs/Calls/Bills/Chat, language onboarding) | BUILT by me — pipeline LIVE-tested on synthetic audio; real Telugu-English voice note from the app PENDING; booking, parts, approvals, invoice NOT BUILT yet |
 | Orchestration engine (spec runner, state machine, confirm gate, retry, idempotency) | BUILT by me — LIVE |
 | Specs: dealer_quotes | BUILT — LIVE (1 dealer verified on a real call; parallel verified in tests + simulated) |
