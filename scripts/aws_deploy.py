@@ -1,0 +1,143 @@
+"""Deploy Chinku to one EC2 instance (ap-south-1) with a stable HTTPS URL.
+
+- Elastic IP  -> stable address; HTTPS via Caddy + Let's Encrypt on <ip-with-dashes>.sslip.io (no domain needed)
+- App: git clone of the public repo, venv, uvicorn on 127.0.0.1:8000 (systemd), Caddy reverse proxy :443
+- .env is copied over SSH (never via user-data, never committed)
+
+Run:   python -m scripts.aws_deploy create     # first time: key pair, security group, instance, Elastic IP
+       python -m scripts.aws_deploy push       # copy .env + pull latest code + restart (after each commit)
+       python -m scripts.aws_deploy status
+"""
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import boto3
+
+from app.store.dynamo import aws_env
+
+aws_env()
+REGION = os.environ.get("AWS_REGION", "ap-south-1")
+NAME = "chinku"
+REPO = "https://github.com/hanish-8880/equal.ai-hakathon.git"
+STATE = Path("data/aws_state.json")
+KEY_FILE = Path.home() / ".ssh" / "chinku-aws.pem"
+
+USER_DATA = f"""#!/bin/bash
+set -eux
+apt-get update -y
+apt-get install -y python3-venv python3-pip git debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
+apt-get update -y && apt-get install -y caddy
+sudo -u ubuntu git clone {REPO} /home/ubuntu/chinku
+cd /home/ubuntu/chinku && sudo -u ubuntu python3 -m venv .venv && sudo -u ubuntu .venv/bin/pip install -q -r requirements.txt
+cat > /etc/systemd/system/chinku.service <<'EOF'
+[Unit]
+Description=Chinku
+After=network.target
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/chinku
+ExecStart=/home/ubuntu/chinku/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+"""
+
+
+def ec2():
+    return boto3.client("ec2", region_name=REGION)
+
+
+def load() -> dict:
+    return json.loads(STATE.read_text()) if STATE.exists() else {}
+
+
+def save(d: dict) -> None:
+    STATE.parent.mkdir(exist_ok=True)
+    STATE.write_text(json.dumps(d, indent=2))
+
+
+def host(ip: str) -> str:
+    return ip.replace(".", "-") + ".sslip.io"
+
+
+def create() -> None:
+    c, st = ec2(), load()
+    if "instance_id" in st:
+        print("already created:", st)
+        return
+    if not KEY_FILE.exists():
+        KEY_FILE.parent.mkdir(exist_ok=True)
+        try:
+            c.delete_key_pair(KeyName=NAME)
+        except Exception:  # noqa: BLE001
+            pass
+        k = c.create_key_pair(KeyName=NAME)
+        KEY_FILE.write_text(k["KeyMaterial"])
+        print("key saved", KEY_FILE)
+    vpc = c.describe_vpcs(Filters=[{"Name": "isDefault", "Values": ["true"]}])["Vpcs"][0]["VpcId"]
+    sgs = c.describe_security_groups(Filters=[{"Name": "group-name", "Values": [NAME]}])["SecurityGroups"]
+    if sgs:
+        sg = sgs[0]["GroupId"]
+    else:
+        sg = c.create_security_group(GroupName=NAME, Description="chinku web+ssh", VpcId=vpc)["GroupId"]
+        c.authorize_security_group_ingress(GroupId=sg, IpPermissions=[
+            {"IpProtocol": "tcp", "FromPort": p, "ToPort": p, "IpRanges": [{"CidrIp": "0.0.0.0/0"}]} for p in (22, 80, 443)])
+    ami = boto3.client("ssm", region_name=REGION).get_parameter(
+        Name="/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id")["Parameter"]["Value"]
+    inst = c.run_instances(ImageId=ami, InstanceType="t3.small", MinCount=1, MaxCount=1, KeyName=NAME,
+                           SecurityGroupIds=[sg], UserData=USER_DATA,
+                           BlockDeviceMappings=[{"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 16, "VolumeType": "gp3"}}],
+                           TagSpecifications=[{"ResourceType": "instance", "Tags": [{"Key": "Name", "Value": NAME}]}])
+    iid = inst["Instances"][0]["InstanceId"]
+    print("instance", iid, "starting…")
+    c.get_waiter("instance_running").wait(InstanceIds=[iid])
+    alloc = c.allocate_address(Domain="vpc")
+    c.associate_address(InstanceId=iid, AllocationId=alloc["AllocationId"])
+    st = {"instance_id": iid, "sg": sg, "allocation_id": alloc["AllocationId"], "ip": alloc["PublicIp"],
+          "host": host(alloc["PublicIp"])}
+    save(st)
+    print(json.dumps(st, indent=2))
+    print("Wait ~3 min for setup, then: python -m scripts.aws_deploy push")
+
+
+def ssh(cmd: str, st: dict) -> int:
+    return subprocess.call(["ssh", "-i", str(KEY_FILE), "-o", "StrictHostKeyChecking=accept-new",
+                            f"ubuntu@{st['ip']}", cmd])
+
+
+def push() -> None:
+    st = load()
+    url = f"https://{st['host']}"
+    env = Path(".env").read_text(encoding="utf-8")
+    import re
+    env = re.sub(r"^PUBLIC_BASE_URL=.*$", f"PUBLIC_BASE_URL={url}", env, flags=re.M)
+    tmp = Path("data/.env.remote")
+    tmp.write_text(env, encoding="utf-8")
+    subprocess.check_call(["scp", "-i", str(KEY_FILE), "-o", "StrictHostKeyChecking=accept-new", str(tmp),
+                           f"ubuntu@{st['ip']}:/home/ubuntu/chinku/.env"])
+    tmp.unlink()
+    caddy = f"{st['host']} {{\\n  reverse_proxy 127.0.0.1:8000\\n}}\\n"
+    ssh("cd ~/chinku && git pull -q && .venv/bin/pip install -q -r requirements.txt && "
+        f"printf '{caddy}' | sudo tee /etc/caddy/Caddyfile >/dev/null && sudo systemctl reload-or-restart caddy && "
+        "sudo systemctl enable -q chinku && sudo systemctl restart chinku && sleep 3 && curl -s 127.0.0.1:8000/health", st)
+    print("\nPUBLIC URL:", url)
+
+
+def status() -> None:
+    st = load()
+    print(json.dumps(st, indent=2))
+    if st:
+        r = ec2().describe_instances(InstanceIds=[st["instance_id"]])["Reservations"][0]["Instances"][0]
+        print("state:", r["State"]["Name"])
+
+
+if __name__ == "__main__":
+    {"create": create, "push": push, "status": status}[sys.argv[1]]()

@@ -25,6 +25,9 @@ class Settings(BaseSettings):
 
     aws_region: str = "ap-south-1"
     ddb_table_prefix: str = "chinku_"
+    store_backend: str = ""  # "dynamo" or "" (local JSON)
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
     scheduler_role_arn: str = ""
 
     public_base_url: str = ""
