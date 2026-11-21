@@ -200,9 +200,12 @@ ACTION_WORDS = {"create_job": "create the job", "book_visit": "CALL the customer
 
 def plan_lines(actions: list[Any]) -> str:
     """Built in CODE from the actions (never only the LLM readback): every consequential step is listed before the yes."""
-    return "\n".join(f"{i}) {ACTION_WORDS.get(a.intent, a.intent.replace('_', ' '))}"
-                     + (f" ({a.job_ref})" if a.job_ref and a.job_ref not in ("new", "ambiguous") else "")
-                     for i, a in enumerate(a for a in actions if a.intent not in ("small_talk", "other")), start=1))
+    real = [a for a in actions if a.intent not in ("small_talk", "other")]
+    lines = []
+    for i, a in enumerate(real, start=1):
+        ref = f" ({a.job_ref})" if a.job_ref and a.job_ref not in ("new", "ambiguous") else ""
+        lines.append(f"{i}) {ACTION_WORDS.get(a.intent, a.intent.replace('_', ' '))}{ref}")
+    return "\n".join(lines)
 
 
 def _log_understanding(job: Job, heard: Any, readback: str) -> None:

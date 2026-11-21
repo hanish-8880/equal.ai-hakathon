@@ -350,3 +350,9 @@ Today hero: "Visit now · … — Finish & invoice" during/just after a booked s
 VERIFIED LIVE (real brain): CLAUDE.md closing note → "2 angle valves ₹700, 1 hose ₹300, labour ₹400. Total ₹1,400. Not billed: 1 ×
 angle valve (returned)" in 7.5 s. Leak photo → problem read correctly → estimate; fixed double-counting (service line + labour).
 Tests: ₹1,400 case, spoken-total conflict, unapproved extra work, idempotent send, receptionist emergency reply (91 passing).
+
+## [Sat 21:20] INCIDENT: broken deploy took the server down (~5 min) — deploy is now gated
+Observed: a syntax error in assistant.plan_lines; pytest failed at collection, but my shell chain still ran git commit + aws_deploy
+(the commit/deploy line was not chained to the test result) → chinku.service crash-looped; HTTPS check failed.
+Fix: syntax fixed; scripts/aws_deploy.py push() now runs the full test suite first and ABORTS on any failure, and after restart polls
+/health and exits non-zero if the server is not healthy.

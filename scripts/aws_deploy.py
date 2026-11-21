@@ -155,6 +155,11 @@ def ssh(cmd: str, st: dict) -> int:
 
 
 def push() -> None:
+    # SAFETY GATE: never deploy code whose tests fail (a broken deploy took the server down once — DECISIONS Sat 21:20)
+    rc = subprocess.call([sys.executable, "-m", "pytest", "-q", "-x"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if rc != 0:
+        print("DEPLOY ABORTED: tests fail locally — run `python -m pytest -q` and fix first.")
+        sys.exit(1)
     st = load()
     url = f"https://{st['host']}"
     env = Path(".env").read_text(encoding="utf-8")
@@ -171,7 +176,17 @@ def push() -> None:
     ssh("cd ~/chinku && git pull -q && .venv/bin/pip install -q -r requirements.txt && "
         f"printf '{caddy}' | sudo tee /etc/caddy/Caddyfile >/dev/null && sudo systemctl reload-or-restart caddy && "
         "sudo systemctl enable -q chinku && sudo systemctl restart chinku && sleep 3 && curl -s 127.0.0.1:8000/health", st)
-    print("\nPUBLIC URL:", url)
+    import httpx
+    for _ in range(10):
+        try:
+            if httpx.get(f"{url}/health", timeout=10).status_code == 200:
+                print("\nPUBLIC URL:", url, "— health OK")
+                return
+        except httpx.HTTPError:
+            pass
+        time.sleep(2)
+    print("\n!!! DEPLOYED BUT HEALTH CHECK FAILED — check `sudo journalctl -u chinku -n 30` on the server")
+    sys.exit(2)
 
 
 def status() -> None:
