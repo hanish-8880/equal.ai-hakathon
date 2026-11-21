@@ -126,6 +126,8 @@
   .rb { font-weight:700; }
   .bub .card { margin-top:8px; min-height:auto; box-shadow:none; padding:12px 14px; border-radius:20px; }
   .bub .card h3 { font-size:17px; margin:6px 0 4px; }
+  .offer { padding:8px 0; border-top:1px solid rgba(21,19,31,.12); } .offer:first-of-type { border-top:0; }
+  .offer a { color:#15131F; font-weight:700; }
   .bub img { max-width:100%; border-radius:16px; display:block; margin-top:6px; } .bub audio { width:100%; height:36px; margin-top:6px; }
   .file { display:inline-flex; gap:6px; margin-top:6px; padding:8px 12px; border-radius:16px; background:var(--page); color:var(--violet-d); font-weight:700; text-decoration:none; }
   .typing .bub { display:flex; align-items:center; gap:8px; color:var(--ink2); font-size:13.5px; }
@@ -473,7 +475,24 @@ function showTyping(label) { if (!typingEl) { typingEl = document.createElement(
 function hideTyping() { if (typingEl && typingEl.parentNode) typingEl.remove(); }
 function startWaiting(s) { waiting = true; setCStatus(s, true); showTyping(s); schedChat(700); }
 function stopWaiting() { waiting = false; setCStatus("Online", false); hideTyping(); }
+function offersCard(c) {
+  const rows = (c.rows || []).map(r => `<div class="offer"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><b>${esc(r.shop)}</b>${chip(r.match)}${chip(r.stock)}${r.hold === "offered" ? chip("Hold offered") : ""}</div>
+    <div style="margin:4px 0">${esc(r.model || "model ?")} · <span class="price" style="font-size:19px">${esc(inr(r.unit_price))}</span>/pc${r.mrp ? `<span class="mrp">${esc(inr(r.mrp))}</span>` : ""}</div>
+    <div class="meta">${r.price_note ? esc(r.price_note) + " · " : ""}GST ${esc(WORD[r.tax] || r.tax)} · delivery ${esc(inr(r.delivery))} · total ${esc(inr(r.total))}</div>
+    ${r.pickup_address ? `<div class="meta">📍 ${esc(r.pickup_address)}${r.earliest_pickup ? " · from " + esc(r.earliest_pickup) : ""}</div>` : ""}
+    ${r.evidence && Object.keys(r.evidence).length ? `<details><summary>What they said</summary>${Object.entries(r.evidence).map(([k, q]) => `<div class="meta"><b>${esc(k.replace(/_/g, " "))}:</b> <span class="quote">“${esc(q)}”</span></div>`).join("")}</details>` : ""}</div>`).join("");
+  const dep = c.dependency ? `<p style="margin:8px 0 0">${chip(c.dependency === "met" ? "met" : "not_met")}</p>` : "";
+  return `<div class="card c-sky"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip("Shop quotes")}</div>
+    <h3>${esc(c.qty)} × ${esc((c.part && (c.part.description + " " + (c.part.model || ""))) || "part")}</h3>${rows || "<p>No answers yet.</p>"}${dep}</div>`;
+}
+function shopsCard(c) {
+  return `<div class="card c-violet"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip("Nearby shops · OpenStreetMap")}</div>
+    ${(c.rows || []).map(r => `<div class="offer"><b>${esc(r.name)}</b> <span class="meta">${esc(r.kind)} · ${esc(r.distance_km)} km</span>
+      <div class="meta">${r.address ? "📍 " + esc(r.address) + " · " : ""}${r.phone ? "☎ " + esc(r.phone) + " · " : "no phone listed · "}<a href="${esc(r.map_url)}" target="_blank" rel="noopener">🗺️ Map</a></div></div>`).join("")}</div>`;
+}
 function chatCard(c) {
+  if (c && c.type === "offers") return offersCard(c);
+  if (c && c.type === "shops") return shopsCard(c);
   if (!c || c.type !== "job") return "";
   const sc = c.site_contact || {};
   const rows = [["Site", c.site], ["Customer", [sc.name, sc.phone].filter(Boolean).join(" · ")], ["Free", (c.plumber_windows || []).join(", ")], ["Bill to", c.billing_to], ["WO", c.work_order]]

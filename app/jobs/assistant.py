@@ -227,6 +227,11 @@ def _execute(user: str, action: Any, text: str, image: dict[str, Any] | None, se
         return None
     if action.intent == "book_visit":
         return start_booking(user, job, send)
+    if action.intent == "source_part":
+        from app.jobs import sourcing
+        return sourcing.start_sourcing(user, job, text, image, send)
+    if action.intent == "set_dependency":
+        return None  # the rule is read together with the part request (sourcing.extract_part)
     return f"{job.job_id}: {NEXT_INTENTS.get(action.intent, action.intent)} is being built right now — not live yet."
 
 

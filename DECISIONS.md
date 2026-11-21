@@ -326,3 +326,13 @@ windows still free = live availability) → book_slot (conditional-write lock sl
 other time asked → visit pending, plumber decides) → WhatsApp confirmation if the customer has joined the sandbox (tracked from inbound
 messages) else recorded as call-only → schedule → visit_confirm call 1 h before (60 s with DEMO_REMINDER_SECONDS) → result to plumber.
 Tests: slot lock conflict, evidence on booking, pending on other-time, past windows never offered, gate → booking call (82 passing).
+
+## [Sat 20:40] Parts sourcing live: OSM shops shown, plumber's shops called, offers compared in code, dependency rule
+Observed (OSM, Kondapur): 10 hardware/sanitary shops within 4 km, 0 phone numbers, Overpass ~32 s → shops are SHOWN (address, distance,
+map link, background card); calls only to shops in the plumber's contacts or numbers he gives (Hanish's choice: "call only on my pick").
+Built: part_extract (model EXACT or ask — never guessed; shops; rule "Srinivas ≤ ₹500 exact → ask customer 4–6"), part_sourcing spec
+(shop_part_check call per shop: exact model, stock today, units, selling price, MRP, GST, delivery, condition, pickup, hold),
+record_offers (evidence + call id; newer call supersedes older offer), rank_offers (exact + in stock first; unknown delivery → total
+unknown; conditional price only if condition met), dependency check (met → next action book; not met → reasons, visit pending, ask
+plumber: wait / take other model / another shop), offers + nearby-shops cards in the app. Bug caught by tests: ₹0 delivery treated as
+unknown (0 == False) → fixed.

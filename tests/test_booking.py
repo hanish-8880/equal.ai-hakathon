@@ -76,3 +76,49 @@ def test_customer_wants_other_time_keeps_visit_pending():
 
 def test_past_windows_are_never_offered():
     assert ops.free_windows(ME, [_w(-5, "This morning")]) == []
+
+
+# ---------------- parts: offers, ranking, dependency ----------------
+from app.jobs import parts  # noqa: E402
+from app.jobs.models import Dependency, Part  # noqa: E402
+
+
+def F(v, st="confirmed", q="q"):
+    return {"value": v, "status": st, "evidence_quote": q}
+
+
+def test_offer_unknown_delivery_stays_unknown_and_condition_rule():
+    o = parts.build_offer("Srinivas", "P1", 2, {"exact_model_available": F(True), "model_offered": F("ALD-0517"),
+                                                  "unit_price": F(300), "price_condition": F("₹300 each only if 10 or more")}, "c1")
+    assert o.delivery_charge is None and o.condition_met is False
+    r = parts.rank_offers([o], 2)[0]
+    assert r["unit_price"] is None and "not met" in r["price_note"] and r["total"] is None
+
+
+def test_rank_exact_in_stock_beats_cheaper_different_model():
+    a = parts.build_offer("Srinivas", "P1", 2, {"exact_model_available": F(False), "model_offered": F("ALD-0520"),
+                                                  "exact_model_eta": F("tomorrow"), "unit_price": F(280)}, "c1")
+    b = parts.build_offer("Ravi", "P1", 2, {"exact_model_available": F(True), "model_offered": F("ALD-0517"),
+                                              "unit_price": F(350), "delivery_charge": F(0)}, "c2")
+    rows = parts.rank_offers([a, b], 2)
+    assert [r["shop"] for r in rows] == ["Ravi", "Srinivas"] and rows[0]["total"] == 700 and rows[1]["stock"] == "tomorrow"
+
+
+def test_dependency_not_met_keeps_visit_pending_and_says_why():
+    j = _job("J21", [])
+    j.parts_needed.append(Part(part_id="P1", description="angle valve", model="ALD-0517", qty=2))
+    j.dependencies.append(Dependency(part_id="P1", shop="Srinivas", exact_model=True, max_unit_price=500, then="today 4–6"))
+    a = parts.build_offer("Srinivas", "P1", 2, {"exact_model_available": F(False), "model_offered": F("ALD-0520"),
+                                                  "exact_model_eta": F("tomorrow"), "unit_price": F(280)}, "c1")
+    state, msg = parts.check_dependencies(j, "P1", parts.rank_offers([a], 2))
+    assert state == "not_met" and "ALD-0520" in msg and "tomorrow" in msg and j.appointment.state == "pending"
+    assert j.next_action.owner == "plumber"
+
+
+def test_dependency_met_moves_to_booking():
+    j = _job("J21", [])
+    j.parts_needed.append(Part(part_id="P1", description="angle valve", model="ALD-0517", qty=2))
+    j.dependencies.append(Dependency(part_id="P1", shop="Srinivas", exact_model=True, max_unit_price=500, then="today 4–6"))
+    a = parts.build_offer("Srinivas Hardware", "P1", 2, {"exact_model_available": F(True), "model_offered": F("ALD-0517"), "unit_price": F(450)}, "c1")
+    state, msg = parts.check_dependencies(j, "P1", parts.rank_offers([a], 2))
+    assert state == "met" and "today 4–6" in j.next_action.what

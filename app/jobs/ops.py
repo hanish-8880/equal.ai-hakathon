@@ -161,4 +161,5 @@ OPS = {"book_slot": book_slot, "notify_client": notify_client, "visit_confirmed"
 
 
 def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+    from app.jobs import parts  # noqa: F401  (registers record_offers / compare_offers)
     return OPS[step["op"]](step, spec, task, send)
