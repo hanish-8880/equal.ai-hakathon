@@ -105,7 +105,7 @@ def book_slot(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
         jobs.log(job, "booking_pending", f"No offered window matched (customer said: {chosen or '—'})", actor="client", channel="call", ref=call_id)
         jobs.save(job)
         CARD(task["user"], f"{job.job_id}: the customer didn't take your windows (said: {chosen or 'nothing clear'}). Which time should I offer?", jobs.card(job))
-        return {"status": "done", "output": {"booked": False, "chosen": chosen}}
+        return {"status": "stop", "output": {"booked": False, "chosen": chosen}}
     # lock: conditional write — two customers can never take one slot
     if not store().claim(slot_key(job.plumber_id, w["start"])):
         nxt = free_windows(job.plumber_id, offered)
@@ -116,7 +116,7 @@ def book_slot(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
         jobs.save(job)
         CARD(task["user"], f"{job.job_id}: {w.get('label')} was just booked by another job. Offer {nxt[0]['label'] if nxt else 'a new time'} instead?",
              jobs.card(job))
-        return {"status": "done", "output": {"booked": False, "conflict": w}}
+        return {"status": "stop", "output": {"booked": False, "conflict": w}}
     job.appointment.slot = Window(**{k: w[k] for k in ("start", "end", "label") if k in w})
     job.appointment.state = "booked"
     job.appointment.confirmed_both = True

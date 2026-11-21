@@ -61,7 +61,7 @@ def test_two_customers_cannot_take_one_slot():
     ops.book_slot({"from_step": "call_client"}, {}, _task("J21", [w1, w2], w2["start"]), lambda m: None)
     r = ops.book_slot({"from_step": "call_client"}, {}, _task("J22", [w1, w2], w2["start"]), lambda m: None)
     j = jobs.get("J22")
-    assert not r["output"]["booked"] and j.appointment.state == "proposed" and "taken" in j.next_action.blocked_by
+    assert r["status"] == "stop" and not r["output"]["booked"] and j.appointment.state == "proposed" and "taken" in j.next_action.blocked_by
     assert "Tomorrow 11–1" in CARDS[-1]  # offers the next free window
     assert [w["label"] for w in ops.free_windows(ME, [w1, w2])] == ["Tomorrow 11–1"]  # live availability
 
@@ -71,7 +71,7 @@ def test_customer_wants_other_time_keeps_visit_pending():
     _job("J21", [w1])
     r = ops.book_slot({"from_step": "call_client"}, {}, _task("J21", [w1], "Sunday evening", "Sunday evening is better"), lambda m: None)
     j = jobs.get("J21")
-    assert not r["output"]["booked"] and j.appointment.state == "pending" and j.next_action.owner == "plumber"
+    assert r["status"] == "stop" and not r["output"]["booked"] and j.appointment.state == "pending" and j.next_action.owner == "plumber"
 
 
 def test_past_windows_are_never_offered():

@@ -8,7 +8,8 @@ from typing import Any
 import httpx
 
 UA = {"User-Agent": "chinku-hackathon-prototype/0.1"}  # generic client name, no personal data
-OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
+OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter",
+            "https://overpass.private.coffee/api/interpreter"]
 _cache: dict[str, tuple[float, Any]] = {}
 
 
@@ -41,14 +42,25 @@ def nearby_shops(lat: float, lon: float, radius_m: int = 4000, limit: int = 8) -
          f'nwr["craft"="plumber"](around:{radius_m},{lat},{lon}););out center 60;')
 
     def go():
+        """Persistent cache in the store (7 days) → a slow Overpass never blocks a site we've seen before."""
+        from app.store.dynamo import store
+        key = f"mapcache:{round(lat, 3)},{round(lon, 3)},{radius_m}"
+        hit = store().get("contacts", key)
+        if hit and time.time() - hit.get("ts", 0) < 7 * 86400:
+            return hit["elements"]
         last = None
-        for url in OVERPASS:
-            try:
-                r = httpx.post(url, data={"data": q}, headers=UA, timeout=45)
-                r.raise_for_status()
-                return r.json().get("elements", [])
-            except httpx.HTTPError as e:
-                last = e
+        for attempt in range(2):
+            for url in OVERPASS:
+                try:
+                    r = httpx.post(url, data={"data": q}, headers=UA, timeout=60)
+                    r.raise_for_status()
+                    els = r.json().get("elements", [])
+                    store().put("contacts", key, {"kind": "mapcache", "ts": time.time(), "elements": els})
+                    return els
+                except (httpx.HTTPError, ValueError) as e:
+                    last = e
+        if hit:
+            return hit["elements"]  # stale but useful
         raise RuntimeError(f"overpass failed: {last}")
     rows = []
     for e in _cached(f"shops:{round(lat, 3)},{round(lon, 3)},{radius_m}", 3600, go):

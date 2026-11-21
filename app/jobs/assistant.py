@@ -300,6 +300,17 @@ def handle(user: str, text: str, image: dict[str, Any] | None, send: Send, force
             job = jobs.get(pb["job_id"])
             billing.start_invoice(user, job, text, previous=pb.get("draft"))
             return
+    # 2c) "nearby shops" → map card for the active job
+    if re.search(r"\b(near(by)?\s+shops?|shops?\s+near|map)\b", text, re.I) and not image:
+        open_ = jobs.open_jobs(user)
+        ref = re.search(r"\bJ\s*(\d+)\b", text, re.I)
+        job = jobs.get(f"J{ref.group(1)}") if ref else (open_[-1] if open_ else None)
+        if job:
+            import threading
+            from app.jobs import sourcing
+            send(f"🗺️ Looking for plumbing shops near {job.site_address.value or job.flat.value or 'the site'} ({job.job_id})…")
+            threading.Thread(target=sourcing._nearby_card, args=(user, job), daemon=True).start()
+            return
     # 3) answer to a question Chinku asked about a job (e.g. which number)
     ans = _answer_pending_question(user, text)
     if ans:

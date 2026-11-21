@@ -63,6 +63,8 @@ def _nearby_card(user: str, job: Job) -> None:
         rows = maps.nearby_shops(g[0], g[1]) if g else []
     except Exception as e:  # noqa: BLE001
         store().add_event(job.job_id, "maps_error", {"error": str(e)[:200]})
+        ops.CARD(user, f"🗺️ The map service is slow right now, so I couldn't load shops near {job.site_address.value or 'the site'}. "
+                       f"Say “nearby shops” in a minute and I'll try again.", jobs.card(job))
         return
     if rows:
         ops.CARD(user, f"🗺️ Plumbing / hardware shops near {job.site_address.value or 'the site'} (OpenStreetMap — tap for the map). "

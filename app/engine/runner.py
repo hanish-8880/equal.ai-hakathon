@@ -279,6 +279,11 @@ def advance(task_id: str, send) -> None:
             task["status"] = "waiting_input"
         if result["status"] == "failed":
             task["status"] = "failed"
+        if result["status"] == "stop":  # step decided the rest of the task must not run (e.g. visit not booked)
+            task["steps"][step["id"]] = {**result, "status": "done"}
+            task["status"] = "done"
+            save_task(task, "task_stopped")
+            return
         save_task(task, f"step_{result['status']}")
         if result["status"] != "done":
             return
