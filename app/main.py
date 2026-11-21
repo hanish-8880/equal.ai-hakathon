@@ -11,6 +11,8 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from app.brain import perceive
 from app.channels import whatsapp
 from app.engine import runner, steps
+from app.jobs import assistant
+from app.jobs import store as job_store
 from app.config import settings
 from app.engine import validate
 from app.engine.validate import mask_phone
@@ -21,8 +23,8 @@ app = FastAPI(title="Chinku")
 
 
 # ---------------- delivery: WhatsApp and/or web chat ----------------
-def chat_log(user: str, kind: str, text: str, media_url: str | None = None) -> None:
-    store().add_event(f"chat:{user}", kind, {"text": text, "media_url": media_url})
+def chat_log(user: str, kind: str, text: str, media_url: str | None = None, card: dict[str, Any] | None = None) -> None:
+    store().add_event(f"chat:{user}", kind, {"text": text, "media_url": media_url, "card": card})
 
 
 def _web_preferred(user: str) -> bool:
@@ -30,9 +32,9 @@ def _web_preferred(user: str) -> bool:
     return bool(c and c.get("channel") == "web")
 
 
-def deliver(to: str, text: str, media_url: str | None = None) -> None:
+def deliver(to: str, text: str, media_url: str | None = None, card: dict[str, Any] | None = None) -> None:
     """Every message is mirrored into the web chat; WhatsApp only if the user's last message came from WhatsApp."""
-    chat_log(to, "chat_out", text, media_url)
+    chat_log(to, "chat_out", text, media_url, card)
     if not _web_preferred(to):
         whatsapp.send(to, text, media_url)
 
@@ -58,6 +60,15 @@ def send_file(to: str, data: bytes, filename: str, caption: str) -> None:
 
 
 steps.SEND_FILE = send_file
+assistant.CARD = lambda to, text, card: deliver(to, text, None, card)
+
+
+def entry(user: str, text: str, image: dict[str, Any] | None, force_confirm: bool = False) -> None:
+    """One router for every channel (CLAUDE.md v2 §3)."""
+    if settings().mode == "plumber":
+        assistant.handle(user, text, image, reply_to(user), force_confirm=force_confirm)
+    else:
+        runner.handle_message(user, text, image, reply_to(user), force_confirm=force_confirm)
 
 
 def _scheduler_loop() -> None:
@@ -134,9 +145,10 @@ def process_message(user: str, text: str, media: list[tuple[bytes, str]]) -> Non
         for data, mtype in media:
             m = {"type": mtype}
             if m["type"].startswith("audio"):
-                tr = perceive.transcribe(data, "voice." + (m["type"].split("/")[-1] or "ogg"))
+                tr = perceive.transcribe(data, "voice." + (m["type"].split("/")[-1].split(";")[0] or "ogg"))
                 text = f"{text}\n{tr.text}".strip()
                 store().add_event("-", "transcribed", {"text": tr.text})
+                chat_log(user, "chat_heard", tr.text)  # show the plumber what Chinku heard
             elif m["type"].startswith("image"):
                 image = perceive.read_image(data, m["type"]).model_dump()
                 store().add_event("-", "image_read", image)
@@ -144,7 +156,7 @@ def process_message(user: str, text: str, media: list[tuple[bytes, str]]) -> Non
                 image = perceive.read_document(data, "document.pdf").model_dump()
                 store().add_event("-", "document_read", {k: image.get(k) for k in ("doc_type", "title", "stated_total")}
                                   | {"items": len(image.get("line_items", []))})
-        runner.handle_message(user, text, image, reply_to(user))
+        entry(user, text, image)
     except Exception as e:  # noqa: BLE001
         store().add_event("-", "error", {"where": "message", "error": str(e)[:500]})
         deliver(user, "Sorry, something went wrong. Please try again.")
@@ -177,7 +189,7 @@ def process_inbound_call(parsed: dict[str, Any]) -> None:
     if not said.strip():
         return
     text = f"[Hanish phone call lo cheppadu]\n{said}\n\n[Call summary: {parsed.get('summary') or '-'}]"
-    runner.handle_message(owner, text, None, reply_to(owner), force_confirm=True)
+    entry(owner, text, None, force_confirm=True)
 
 
 def process_omni(parsed: dict[str, Any]) -> None:
@@ -249,7 +261,8 @@ async def chat_send(request: Request, bg: BackgroundTasks) -> JSONResponse:
     f = form.get("file")
     if f is not None and getattr(f, "filename", ""):
         data = await f.read()
-        mtype = f.content_type or ("application/pdf" if f.filename.lower().endswith(".pdf") else "image/jpeg")
+        fn = f.filename.lower()
+        mtype = f.content_type or ("application/pdf" if fn.endswith(".pdf") else "audio/webm" if fn.endswith((".webm", ".ogg", ".m4a")) else "image/jpeg")
         media.append((data, mtype))
     set_channel(owner, "web")
     chat_log(owner, "chat_in", text or f"(file: {getattr(f, 'filename', '')})")
@@ -263,7 +276,16 @@ def chat_messages(key: str = "", since: float = 0) -> JSONResponse:
         return JSONResponse({"error": "forbidden"}, status_code=403)
     owner = settings().user_whatsapp
     ev = [e for e in store().events(f"chat:{owner}") if e["ts"] > since]
-    return JSONResponse([{"ts": e["ts"], "dir": "in" if e["kind"] == "chat_in" else "out", **e["payload"]} for e in ev])
+    return JSONResponse([{"ts": e["ts"], "dir": {"chat_in": "in", "chat_heard": "heard"}.get(e["kind"], "out"), **e["payload"]} for e in ev])
+
+
+@app.get("/api/jobs")
+def api_jobs(key: str = "") -> JSONResponse:
+    if not _chat_ok(key):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    owner = settings().user_whatsapp
+    rows = sorted(store().scan("jobs", plumber_id=owner), key=lambda j: j["created_at"], reverse=True)
+    return JSONResponse([job_store.card(job_store.Job.model_validate(j)) | {"timeline": j.get("timeline", [])[-20:]} for j in rows])
 
 
 @app.get("/health")

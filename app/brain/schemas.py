@@ -123,3 +123,48 @@ class SlideDeck(BaseModel):
     title: str
     subtitle: str | None = None
     slides: list[Slide]
+
+
+# ---------- plumber mode (CLAUDE.md v2 §8) ----------
+Intent = Literal["create_job", "book_visit", "source_part", "set_dependency", "request_approval", "approval_response",
+                 "close_job_invoice", "correct_detail", "report_delay", "cancel", "status_query", "small_talk", "other"]
+
+
+class PlumberRoute(BaseModel):
+    intent: Intent
+    job_ref: str | None = None  # "J24" | "new" | "ambiguous" | null
+    entities: dict[str, Any] = Field(default_factory=dict)
+    missing: list[str] = Field(default_factory=list)
+    clarifying_question: str | None = None
+
+
+class FactOut(BaseModel):
+    value: Any = None
+    status: Literal["confirmed", "tentative", "refused", "not_mentioned", "conflicting"] = "not_mentioned"
+    evidence_quote: str | None = None
+
+
+class WindowOut(BaseModel):
+    start: str  # ISO 8601 with +05:30
+    end: str
+    label: str
+    evidence_quote: str
+
+
+class PersonOut(BaseModel):
+    name: str | None = None
+    phones: list[str] = Field(default_factory=list)  # digits exactly as said
+    email: str | None = None
+    evidence_quote: str | None = None
+
+
+class JobDraft(BaseModel):
+    issue: FactOut
+    site_address: FactOut
+    flat: FactOut
+    access_notes: FactOut
+    site_contact: PersonOut | None = None
+    billing_to: PersonOut | None = None
+    approver: PersonOut | None = None
+    work_order: FactOut
+    plumber_windows: list[WindowOut] = Field(default_factory=list)

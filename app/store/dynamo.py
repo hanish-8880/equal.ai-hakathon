@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-TABLES = ("tasks", "calls", "contacts", "events", "seen")
+TABLES = ("tasks", "calls", "contacts", "events", "seen", "jobs")
 
 
 class MemoryStore:

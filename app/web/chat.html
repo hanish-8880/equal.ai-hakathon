@@ -1,85 +1,157 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Chinku Chat</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Chinku</title>
 <style>
-  :root { --bg:#efeae2; --panel:#f0f2f5; --me:#d9fdd3; --bot:#ffffff; --ink:#111b21; --mut:#667781; --acc:#008069; --line:#e9edef; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0b141a; --panel:#202c33; --me:#005c4b; --bot:#202c33; --ink:#e9edef; --mut:#8696a0; --acc:#00a884; --line:#2a3942; } }
+  :root { --bg:#efeae2; --panel:#f0f2f5; --me:#d9fdd3; --bot:#ffffff; --ink:#111b21; --mut:#667781; --acc:#008069; --line:#e2e5e8;
+          --ok:#1f7a4d; --warn:#9a5b00; --bad:#b3261e; --grey:#5f6b73; --card:#f7f8f9; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0b141a; --panel:#202c33; --me:#005c4b; --bot:#202c33;
+          --ink:#e9edef; --mut:#8696a0; --acc:#00a884; --line:#2a3942; --ok:#4fd18b; --warn:#f0b35a; --bad:#ff8a80; --grey:#9aa7b0; --card:#18232a; } }
   * { box-sizing:border-box; }
   body { margin:0; height:100dvh; display:flex; flex-direction:column; background:var(--bg); color:var(--ink);
          font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif; }
-  header { background:var(--acc); color:#fff; padding:12px 16px; display:flex; align-items:center; gap:10px; }
-  header b { font-size:17px; } header span { opacity:.85; font-size:13px; }
+  header { background:var(--acc); color:#fff; padding:10px 16px; display:flex; align-items:center; gap:10px; }
+  header b { font-size:18px; }
+  #chip { margin-left:auto; background:rgba(255,255,255,.18); border:0; color:#fff; border-radius:16px; padding:6px 10px; font:inherit;
+          font-size:13px; max-width:62%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
   #log { flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:6px; }
-  .msg { max-width:min(80%,560px); padding:7px 10px 18px; border-radius:8px; position:relative; white-space:pre-wrap; word-wrap:break-word;
+  .msg { max-width:min(86%,560px); padding:7px 10px 18px; border-radius:8px; position:relative; white-space:pre-wrap; word-wrap:break-word;
          box-shadow:0 1px .5px rgba(0,0,0,.13); }
   .in { align-self:flex-end; background:var(--me); } .out { align-self:flex-start; background:var(--bot); }
+  .heard { align-self:flex-end; background:transparent; box-shadow:none; color:var(--mut); font-size:13px; font-style:italic; padding:0 4px 4px; }
   .t { position:absolute; right:8px; bottom:3px; font-size:11px; color:var(--mut); }
   .msg img { max-width:100%; border-radius:6px; display:block; margin-top:6px; }
   .msg audio { width:100%; margin-top:6px; }
   .file { display:inline-block; margin-top:6px; padding:8px 10px; border-radius:6px; background:var(--panel); color:var(--acc); text-decoration:none; font-weight:600; }
-  form { display:flex; gap:8px; padding:8px 12px; background:var(--panel); align-items:center; }
+  .card { margin-top:8px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px 10px; white-space:normal; font-size:14px; }
+  .card h4 { margin:0 0 4px; font-size:14px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; } .kv span:nth-child(odd) { color:var(--mut); }
+  .chipx { font-size:11px; font-weight:600; padding:1px 7px; border-radius:10px; border:1px solid currentColor; }
+  .ok { color:var(--ok); } .warn { color:var(--warn); } .bad { color:var(--bad); } .grey { color:var(--grey); } .sim { border-style:dashed; }
+  .next { margin-top:6px; padding-top:6px; border-top:1px dashed var(--line); }
+  .quick { display:flex; gap:6px; flex-wrap:wrap; padding:0 12px 6px; }
+  .quick button { border:1px solid var(--acc); color:var(--acc); background:var(--bot); border-radius:16px; padding:6px 12px; font:inherit; font-size:13px; cursor:pointer; }
+  form { display:flex; gap:8px; padding:8px 12px calc(8px + env(safe-area-inset-bottom)); background:var(--panel); align-items:center; }
   #text { flex:1; padding:10px 14px; border-radius:20px; border:1px solid var(--line); background:var(--bot); color:var(--ink); font:inherit; min-width:0; }
-  button, label.att { border:0; border-radius:50%; width:42px; height:42px; background:var(--acc); color:#fff; font-size:18px; cursor:pointer; display:grid; place-items:center; flex:none; }
-  label.att { background:transparent; color:var(--mut); font-size:22px; }
-  #fname { font-size:12px; color:var(--mut); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .round { border:0; border-radius:50%; width:46px; height:46px; background:var(--acc); color:#fff; font-size:19px; cursor:pointer; display:grid; place-items:center; flex:none; }
+  label.att { background:transparent; color:var(--mut); font-size:22px; width:34px; }
+  #mic { width:52px; height:52px; font-size:22px; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #mic.rec { background:var(--bad); animation:pulse 1s infinite; }
+  @keyframes pulse { 50% { transform:scale(1.08); } }
+  #recbar { display:none; text-align:center; color:var(--bad); font-weight:600; font-size:13px; padding:4px; background:var(--panel); }
+  #fname { font-size:12px; color:var(--mut); max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .hint { align-self:center; font-size:12px; color:var(--mut); background:var(--panel); padding:4px 10px; border-radius:8px; text-align:center; }
+  dialog { border:0; border-radius:12px; padding:0; width:min(92vw,480px); background:var(--bot); color:var(--ink); }
+  dialog .jl { padding:12px; display:flex; flex-direction:column; gap:8px; max-height:70vh; overflow:auto; }
 </style>
 </head>
 <body>
-<header><b>Chinku</b><span>web chat · same engine as WhatsApp · real calls</span></header>
-<div id="log"><div class="hint">Type a task, or attach a photo / PDF. Replies, voice notes and PPTs appear here.</div></div>
+<header><b>Chinku</b><button id="chip" title="Switch job">No job yet</button></header>
+<div id="log"><div class="hint">Hold 🎤 to talk, or type. Attach a photo or PDF with 📎. Chinku replies here.</div></div>
+<div class="quick" id="quick"></div>
+<div id="recbar">● Recording… release to send</div>
 <form id="f">
-  <label class="att" title="Attach photo or PDF">📎<input id="file" type="file" accept="image/*,application/pdf" hidden></label>
+  <label class="att round" title="Attach photo or PDF">📎<input id="file" type="file" accept="image/*,application/pdf" hidden></label>
   <span id="fname"></span>
   <input id="text" placeholder="Message Chinku…" autocomplete="off">
-  <button title="Send">➤</button>
+  <button class="round" id="sendbtn" title="Send" type="submit">➤</button>
+  <button class="round" id="mic" title="Hold to talk" type="button">🎤</button>
 </form>
+<dialog id="jobs"><div class="jl" id="joblist"></div></dialog>
 <script>
 const key = new URLSearchParams(location.search).get("key") || "";
-const log = document.getElementById("log"), fileIn = document.getElementById("file"), fname = document.getElementById("fname");
+const $ = id => document.getElementById(id);
+const log = $("log"), fileIn = $("file");
 let since = 0;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const STATE = { open:["Open","grey"], booked:["Booked","ok"], in_progress:["In progress","warn"], awaiting_approval:["Awaiting approval","warn"],
+  invoicing:["Invoicing","warn"], closed:["Closed","ok"], cancelled:["Cancelled","bad"], not_booked:["Not booked","grey"],
+  proposed:["Proposed","warn"], pending:["Pending","grey"] };
+const chip = (k, extra="") => { const [t, c] = STATE[k] || [k, "grey"]; return `<span class="chipx ${c} ${extra}">${esc(t)}</span>`; };
+function jobCard(c) {
+  const kv = [["Site", c.site], ["Customer", c.site_contact && [c.site_contact.name, c.site_contact.phone].filter(Boolean).join(" · ")],
+              ["Your windows", (c.plumber_windows || []).join(", ")], ["Bill to", c.billing_to], ["Work order", c.work_order]]
+    .filter(([, v]) => v).map(([k, v]) => `<span>${esc(k)}</span><span>${esc(v)}</span>`).join("");
+  const na = c.next_action ? `<div class="next"><b>Next:</b> ${esc(c.next_action.what)}${c.next_action.blocked_by ? ` <span class="chipx grey">Blocked: ${esc(c.next_action.blocked_by)}</span>` : ""}</div>` : "";
+  return `<div class="card"><h4>${esc(c.job_id)} · ${esc(c.issue || "Job")} ${chip(c.status)} ${chip(c.appointment)}</h4><div class="kv">${kv}</div>${na}</div>`;
+}
 function media(url) {
   if (!url) return "";
   const u = esc(url), low = url.toLowerCase();
   if (/\.(png|jpe?g|webp)$/.test(low)) return `<img src="${u}" alt="">`;
   if (/\.mp3$/.test(low)) return `<audio controls src="${u}"></audio>`;
-  const name = esc(url.split("/").pop());
-  return `<a class="file" href="${u}" target="_blank" rel="noopener">${low.endsWith(".pptx") ? "📊" : "📄"} ${name}</a>`;
+  return `<a class="file" href="${u}" target="_blank" rel="noopener">${low.endsWith(".pptx") ? "📊" : "📄"} ${esc(url.split("/").pop())}</a>`;
 }
 function add(m) {
   const d = document.createElement("div");
+  if (m.dir === "heard") { d.className = "msg heard"; d.textContent = "🎙️ heard: " + m.text; log.appendChild(d); return; }
   d.className = "msg " + (m.dir === "in" ? "in" : "out");
   const t = new Date(m.ts * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
-  d.innerHTML = esc(m.text) + media(m.media_url) + `<span class="t">${t}</span>`;
+  d.innerHTML = esc(m.text) + media(m.media_url) + (m.card && m.card.type === "job" ? jobCard(m.card) : "") + `<span class="t">${t}</span>`;
   log.appendChild(d);
+  if (m.dir === "out") quick(m.text || "");
+}
+function quick(text) {
+  const q = $("quick"); q.innerHTML = "";
+  const opts = /\?\s*(\(yes \/ no\))?\s*$/i.test(text.trim()) || /shall i/i.test(text) ? ["Yes", "No", "Change"] : [];
+  opts.concat(["Show jobs"]).forEach(o => { const b = document.createElement("button"); b.textContent = o;
+    b.onclick = () => o === "Show jobs" ? showJobs() : send(o); q.appendChild(b); });
 }
 async function poll() {
   try {
     const r = await fetch(`/api/chat/messages?key=${encodeURIComponent(key)}&since=${since}`);
     if (r.ok) {
       const rows = await r.json();
-      const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+      const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 120;
       rows.forEach(m => { add(m); since = Math.max(since, m.ts); });
-      if (rows.length && atBottom) log.scrollTop = log.scrollHeight;
+      if (rows.length) { if (atBottom) log.scrollTop = log.scrollHeight; refreshChip(); }
     }
   } catch (e) {}
 }
-fileIn.onchange = () => { fname.textContent = fileIn.files[0] ? fileIn.files[0].name : ""; };
-document.getElementById("f").onsubmit = async ev => {
-  ev.preventDefault();
-  const text = document.getElementById("text").value.trim();
-  if (!text && !fileIn.files[0]) return;
-  const fd = new FormData();
-  fd.append("key", key); fd.append("text", text);
-  if (fileIn.files[0]) fd.append("file", fileIn.files[0]);
-  document.getElementById("text").value = ""; fileIn.value = ""; fname.textContent = "";
+let jobsCache = [];
+async function refreshChip() {
+  try { const r = await fetch(`/api/jobs?key=${encodeURIComponent(key)}`); if (!r.ok) return; jobsCache = await r.json();
+    const open = jobsCache.filter(j => !["closed", "cancelled"].includes(j.status));
+    $("chip").textContent = open.length ? `${open[0].job_id} · ${open[0].site || ""} · ${open[0].issue || ""}` + (open.length > 1 ? ` (+${open.length - 1})` : "") : "No job yet";
+  } catch (e) {}
+}
+function showJobs() {
+  $("joblist").innerHTML = jobsCache.length ? jobsCache.map(jobCard).join("") + `<button class="quick" onclick="jobs.close()">Close</button>` : "<p>No jobs yet.</p>";
+  $("jobs").showModal();
+}
+$("chip").onclick = showJobs;
+$("jobs").onclick = e => { if (e.target.id === "jobs") $("jobs").close(); };
+async function send(text, file) {
+  const fd = new FormData(); fd.append("key", key); fd.append("text", text || "");
+  if (file) fd.append("file", file, file.name || "voice.webm");
+  $("quick").innerHTML = "";
   await fetch("/api/chat", {method: "POST", body: fd});
   poll(); log.scrollTop = log.scrollHeight;
-};
-poll().then(() => log.scrollTop = log.scrollHeight);
+}
+fileIn.onchange = () => { $("fname").textContent = fileIn.files[0] ? fileIn.files[0].name : ""; };
+$("f").onsubmit = ev => { ev.preventDefault(); const t = $("text").value.trim(), f = fileIn.files[0];
+  if (!t && !f) return; $("text").value = ""; fileIn.value = ""; $("fname").textContent = ""; send(t, f); };
+// hold-to-talk
+let rec = null, chunks = [];
+async function startRec(e) {
+  e.preventDefault();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    rec = new MediaRecorder(stream); chunks = [];
+    rec.ondataavailable = ev => chunks.push(ev.data);
+    rec.onstop = () => { stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(chunks, {type: rec.mimeType || "audio/webm"});
+      if (blob.size > 1500) send("", new File([blob], "voice.webm", {type: blob.type}));
+      $("mic").classList.remove("rec"); $("recbar").style.display = "none"; };
+    rec.start(); $("mic").classList.add("rec"); $("recbar").style.display = "block";
+  } catch (err) { alert("Microphone not available: " + err.message); }
+}
+function stopRec(e) { e.preventDefault(); if (rec && rec.state === "recording") rec.stop(); }
+const mic = $("mic");
+mic.addEventListener("pointerdown", startRec); mic.addEventListener("pointerup", stopRec);
+mic.addEventListener("pointerleave", stopRec); mic.addEventListener("pointercancel", stopRec);
+poll().then(() => { log.scrollTop = log.scrollHeight; refreshChip(); });
 setInterval(poll, 2000);
 </script>
 </body>

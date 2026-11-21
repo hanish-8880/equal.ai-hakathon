@@ -262,3 +262,14 @@ Observed: chair task t_e4b4ac9a stuck "running" 40+ min: one call no_answer → 
 timer lost → step waited forever. Chose: the no-answer call record becomes status "retry_scheduled" with retry_at (DynamoDB);
 the 15 s loop fires due retries (idempotent claim retry:{call_id}); a retry_scheduled call keeps the step non-terminal.
 Stuck task closed manually (status failed, note). Remaining in-memory timers: wait_for remind/timeout only (logged as a limit).
+
+## [Sat 19:40] PIVOT adopted: Chinku for Plumbers (new CLAUDE.md; v1 archived in docs/CLAUDE_v1_errands.md)
+Chose: a persistent Job (app/jobs/models.py, CLAUDE.md §5) on top of the existing engine. Plumber router (gpt-5.5) returns
+{intent, job_ref, entities, missing, clarifying_question}; job resolution in code: named job → that job; none named + one open job → it;
+several open → ask (never guess). Each plumber action will be a spec bound to a job; v1 features still work via "other" intent.
+Built (LIVE-tested with the real brain, in-memory store): create_job from the §6.1 example → J21, issue/flat/site/WO/billing with evidence,
+plumber windows resolved to ISO (tomorrow 11–13, 16–19), next action "Call the customer to book a visit"; status query; several
+customer numbers → asks which; missing windows → asks only for windows. Job ids start at J21 (JOB_ID_START) so the demo can reach J24.
+Chinku App (/chat?key=): job chip, job cards, hold-to-talk mic (MediaRecorder → upload → gpt-4o-transcribe), "🎙️ heard:" transcript,
+quick replies, text-labelled status chips. Language conflict: new CLAUDE.md §8 says Telugu-English replies; Hanish asked for English
+earlier today → kept DEFAULT_LANGUAGE=English (router still understands Telugu-English). Flagged to Hanish.
