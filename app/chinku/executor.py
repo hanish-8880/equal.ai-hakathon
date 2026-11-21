@@ -79,6 +79,8 @@ def missing_refs(inputs: Any) -> list[str]:
 def step_line(i: int, s: Any) -> str:
     inp = s.inputs or {}
     who = ", ".join(str(x.get("name") or x.get("phone")) for x in inp.get("targets") or [] if isinstance(x, dict)) or "them"
+    if "{" in who:  # filled in from an earlier step (e.g. the photo) — say so in words
+        who = "the number on the photo"
     words = STEP_WORDS.get(s.tool, s.tool).format(what="photo", query=str(inp.get("query", ""))[:60], who=who,
                                                   to="you" if str(inp.get("to", "")).lower() in ("me", "myself") else inp.get("to", "?"),
                                                   text=str(inp.get("text", ""))[:60])
