@@ -109,7 +109,7 @@ def test_trip_sorted_by_rating_and_only_real_numbers_callable(monkeypatch):
     out = tools.trip_plan(ME, {"destination": "Araku", "days": 2, "people": 4}, ctx())
     assert [h["name"] for h in out["hotels"]] == ["B", "A", "C"]
     assert [h["callable"] for h in out["hotels"]] == [True, True, False]
-    assert out["restaurants"][0]["callable"] is False  # landline → shown, but the mobile-only call engine won't dial it
+    assert out["restaurants"][0]["callable"] is True and out["restaurants"][0]["phone_kind"] == "landline"  # STD landline, dialable
 
 
 def test_quiet_hours_block_unknown_numbers_only(monkeypatch):
@@ -123,3 +123,22 @@ def test_quiet_hours_block_unknown_numbers_only(monkeypatch):
         tools.call(ME, {"targets": [{"name": "Ushodaya Resort", "phone": "+919441196111"}], "purpose": "book"}, ctx())
     memory.remember(ME, "Ravi phone", "98480 22222", "contact")
     assert "+919848022222" in tools.known_numbers(ME) and "+919989683607" in tools.known_numbers(ME)
+
+
+
+@pytest.mark.parametrize("raw,num,kind", [
+    ("1800 102 5551", "+9118001025551", "tollfree"), ("+91 1800 209 4999", "+9118002094999", "tollfree"),
+    ("022-4128 0000", "+912241280000", "landline"), ("0891-2345678", "+918912345678", "landline"),
+    ("098480 22222", "+919848022222", "mobile"), ("9876543210", "+919876543210", "mobile"), ("12345", None, None)])
+def test_phone_kinds(raw, num, kind):
+    from app.engine.validate import phone_kind
+    assert phone_kind(raw) == (num, kind)
+
+
+def test_tollfree_helplines_allowed_at_night_strangers_not(monkeypatch):
+    from app.config import settings
+    monkeypatch.setattr(settings(), "user_whatsapp", ME)
+    monkeypatch.setattr(tools, "quiet_hours", lambda now=None: "1:30 AM")
+    tools.check_call_hours(ME, [{"label": "Bajaj helpline", "phone": "1800 102 5551"}])  # no error
+    with pytest.raises(tools.ToolError, match="too late"):
+        tools.check_call_hours(ME, [{"label": "Bajaj office", "phone": "022-4128 0000"}])

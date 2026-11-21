@@ -5,7 +5,7 @@ route_examples:
   - "call Ravi and ask if he can come tomorrow"
   - "electrician ki call chesi repu ravagalara ani adugu"
 inputs:
-  targets:   {source: text_or_contacts, required: true, type: list, item_fields: [label, phone, role], validate_item: {phone: indian_mobile}}
+  targets:   {source: text_or_contacts, required: true, type: list, item_fields: [label, phone, role], validate_item: {phone: dialable}}
   purpose:   {source: text, required: true}
   questions: {source: text, required: true, type: list, item_fields: [field, question]}
 confirm_before: [call]

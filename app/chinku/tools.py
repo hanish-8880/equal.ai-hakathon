@@ -397,7 +397,8 @@ def check_call_hours(user: str, targets: list[dict[str, Any]]) -> None:
     if not late:
         return
     known = known_numbers(user)
-    strangers = [t for t in targets if indian_mobile(str(t.get("phone") or "")) not in known]
+    from app.engine.validate import phone_kind
+    strangers = [t for t in targets if phone_kind(t.get("phone"))[1] != "tollfree" and phone_kind(t.get("phone"))[0] not in known]
     if strangers:
         names = ", ".join(str(t.get("label") or t.get("name") or t.get("phone")) for t in strangers)
         raise ToolError(f"It's {late} — too late to call {names} (businesses and people who haven't agreed to calls). "
@@ -410,10 +411,11 @@ def call(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, An
     from app.engine.validate import indian_mobile
     targets = []
     for t in inputs.get("targets") or []:
-        ph = indian_mobile(str(t.get("phone") or ""))
+        from app.engine.validate import phone_kind
+        ph, kind = phone_kind(t.get("phone"))
         if not ph:
-            raise ToolError(f"“{t.get('phone')}” is not a valid Indian mobile number.")
-        targets.append({"label": t.get("name") or "the person", "phone": ph, "role": t.get("role") or "contact"})
+            raise ToolError(f"“{t.get('phone')}” is not a number I can call (mobile, landline or 1800 toll-free).")
+        targets.append({"label": t.get("name") or "the person", "phone": ph, "role": t.get("role") or "contact", "kind": kind})
     if not targets:
         raise ToolError("Whom should I call? I need a phone number.")
     check_call_hours(user, targets)
@@ -832,10 +834,10 @@ def trip_plan(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[st
     def prep(rows: list[TripPlace], kind: str) -> list[dict[str, Any]]:
         out = []
         for p in sorted(rows, key=lambda x: (x.rating is None, -(x.rating or 0))):  # code ranks by rating; unknown rating last
+            from app.engine.validate import phone_kind
             raw = (p.phone or "").strip()
-            landline = bool(re.match(r"^0\d{2,4}[-\s]\d{6,8}$", raw))  # 0891-2345678 is an STD landline, not a mobile
-            mob = None if landline else indian_mobile(raw)
-            out.append(p.model_dump() | {"kind": kind, "phone": mob or (raw or None), "callable": bool(mob)})
+            num, how = phone_kind(raw)  # mobile, landline (0891-2345678) or toll-free — all dialable now
+            out.append(p.model_dump() | {"kind": kind, "phone": num or (raw or None), "callable": bool(num), "phone_kind": how})
         return out
     hotels, restaurants = prep(t.hotels, "hotel"), prep(t.restaurants, "restaurant")
     checked = datetime.now(IST).strftime("%d %b %Y")
@@ -866,7 +868,200 @@ def connect_me(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[s
     return {"phone": phone, "ticket": inputs.get("ticket"), "transfer": "not_available"}
 
 
+# ---------------- Swiggy Food (delivery) + Dineout (tables) — LIVE, user's own login ----------------
+def _sw():
+    from app.chinku.adapters import swiggy
+    if not swiggy.connected():
+        raise ToolError("Swiggy isn't connected yet — log in once with your phone + OTP.")
+    return swiggy
+
+
+def food_search(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    """Real dishes from Swiggy; filters and ranking in CODE (veg, max price, max minutes; cheapest / fastest / best rated)."""
+    sw = _sw()
+    q = str(inputs.get("query") or "").strip()
+    if not q:
+        raise ToolError("What would you like to eat?")
+    try:
+        data = sw.call("search_menu", {"query": q, "addressId": sw.address_id("food")}, "food")
+    except sw.SwiggyError as e:
+        raise ToolError(str(e)) from e
+    veg, max_price, max_min = inputs.get("veg"), inputs.get("max_price"), inputs.get("max_minutes")
+    keep, excluded = [], []
+    for it in data.get("items") or []:
+        name, price, mins = (it.get("name") or "").strip(), it.get("price"), it.get("deliveryTimeMinutes")
+        why = ("not veg" if veg and it.get("isVeg") is False else
+               f"₹{price} is over ₹{max_price}" if max_price and price is not None and price > float(max_price) else
+               f"{mins} min is over {max_min} min" if max_min and mins and mins > float(max_min) else
+               "out of stock" if it.get("inStock") == 0 else None)
+        row = {"dish": name, "price": price, "veg": it.get("isVeg"), "menu_item_id": it.get("menu_item_id"), "restaurant_id": it.get("restaurant_id"),
+               "restaurant": it.get("restaurant_name"), "area": it.get("restaurant_area"), "minutes": mins, "eta": it.get("deliveryTimeRange"),
+               "rating": float(it["restaurant_rating"]) if str(it.get("restaurant_rating") or "").replace(".", "").isdigit() else None,
+               "ratings": it.get("restaurant_rating_count"), "km": it.get("distanceKm"), "image": it.get("imageUrl")}
+        (excluded.append({"item": f"{name} · {row['restaurant']}", "why": why}) if why else keep.append(row))
+    prio = inputs.get("priority") if inputs.get("priority") in ("cheapest", "fastest", "best") else "cheapest"
+    key = {"cheapest": lambda r: (r["price"] is None, r["price"] or 0, r["minutes"] or 999),
+           "fastest": lambda r: (r["minutes"] is None, r["minutes"] or 0, r["price"] or 10**6),
+           "best": lambda r: (r["rating"] is None, -(r["rating"] or 0), r["price"] or 10**6)}[prio]
+    keep.sort(key=key)
+    if not keep:
+        raise ToolError(f"Nothing on Swiggy matched “{q}”" + (f" ({excluded[0]['why']})" if excluded else "") + ". Try another dish name.")
+    w = keep[0]
+    why = {"cheapest": f"lowest price ₹{w['price']}", "fastest": f"fastest delivery ({w['eta'] or str(w['minutes']) + ' min'})",
+           "best": f"best rated restaurant ({w['rating']}★)"}[prio]
+    ctx["card"](f"🍽️ Recommended: {w['dish']} · {w['restaurant']} · ₹{w['price']} · {w['eta'] or ''} — {why}",
+                {"type": "food", "query": q, "priority": prio, "why": why, "rows": keep[:6], "excluded": excluded[:6],
+                 "address": "your saved Swiggy address", "checked": datetime.now(IST).isoformat(timespec="minutes")})
+    return {"rows": keep[:6], "recommended": w, "excluded": excluded}
+
+
+def food_cart_add(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    """Add to the Swiggy FOOD cart (after approval) and show Swiggy's real bill. Never places the order, never pays."""
+    sw = _sw()
+    rid = str(inputs.get("restaurant_id") or "")
+    items = [{"menu_item_id": str(i.get("menu_item_id")), "quantity": int(i.get("quantity") or 1)} for i in inputs.get("items") or [] if i.get("menu_item_id")]
+    if not (rid and items):
+        raise ToolError("Which dish should I add? Pick one from the list first.")
+    if not store().claim(f"ifood:{ctx['task'].task_id}:{ctx['step_id']}"):
+        return {"added": len(items), "duplicate": True}
+    aid = sw.address_id("food")
+    try:
+        cur = sw.call("get_food_cart", {"addressId": aid}, "food")
+        cur_rid = str((cur.get("restaurant") or {}).get("id") or cur.get("restaurantId") or "")
+        cur_items = [x for x in (cur.get("items") or cur.get("cartItems") or []) if isinstance(x, dict)]
+        if cur_items and cur_rid and cur_rid != rid:
+            raise ToolError("Your Swiggy food cart already has dishes from another restaurant — I won't replace them. "
+                            "Empty it in the Swiggy app, then ask me again.")
+        merged = {i["menu_item_id"]: i for i in items}
+        for x in cur_items if cur_rid == rid else []:
+            mid = str(x.get("menu_item_id") or x.get("menuItemId") or x.get("id") or "")
+            if mid and mid not in merged:
+                merged[mid] = {"menu_item_id": mid, "quantity": int(x.get("quantity") or 1)}
+        sw.call("update_food_cart", {"restaurantId": rid, "cartItems": list(merged.values())}, "food")
+        cart = sw.call("get_food_cart", {"addressId": aid, "restaurantName": inputs.get("restaurant") or ""}, "food")
+    except sw.SwiggyError as e:
+        raise ToolError(str(e)) from e
+    bill = cart.get("billBreakdown") or cart.get("bill") or {}
+    lines = [{"label": li.get("label") or li.get("name"), "value": li.get("value") or li.get("amount")} for li in (bill.get("lineItems") or []) if isinstance(li, dict)]
+    pay = ((bill.get("toPay") or {}).get("value") if isinstance(bill.get("toPay"), dict) else bill.get("toPay")) or cart.get("cartTotalAmount") or cart.get("totalAmount")
+    ctx["card"](f"✅ Added to your Swiggy food cart" + (f" · to pay ₹{pay}" if pay else "") + ". Open Swiggy to place the order — Chinku never pays.",
+                {"type": "cart_done", "added": len(items), "to_pay": pay, "lines": lines, "open_url": "https://www.swiggy.com/checkout",
+                 "provider": "Swiggy Food", "restaurant": inputs.get("restaurant")})
+    return {"added": len(items), "to_pay": pay, "lines": lines}
+
+
+DINE_LINE = re.compile(r"^\s*\d+\.\s*(?P<name>.+?)\s+—\s+(?P<rest>.*?)\(ID:\s*(?P<id>\d+)\)", re.M)
+
+
+def _ll(place: str | None, user: str) -> tuple[float, float, str]:
+    from app.actions import maps
+    area = place or memory.get(user, "home") or memory.get(user, "current location")
+    if not area:
+        raise ToolError("Which area? (Say “near Kukatpally”, or tell me your home area once.)")
+    g = maps.geocode(f"{area}, Hyderabad") or maps.geocode(str(area))
+    if not g:
+        raise ToolError(f"I couldn't find “{area}” on the map.")
+    return round(g[0], 4), round(g[1], 4), str(area)
+
+
+def dineout_search(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    sw = _sw()
+    lat, lon, area = _ll(inputs.get("area"), user)
+    q = str(inputs.get("query") or "restaurant")
+    try:
+        d = sw.call("search_restaurants_dineout", {"query": q, "latitude": lat, "longitude": lon}, "dineout")
+    except sw.SwiggyError as e:
+        raise ToolError(str(e)) from e
+    rows = []
+    for m in DINE_LINE.finditer(d.get("text") or d.get("_text") or ""):
+        rest = m.group("rest")
+        rating = re.search(r"(\d(?:\.\d)?)★", rest)
+        cost = re.search(r"₹\s?([\d,]+) for two", rest)
+        km = re.search(r"([\d.]+) km", rest)
+        rows.append({"id": m.group("id"), "name": m.group("name").strip(), "rating": float(rating.group(1)) if rating else None,
+                     "cost_for_two": int(cost.group(1).replace(",", "")) if cost else None, "km": float(km.group(1)) if km else None,
+                     "about": re.sub(r"\s+", " ", rest).strip(" |")[:120]})
+    if inputs.get("max_cost_for_two"):
+        rows = [r for r in rows if r["cost_for_two"] is None or r["cost_for_two"] <= float(inputs["max_cost_for_two"])]
+    rows.sort(key=lambda r: (r["rating"] is None, -(r["rating"] or 0), r["km"] or 99))  # best rated first (code)
+    if not rows:
+        raise ToolError(f"No Dineout restaurants found for “{q}” near {area}.")
+    ctx["card"](f"🍽️ Tables near {area} · best rated first — pick one and a time",
+                {"type": "dineout", "query": q, "area": area, "lat": lat, "lon": lon, "rows": rows[:8], "date": inputs.get("date"),
+                 "time": inputs.get("time"), "guests": inputs.get("guests")})
+    return {"rows": rows[:8], "lat": lat, "lon": lon, "area": area}
+
+
+def table_check(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    """Check the wanted date/time is a real FREE slot (code), before asking for approval."""
+    sw = _sw()
+    rid = str(inputs.get("restaurant_id") or "")
+    if not rid:
+        raise ToolError("Which restaurant? Pick one from the list.")
+    lat, lon = inputs.get("lat"), inputs.get("lon")
+    if lat is None or lon is None:
+        lat, lon, _ = _ll(inputs.get("area"), user)
+    try:
+        when = datetime.fromisoformat(str(inputs.get("when_iso")))
+    except (TypeError, ValueError) as e:
+        raise ToolError("What date and time should I book?") from e
+    when = (when if when.tzinfo else when.replace(tzinfo=IST)).astimezone(IST)
+    when = when.replace(minute=(when.minute // 15) * 15, second=0, microsecond=0)
+    if when <= datetime.now(IST):
+        raise ToolError(f"{when_words(when)} is already past — which time?")
+    guests = int(inputs.get("guests") or 2)
+    if not 1 <= guests <= 20:
+        raise ToolError("Dineout books 1 to 20 guests.")
+    try:
+        s = sw.call("get_available_slots", {"restaurantId": rid, "date": when.strftime("%Y-%m-%d"), "latitude": lat, "longitude": lon}, "dineout")
+    except sw.SwiggyError as e:
+        raise ToolError(str(e)) from e
+    txt = s.get("_text") or s.get("text") or ""
+    day = when.strftime("%Y-%m-%d")
+    win = re.search(rf"{day}:(.*)", txt)
+    ok = False
+    for a, b in re.findall(r"\((\d{1,2}:\d{2} [AP]M)–(\d{1,2}:\d{2} [AP]M)", win.group(1) if win else ""):
+        start = datetime.strptime(f"{day} {a}", "%Y-%m-%d %I:%M %p").replace(tzinfo=IST)
+        end = datetime.strptime(f"{day} {b}", "%Y-%m-%d %I:%M %p").replace(tzinfo=IST)
+        ok = ok or start <= when <= end
+    free = re.search(rf"{day} \[FREE\]: slotId=(\d+), itemId=\"([\w-]+)\"", txt)
+    paid = re.findall(rf"{day} \[PAID ([^\]]+)\][^\n]*?—\s*\"([^\"]+)\"", txt)
+    if not ok:
+        raise ToolError(f"{inputs.get('restaurant') or 'They'} have no table at {when_words(when)}. "
+                        f"Open times that day: {(win.group(1).strip() if win else 'none listed')}")
+    if not free:
+        raise ToolError("Only PAID pre-book deals are available then — book that in the Swiggy app (Chinku never pays).")
+    params = {"restaurantId": rid, "slotId": int(free.group(1)), "itemId": free.group(2), "reservationTime": int(when.timestamp()),
+              "guestCount": guests, "latitude": lat, "longitude": lon}
+    return {"params": params, "restaurant": inputs.get("restaurant"), "when": when_words(when), "guests": guests, "free": True,
+            "paid_deals": [f"{p} — {d}" for p, d in paid]}
+
+
+def table_book(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    """FREE Dineout reservation only, after approval. Paid deals / payment are never touched."""
+    sw = _sw()
+    chk = inputs.get("check") or inputs
+    p = chk.get("params") or {}
+    if not (p.get("itemId") and chk.get("free")):
+        raise ToolError("I only book FREE table reservations — paid deals are booked in the Swiggy app.")
+    if not store().claim(f"itable:{ctx['task'].task_id}:{ctx['step_id']}"):
+        return {"booked": True, "duplicate": True}
+    try:
+        r = sw.call("book_table", {k: p[k] for k in ("restaurantId", "slotId", "itemId", "reservationTime", "guestCount", "latitude", "longitude")}, "dineout")
+    except sw.SwiggyError as e:
+        raise ToolError(str(e)) from e
+    txt = (r.get("_text") or r.get("text") or json.dumps(r))[:600]
+    oid = r.get("orderId") or (re.search(r"[Oo]rder ?ID[:\s]*([\w-]+)", txt).group(1) if re.search(r"[Oo]rder ?ID[:\s]*([\w-]+)", txt) else None)
+    booked = bool(oid) and not re.search(r"fail|error|unable|not (be )?booked", txt, re.I)
+    ctx["card"](("✅ Table booked" if booked else "⚠️ Swiggy didn't confirm the booking") + f" · {chk.get('restaurant') or ''} · {chk.get('when')} · {chk.get('guests')} guests",
+                {"type": "table_booked", "booked": booked, "restaurant": chk.get("restaurant"), "when": chk.get("when"), "guests": chk.get("guests"),
+                 "order_id": oid, "note": txt[:240]})
+    return {"booked": booked, "order_id": oid}
+
+
 REGISTRY: dict[str, Callable[[str, dict[str, Any], dict[str, Any]], dict[str, Any]]] = {
+    "food_search": food_search, "food_cart_add": food_cart_add, "dineout_search": dineout_search,
+    "table_check": table_check, "table_book": table_book,
     "connect_me": connect_me,
     "trip_plan": trip_plan,
     "find_support": find_support, "promise": promise, "promise_update": promise_update, "scam_check": scam_check,
@@ -876,4 +1071,4 @@ REGISTRY: dict[str, Callable[[str, dict[str, Any], dict[str, Any]], dict[str, An
     "draft_email": draft_email, "send_email": send_email, "remind": remind, "remember": remember, "recall": recall,
     "compute": compute, "reply": reply, "call": call,
 }
-ALWAYS_APPROVE = {"send_email", "call", "cart_add"}  # anything that leaves the device — enforced in code, whatever the plan says
+ALWAYS_APPROVE = {"send_email", "call", "cart_add", "food_cart_add", "table_book"}  # anything that leaves the device — enforced in code, whatever the plan says

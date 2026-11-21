@@ -18,8 +18,8 @@ BASE = "https://mcp.swiggy.com"
 ALLOWED = {  # per server. NEVER: checkout, place_food_order, confirm_order, payment tools, clear/flush cart
     "im": {"get_addresses", "search_products", "get_cart", "update_cart", "your_go_to_items"},
     "food": {"get_addresses", "search_restaurants", "search_menu", "get_restaurant_menu", "get_food_cart", "update_food_cart",
-             "fetch_food_coupons"},
-    "dineout": set(),  # filled after the tool list is verified (scripts/swiggy_tools.py)
+             "fetch_food_coupons", "track_food_order", "get_food_orders"},
+    "dineout": {"search_restaurants_dineout", "get_restaurant_details", "get_available_slots", "book_table"},  # book_table: FREE only (tools.table_book)
 }
 _lock = threading.Lock()
 _sessions: dict[str, dict[str, Any]] = {}

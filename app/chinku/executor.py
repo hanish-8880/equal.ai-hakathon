@@ -22,7 +22,9 @@ STEP_WORDS = {"analyze": "look at the {what}", "transcribe_image": "type out the
               "recall": "check what I remember", "compute": "calculate", "reply": "answer",
               "recipe": "write the recipe", "shop_list": "find the ingredients on Swiggy Instamart", "cart_add": "add them to your Swiggy cart (I'll ask you first)",
               "compare": "compare options", "find_support": "find the official support contact",
-              "promise": "track their promise", "promise_update": "update the promise", "scam_check": "check if it's a scam", "trip_plan": "plan the trip", "connect_me": "connect you"}
+              "promise": "track their promise", "promise_update": "update the promise", "scam_check": "check if it's a scam", "trip_plan": "plan the trip", "connect_me": "connect you",
+              "food_search": "find food on Swiggy", "food_cart_add": "add it to your Swiggy cart (I'll ask you first)",
+              "dineout_search": "find tables on Swiggy Dineout", "table_check": "check the table time", "table_book": "book the table (I'll ask you first)"}
 
 
 # ---------------- persistence ----------------
@@ -109,6 +111,13 @@ def _preview(tool: str, inputs: dict[str, Any]) -> dict[str, Any]:
         return {"type": "cart_plan", "state": "waiting", "provider": "Swiggy Instamart", "status": "LIVE", "rows": inputs.get("rows") or [],
                 "total": inputs.get("total"), "count": len(inputs.get("items") or []),
                 "note": "Adds to your Swiggy cart only. You check out and pay in the Swiggy app — Chinku never pays."}
+    if tool == "food_cart_add":
+        return {"type": "approve_food", "restaurant": inputs.get("restaurant"), "items": inputs.get("items"), "dish": inputs.get("dish"),
+                "price": inputs.get("price"), "note": "Adds to your Swiggy food cart. You place the order and pay in the Swiggy app — Chinku never pays."}
+    if tool == "table_book":
+        c = inputs.get("check") or {}
+        return {"type": "approve_table", "restaurant": c.get("restaurant"), "when": c.get("when"), "guests": c.get("guests"),
+                "free": c.get("free"), "paid_deals": c.get("paid_deals"), "note": "FREE reservation — no payment."}
     if tool == "remind" and inputs.get("call_phone"):
         return {"type": "call_plan", "targets": [{"name": inputs.get("for_person") or "them", "phone": inputs.get("call_phone")}],
                 "purpose": f"Reminder call at the set time: {inputs.get('text')}", "questions": [], "language": inputs.get("call_language")}
@@ -154,6 +163,8 @@ def run(t: Task, send: Send, card: Card) -> Task:
             save(t)
             store().put("contacts", f"iwait:{t.user}", {"kind": "iwait", "task_id": t.task_id, "step_id": s.id})
             what = {"send_email": f"Send this email to {st.preview.get('to')}?",
+                    "food_cart_add": f"Add {st.preview.get('dish') or 'this'} from {st.preview.get('restaurant') or 'the restaurant'} to your Swiggy food cart?",
+                    "table_book": f"Book a FREE table at {st.preview.get('restaurant')} · {st.preview.get('when')} · {st.preview.get('guests')} guests?",
                     "cart_add": f"Add {st.preview.get('count')} items (₹{st.preview.get('total') or 0:,.0f}) to your Swiggy cart?",
                     "call": "Call " + ", ".join(f"{x.get('name') or ''} {x.get('phone') or ''}".strip() for x in inputs.get("targets") or []) + "?"}
             card(f"👉 Needs you: {what.get(s.tool, 'Go ahead?')} (yes / no)", st.preview)
