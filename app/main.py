@@ -11,6 +11,8 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from app.brain import perceive
 from app.channels import whatsapp
 from app.engine import runner, steps
+from app.config import settings
+from app.engine import validate
 from app.engine.validate import mask_phone
 from app.store.dynamo import store
 from app.voice import omni
@@ -46,6 +48,8 @@ def _start_scheduler() -> None:
 def internal_fire(task_id: str, step_id: str, bg: BackgroundTasks) -> dict[str, bool]:
     bg.add_task(runner.fire_schedule, task_id, step_id)
     return {"ok": True}
+
+
 EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response></Response>'
 
 
@@ -67,6 +71,10 @@ def process_whatsapp(msg: dict[str, Any]) -> None:
             elif m["type"].startswith("image"):
                 image = perceive.read_image(data, m["type"]).model_dump()
                 store().add_event("-", "image_read", image)
+            elif m["type"] == "application/pdf":
+                image = perceive.read_document(data, "document.pdf").model_dump()
+                store().add_event("-", "document_read", {k: image.get(k) for k in ("doc_type", "title", "stated_total")}
+                                  | {"items": len(image.get("line_items", []))})
         runner.handle_message(user, text, image, reply_to(user))
     except Exception as e:  # noqa: BLE001
         store().add_event("-", "error", {"where": "whatsapp", "error": str(e)[:500]})
@@ -81,8 +89,35 @@ async def wa_webhook(request: Request, bg: BackgroundTasks) -> Response:
     return Response(EMPTY_TWIML, media_type="application/xml")
 
 
+def inbound_caller_allowed(number: str | None) -> str | None:
+    """Only the owner may give Chinku tasks by phone. Returns the owner's WhatsApp id or None."""
+    owner = settings().user_whatsapp
+    if number and owner and validate.indian_mobile(number) == validate.indian_mobile(owner.replace("whatsapp:", "")):
+        return owner
+    return None
+
+
+def process_inbound_call(parsed: dict[str, Any]) -> None:
+    """Someone called Chinku: the inbound agent took the order; run it exactly like a WhatsApp message."""
+    owner = inbound_caller_allowed(parsed.get("from_number"))
+    store().add_event("-", "inbound_call", {"from_last4": (parsed.get("from_number") or "")[-4:], "allowed": bool(owner),
+                                            "summary": parsed.get("summary"), "transcript": parsed.get("transcript", "")[:3000]})
+    if not owner:
+        return
+    said = "\n".join(l[5:].strip() for l in parsed.get("transcript", "").splitlines() if l.startswith("user:"))
+    if not said.strip():
+        return
+    text = f"[Hanish phone call lo cheppadu]\n{said}\n\n[Call summary: {parsed.get('summary') or '-'}]"
+    whatsapp.send(owner, "📞 Call lo cheppindi ardham ayyindi — pani start chestunna.")
+    runner.handle_message(owner, text, None, reply_to(owner))
+
+
 def process_omni(parsed: dict[str, Any]) -> None:
     try:
+        inbound_id = settings().omnidim_inbound_agent_id
+        if parsed.get("direction") == "inbound" or (inbound_id and parsed.get("bot_id") == inbound_id):
+            process_inbound_call(parsed)
+            return
         runner.on_call_result(parsed, lambda user, text: whatsapp.send(user, text))
     except Exception as e:  # noqa: BLE001
         store().add_event(parsed.get("task_id") or "-", "error", {"where": "omni", "error": str(e)[:500]})

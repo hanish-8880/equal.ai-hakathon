@@ -1,7 +1,9 @@
 import io
 
+import base64
+
 from app.brain.client import image_part, json_call, oai, prompt
-from app.brain.schemas import ImageRead, Transcript
+from app.brain.schemas import DocRead, ImageRead, Transcript
 from app.config import settings
 
 
@@ -21,3 +23,11 @@ def tts(text: str) -> bytes:
     r = oai().audio.speech.create(model=settings().openai_model_tts, voice="alloy", input=text,
                                   instructions="Speak slowly, warmly, in simple Telugu.", response_format="mp3")
     return r.read()
+
+
+def read_document(data: bytes, filename: str = "document.pdf", task_id: str | None = None) -> DocRead:
+    """PDF → line items exactly as printed (the total is computed later, in code)."""
+    part = {"type": "file", "file": {"filename": filename,
+                                     "file_data": "data:application/pdf;base64," + base64.b64encode(data).decode()}}
+    user = [{"type": "text", "text": "Read this document."}, part]
+    return json_call(settings().openai_model_brain, prompt("read_document"), user, DocRead, task_id, "read_document")

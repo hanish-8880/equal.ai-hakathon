@@ -19,7 +19,8 @@ YES = re.compile(r"^\s*(yes|y|ok|okay|avunu|haa|ha|sare|cheyyi|confirm|go|done|�
 NO = re.compile(r"^\s*(no|vaddu|cancel|stop|ledu)\b", re.I)
 OPEN = ("planned", "awaiting_confirm", "running", "waiting_input")
 EMAIL_IN_TEXT = re.compile(r"[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}")
-CONTACT_CMD = re.compile(r"^\s*(?:save\s+)?contact\s+([A-Za-zఀ-౿]+)\s+([+\d][\d\s-]{9,})\s*$", re.I)
+CONTACT_CMD = re.compile(r"^\s*(?:save\s+)?contact\s+([A-Za-zఀ-౿]+)\s+(.+?)\s*$", re.I)
+MEDIA_MEMORY_S = {"document": 3600}  # PDFs remembered 60 min (user may call later); photos 15 min
 
 
 def now() -> float:
@@ -41,13 +42,16 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> 
     """Entry point for every WhatsApp message (already perceived). `send(text)` replies to the user."""
     m = CONTACT_CMD.match(text or "")
     if m:
-        phone = VALIDATORS["indian_mobile"](m.group(2))
-        if not phone:
-            send("Number sariga ledu — 10 digits pampandi.")
+        alias, val = m.group(1).lower(), m.group(2)
+        phone, mail = VALIDATORS["indian_mobile"](val), VALIDATORS["email"](val)
+        if not (phone or mail):
+            send("Number (10 digits) leda email sariga ledu — malli pampandi.")
             return
-        alias = m.group(1).lower()
-        store().put("contacts", f"{user}:{alias}", {"user": user, "alias": alias, "phone": phone, "relation": alias})
-        send(f"Saved ✅ {alias} ({mask_phone(phone)})")
+        key = f"{user}:{alias}"
+        c = store().get("contacts", key) or {"user": user, "alias": alias, "relation": alias}
+        c.update({"phone": phone} if phone else {"email": mail})
+        store().put("contacts", key, c)
+        send(f"Saved ✅ {alias} ({mask_phone(phone) if phone else mail})")
         return
 
     waiting = steps.find_waiting(user, bool(image))
@@ -92,7 +96,8 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> 
         store().put("contacts", f"lastimg:{user}", {"owner": user, "kind": "last_image", "image": image, "ts": now()})
     elif not image:
         last = store().get("contacts", f"lastimg:{user}")
-        if last and now() - last["ts"] < 900:
+        window = MEDIA_MEMORY_S.get((last or {}).get("image", {}).get("image_type"), 900)
+        if last and now() - last["ts"] < window:
             image = last["image"]
             store().put("contacts", f"lastimg:{user}", {**last, "ts": 0})
 
@@ -119,7 +124,11 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> 
             save_task(pending)
         task = {"task_id": "t_" + uuid.uuid4().hex[:8], "user": user, "spec": r.spec, "status": "planned",
                 "inputs": r.inputs, "language": r.language, "step_idx": 0, "steps": {}, "created_at": now()}
-    store().add_event(task["task_id"], "routed", r.model_dump())
+    # media inputs are filled deterministically from what was perceived (the router never copies documents)
+    for name, cfg in load_specs()[task["spec"]]["inputs"].items():
+        if cfg.get("media") and image and image.get("image_type") == cfg["media"]:
+            task["inputs"][name] = image
+    store().add_event(task["task_id"], "routed", {**r.model_dump(), "inputs": {k: ("<media>" if isinstance(v, dict) and v.get("image_type") else v) for k, v in r.inputs.items()}})
     plan(task, r, send)
 
 

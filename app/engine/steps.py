@@ -23,12 +23,34 @@ ON_CALL_TERMINAL = lambda task_id, step_id: None  # set by runner
 NOTIFY = lambda to, text, audio=None: store().add_event("-", "notify_unwired", {"to_last4": to[-4:], "text": text[:200]})
 
 
+def tctx(task: dict[str, Any], item: Any = None) -> dict[str, Any]:
+    return {"inputs": task["inputs"], "steps": task.get("steps", {}), "item": item or {}}
+
+
+def inr(v: float) -> str:
+    """Indian digit grouping: 1234567 -> 12,34,567 (deterministic)."""
+    neg, v = v < 0, abs(v)
+    whole, frac = int(v), round(v - int(v), 2)
+    s = str(whole)
+    if len(s) > 3:
+        head, tail = s[:-3], s[-3:]
+        parts = []
+        while len(head) > 2:
+            parts.insert(0, head[-2:]); head = head[:-2]
+        if head:
+            parts.insert(0, head)
+        s = ",".join(parts + [tail])
+    if frac:
+        s += f"{frac:.2f}"[1:]
+    return ("-" if neg else "") + s
+
+
 def call_targets(spec: dict[str, Any], task: dict[str, Any], step: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     step = step or next(s for s in spec["steps"] if s["type"] == "call")
     items = task["inputs"].get(step["for_each"], []) if step.get("for_each") else [None]
     out = []
     for it in items:
-        ctx = {"inputs": task["inputs"], "item": it or {}}
+        ctx = tctx(task, it)
         out.append({"to": render(step["to"], ctx), "callee": render(step.get("callee", {}), ctx), "item": it})
     return out
 
@@ -199,7 +221,7 @@ def run_reply(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
     results += [{"step": k, "output": out} for k, out in prior.items() if isinstance(out, dict)]
     ranking = rank(results, step["rank_by"], task["inputs"], spec.get("result_schema", {}),
                    step.get("rank_label", "score")) if step.get("rank_by") else None
-    ctx = {"inputs": task["inputs"]}
+    ctx = tctx(task)
     hint = render(step.get("template_hint", ""), ctx)
     lang = "Telugu (Telugu script)" if step.get("voice") else task.get("language", "Telugu-English mix")
     text = decider.compose_reply(hint, task["inputs"], results, ranking, lang, task["task_id"])
@@ -261,6 +283,34 @@ def find_waiting(sender: str, has_image: bool) -> tuple[dict[str, Any], str] | N
     return None
 
 
+# ---------------- compute ----------------
+def run_compute(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+    """Deterministic arithmetic over a list from inputs/steps. The LLM never computes money."""
+    from app.engine.specs_loader import _lookup
+    ctx = tctx(task)
+    rows = _lookup(ctx, step["list"]) or []
+    field = step["field"]
+    vals, missing = [], []
+    for r in rows:
+        v = (r or {}).get(field)
+        try:
+            vals.append(float(str(v).replace(",", "")))
+        except (TypeError, ValueError):
+            missing.append((r or {}).get("label") or str(r)[:40])
+    if step.get("op", "sum") != "sum":
+        raise NotImplementedError(f"compute op {step.get('op')}")
+    total = round(sum(vals), 2)
+    stated = _lookup(ctx, step["check_against"]) if step.get("check_against") else None
+    try:
+        stated = float(str(stated).replace(",", "")) if stated not in (None, "") else None
+    except ValueError:
+        stated = None
+    out = {"total": total, "total_str": inr(total), "count": len(vals), "missing": missing,
+           "stated_total": stated, "matches_stated": (abs(stated - total) < 0.5) if stated is not None else None}
+    store().add_event(task["task_id"], "computed", out)
+    return {"status": "done", "output": out}
+
+
 # ---------------- schedule ----------------
 def _field_from_step(task: dict[str, Any], step_id: str, field: str) -> Any:
     out = task.get("steps", {}).get(step_id, {}).get("output")
@@ -303,6 +353,8 @@ def due_schedules(now_ts: float | None = None) -> list[tuple[str, str]]:
 def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
     if step["type"] == "schedule":
         return run_schedule(step, spec, task, send)
+    if step["type"] == "compute":
+        return run_compute(step, spec, task, send)
     if step["type"] == "wait_for":
         return run_wait_for(step, spec, task, send)
     return _run(step, spec, task, send)
@@ -328,7 +380,7 @@ def run_email(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
         return {**state, "status": "done", "output": {"to": state["to"], "delivered_to": used,
                                                        "subject": state["draft"]["subject"],
                                                        "demo_override": settings().email_demo_override}}
-    ctx = {"inputs": task["inputs"]}
+    ctx = tctx(task)
     to = validate.email(render(step["to"], ctx))
     source = "you" if to else None
     if not to and step.get("to_lookup"):

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     omnidim_api_key: str = ""
     omnidim_agent_id: str = ""
     omnidim_from_number_id: str = ""
+    omnidim_inbound_agent_id: str = ""
     omnidim_base_url: str = "https://backend.omnidim.io/api/v1"
 
     twilio_account_sid: str = ""

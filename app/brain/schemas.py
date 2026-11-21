@@ -12,6 +12,24 @@ class ImageRead(BaseModel):
     unreadable: list[str] = Field(default_factory=list)
 
 
+class LineItem(BaseModel):
+    label: str
+    amount: float | None = None
+    quantity: float | None = None
+
+
+class DocRead(BaseModel):
+    image_type: Literal["document"] = "document"
+    doc_type: str  # invoice / bill / quotation / statement / other
+    title: str | None = None
+    parties: list[str] = Field(default_factory=list)
+    line_items: list[LineItem] = Field(default_factory=list)
+    stated_total: float | None = None
+    currency: str = "INR"
+    notes: str | None = None
+    unreadable: list[str] = Field(default_factory=list)
+
+
 class Transcript(BaseModel):
     text: str
     language: str | None = None
