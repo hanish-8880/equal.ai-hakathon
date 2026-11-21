@@ -141,3 +141,23 @@ def test_429_is_retried_after_waiting(monkeypatch):
     monkeypatch.setattr(httpx, "post", lambda *a, **k: posts.append(1) or R(429 if len(posts) < 3 else 200))
     out, _ = ORIG_POST({"jsonrpc": "2.0", "id": 5, "method": "x"}, "tok", None)
     assert out["result"]["ok"] is True and len(posts) == 3 and len(sleeps) == 2 and all(s >= 1.5 for s in sleeps)
+
+
+def test_search_cache_and_cooldown(monkeypatch):
+    live = []
+    monkeypatch.setattr(swiggy, "_call_live", lambda name, args, server: live.append(args["query"]) or {"products": [], "q": args["query"]})
+    a = swiggy.call("search_products", {"query": "soap", "addressId": "x"})
+    b = swiggy.call("search_products", {"query": "soap", "addressId": "x"})
+    assert a == b and live == ["soap"]                                   # second identical search served from cache
+    import httpx
+    monkeypatch.setattr(swiggy.time, "sleep", lambda s: None)
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: type("R", (), {"status_code": 429, "headers": {}, "text": ""})())
+    swiggy._cool["until"] = 0
+    with pytest.raises(swiggy.SwiggyError, match="limiting requests"):
+        ORIG_POST({"jsonrpc": "2.0", "id": 1}, "tok", None)
+    calls = []
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: calls.append(1))
+    with pytest.raises(swiggy.SwiggyError, match="try again in"):
+        ORIG_POST({"jsonrpc": "2.0", "id": 1}, "tok", None)
+    assert calls == []                                                   # cooling down: Swiggy is not called at all
+    swiggy._cool["until"] = 0

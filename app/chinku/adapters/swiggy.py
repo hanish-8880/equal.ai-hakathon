@@ -58,15 +58,20 @@ def _post(msg: dict[str, Any], tok: str, sid: str | None, server: str = "im") ->
     h = {"Authorization": f"Bearer {tok}", "Accept": "application/json, text/event-stream", "Content-Type": "application/json"}
     if sid:
         h["Mcp-Session-Id"] = sid
-    for attempt in range(4):  # Swiggy's gateway returns 429 + Retry-After when we go too fast → wait and retry (their guidance)
+    if time.time() < _cool["until"]:
+        raise SwiggyError(f"Swiggy is limiting requests right now — try again in {max(1, round((_cool['until'] - time.time()) / 60))} min.")
+    for attempt in range(3):  # Swiggy's gateway returns 429 when we go too fast → short wait, then retry (their guidance)
         r = httpx.post(f"{BASE}/{server}", json=msg, headers=h, timeout=60)
-        if r.status_code != 429 or attempt == 3:
+        if r.status_code != 429 or attempt == 2:
             break
         try:
             wait = float(r.headers.get("retry-after") or 0)
         except ValueError:
             wait = 0
-        time.sleep(min(8.0, max(1.5 * (attempt + 1), wait)))
+        time.sleep(min(8.0, max(2.0 * (attempt + 1), wait)))
+    if r.status_code == 429:  # still limited → back off for 2 minutes instead of hammering (cached results keep working)
+        _cool["until"] = time.time() + 120
+        raise SwiggyError("Swiggy is limiting requests right now — try again in 2 min.")
     sid = r.headers.get("mcp-session-id") or sid
     if r.status_code == 401:
         raise SwiggyError("Swiggy login expired — please log in again.")
@@ -81,9 +86,29 @@ def _post(msg: dict[str, Any], tok: str, sid: str | None, server: str = "im") ->
     return json.loads(body or "{}"), sid
 
 
+CACHED = {"search_products", "search_menu", "search_restaurants_dineout", "get_available_slots", "get_addresses"}
+CACHE_S = 20 * 60
+_cool = {"until": 0.0}
+
+
 def call(name: str, args: dict[str, Any], server: str = "im") -> dict[str, Any]:
     if name not in ALLOWED.get(server, set()):
         raise PermissionError(f"Chinku never calls Swiggy's “{name}” (checkout, payment and clearing the cart are yours to do).")
+    key = None
+    if name in CACHED:  # read-only lookups: reuse for 20 min (gentle on Swiggy; also survives a short rate limit)
+        from app.store.dynamo import store
+        key = f"swcache:{server}:{name}:{json.dumps(args, sort_keys=True)}"[:900]
+        hit = store().get("contacts", key)
+        if hit and time.time() - hit.get("ts", 0) < CACHE_S:
+            return hit["data"]
+    out = _call_live(name, args, server)
+    if key:
+        from app.store.dynamo import store
+        store().put("contacts", key, {"kind": "swcache", "ts": time.time(), "data": out})
+    return out
+
+
+def _call_live(name: str, args: dict[str, Any], server: str) -> dict[str, Any]:
     with _lock:  # one session per user per server, calls in sequence (Swiggy's guidance)
         tok = _token()
         ses = _sessions.setdefault(server, {})
