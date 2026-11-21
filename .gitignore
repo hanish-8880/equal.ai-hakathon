@@ -5,3 +5,8 @@ __pycache__/
 .pytest_cache/
 media_tmp/
 data/
+
+# Swiggy OAuth tokens / client (stored outside the repo anyway)
+*swiggy_tokens*
+*swiggy_client*
+.chinku/
