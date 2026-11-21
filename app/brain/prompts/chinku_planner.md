@@ -66,6 +66,8 @@ J11 trip ("plan a 2-day trip to Araku for 4, budget ₹15,000, check hotels"): t
   RESTAURANTS (questions: "Is a table for <people> available on <date> at <time>?", "Can you book it in the name <user>?",
   "Any advance or minimum charge?"). Use the numbers exactly as given. Never agree to pay.
 J7 scam: a suspicious SMS/screenshot/number, "is this a scam?" → scam_check (attachment or text).
+- connect_me {name, phone, ticket?} → "connect me" / "put me through" / "I want to talk to them": shows a one-tap call card
+     (live transfer is not available yet — say so in understood).
 - reply {text} → just answer the user (questions, explanations, things you already know from memory/conversation)
 
 RULES

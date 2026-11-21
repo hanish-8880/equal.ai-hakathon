@@ -268,6 +268,8 @@ const I = {
   "Email this photo": ["ఈ ఫోటో ఇమెయిల్ చేయి", "यह फ़ोटो ईमेल करो", "Ee photo email cheyyi"], "Book a doctor": ["డాక్టర్ అపాయింట్‌మెంట్", "डॉक्टर बुक करो", "Doctor book cheyyi"],
   "Complain & follow up": ["ఫిర్యాదు & ఫాలో అప్", "शिकायत और फ़ॉलो अप", "Complaint & follow up"], "Call from a photo": ["ఫోటో నుంచి కాల్", "फ़ोटो से कॉल", "Photo nunchi call"],
   "Is this a scam?": ["ఇది మోసమా?", "क्या यह धोखा है?", "Idi scam aa?"],
+  "Talk to them now": ["ఇప్పుడే మాట్లాడండి", "अभी बात करें", "Ippude matladandi"], "Call now": ["ఇప్పుడే కాల్ చేయి", "अभी कॉल करो", "Ippude call cheyyi"],
+  "Live transfer is not switched on yet — tap to call them yourself.": ["లైవ్ ట్రాన్స్‌ఫర్ ఇంకా ఆన్ కాలేదు — మీరే కాల్ చేయడానికి నొక్కండి.", "लाइव ट्रांसफ़र अभी चालू नहीं — खुद कॉल करने के लिए दबाएँ।", "Live transfer inka on kaledu — meere call cheyyadaniki nokkandi."],
   "approx. area": ["సుమారు ప్రాంతం", "अनुमानित इलाका", "approx. area"], "not on map": ["మ్యాప్‌లో లేదు", "नक्शे पर नहीं", "map lo ledu"],
   "Hotels": ["హోటళ్ళు", "होटल", "Hotels"], "Restaurants": ["రెస్టారెంట్లు", "रेस्टोरेंट", "Restaurants"], "by rating": ["రేటింగ్ ప్రకారం", "रेटिंग के हिसाब से", "rating prakaram"],
   "days": ["రోజులు", "दिन", "rojulu"], "No phone number found": ["ఫోన్ నంబర్ దొరకలేదు", "फ़ोन नंबर नहीं मिला", "Phone number dorakaledu"],
@@ -445,6 +447,9 @@ function card(c) {
       <div id="${id}" class="hidden"><ol>${(c.rows || []).map(o => `<li><b>${money(o)}</b> · ${esc(o.item)}<br><span class="src">${tm(o.depart)} → ${tm(o.arrive)} · ${hm(o.duration_min)}${o.link ? ` · <a href="${esc(o.link)}" target="_blank" rel="noopener">${L("Open booking link")}</a>` : ""}</span></li>`).join("")}</ol>
         ${(c.excluded || []).length ? `<div class="src">${L("Not shown")}: ${(c.excluded || []).map(x => esc(x.item + " — " + x.why)).join("; ")}</div>` : ""}</div>
       <div class="src">${esc(c.total_found)} ${L("options")} · ${L("checked")} ${(() => { try { return esc(new Date(c.checked).toLocaleString(LOC(), {weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"})); } catch (e) { return esc(c.checked || ""); } })()} · ${L("Price as shown by the provider; you book and pay on their page — Chinku never pays.")}</div></div>`; }
+  if (c.type === "connect") return `<div class="rc"><h4>📞 ${L("Talk to them now")}</h4><b>${esc(c.name || "")}</b> · ${esc(c.phone)}${c.ticket ? ` · ${L("Ticket")} <b>${esc(c.ticket)}</b>` : ""}
+      <div class="btns"><a class="btn primary" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(c.tel)}">📞 ${L("Call now")}</a></div>
+      <div class="src">${L("Live transfer is not switched on yet — tap to call them yourself.")}</div></div>`;
   if (c.type === "trip") { const id = "trip" + (++mapN);
     const row = p => `<label class="memrow" style="cursor:${p.callable ? "pointer" : "default"}"><input type="checkbox" ${p.callable ? "" : "disabled"} data-pick='${esc(JSON.stringify({name: p.name, phone: p.phone, kind: p.kind}))}' style="width:22px;height:22px;flex:none">
         <div class="t"><b>${esc(p.name)}</b><span>${p.rating != null ? "⭐ " + esc(p.rating) : "⭐ ?"}${p.reviews ? " (" + esc(p.reviews) + ")" : ""}${p.price_hint ? " · " + esc(p.price_hint) : ""}${p.cuisine ? " · " + esc(p.cuisine) : ""}</span>

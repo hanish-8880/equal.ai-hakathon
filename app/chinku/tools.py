@@ -853,7 +853,21 @@ def trip_plan(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[st
             "start_date": start, "days": days}
 
 
+def connect_me(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    """J5. Live transfer (OmniDimension 'Custom API transfer') is NOT switched on yet → honest fallback from CLAUDE.md:
+    'Talk to them now: call <number>, ticket <id>' with a one-tap dial button."""
+    phone = str(inputs.get("phone") or "")
+    if not phone:
+        raise ToolError("Whom should I connect you to? I need their number.")
+    digits = re.sub(r"[^\d+]", "", phone)
+    ctx["card"](f"📞 Talk to them now: call {inputs.get('name') or phone}" + (f", ticket {inputs['ticket']}" if inputs.get("ticket") else ""),
+                {"type": "connect", "name": inputs.get("name"), "phone": phone, "tel": f"tel:{digits}", "ticket": inputs.get("ticket"),
+                 "transfer": "not_available"})
+    return {"phone": phone, "ticket": inputs.get("ticket"), "transfer": "not_available"}
+
+
 REGISTRY: dict[str, Callable[[str, dict[str, Any], dict[str, Any]], dict[str, Any]]] = {
+    "connect_me": connect_me,
     "trip_plan": trip_plan,
     "find_support": find_support, "promise": promise, "promise_update": promise_update, "scam_check": scam_check,
     "recipe": recipe, "shop_list": shop_list, "cart_add": cart_add,

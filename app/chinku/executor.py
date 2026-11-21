@@ -22,7 +22,7 @@ STEP_WORDS = {"analyze": "look at the {what}", "transcribe_image": "type out the
               "recall": "check what I remember", "compute": "calculate", "reply": "answer",
               "recipe": "write the recipe", "shop_list": "find the ingredients on Swiggy Instamart", "cart_add": "add them to your Swiggy cart (I'll ask you first)",
               "compare": "compare options", "find_support": "find the official support contact",
-              "promise": "track their promise", "promise_update": "update the promise", "scam_check": "check if it's a scam"}
+              "promise": "track their promise", "promise_update": "update the promise", "scam_check": "check if it's a scam", "trip_plan": "plan the trip", "connect_me": "connect you"}
 
 
 # ---------------- persistence ----------------
