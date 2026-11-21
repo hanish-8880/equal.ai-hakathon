@@ -477,7 +477,10 @@ def _search_with_fallback(swiggy: Any, q: str) -> tuple[list[dict[str, Any]], st
         return found, q
     words = [w for w in re.findall(r"[A-Za-z]+", q) if w.lower() not in ("leaves", "leaf", "fresh", "whole", "powder", "paste")]
     if words and words[0].lower() != q.lower():
-        return swiggy.search(words[0]), words[0]
+        found = swiggy.search(words[0])
+        if re.search(r"(leaves|leaf|fresh)", q, re.I):  # asked for the herb, not seeds/powder
+            found = [v for v in found if not re.search(r"(whole|seeds?|powder|dhania whole)", v.get("name") or "", re.I)]
+        return [v | {"fallback": True} for v in found], words[0]
     return [], q
 
 
@@ -499,6 +502,8 @@ def shop_list(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[st
         try:
             found, used = _search_with_fallback(swiggy, q)
             best, qty, note = _pick(found, used, ing.get("grams"))
+            if best and best.get("fallback"):
+                note = f"check: closest match for “{q}”"
         except swiggy.SwiggyError as e:
             raise ToolError(str(e)) from e
         if not best:

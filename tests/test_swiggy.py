@@ -99,3 +99,12 @@ def test_no_single_pack_big_enough_takes_several_and_short_query_retry(monkeypat
     assert rows["Chicken"]["pack"] == "400 g" and rows["Chicken"]["quantity"] == 2 and rows["Chicken"]["line_total"] == 238
     assert rows["Mint leaves"]["product"] == "Mint (Pudina)" and out["missing"] == []
     assert out["total"] == 238 + 12 and {i["spinId"]: i["quantity"] for i in out["items"]}[rows["Chicken"]["spinId"]] == 2
+
+
+def test_leaves_never_become_seeds(monkeypatch):
+    """Real case (Sun 01:55): 'coriander leaves' → fallback 'coriander' picked 'Coriander (Dhania) Whole' seeds."""
+    cat = {"coriander leaves": [], "coriander": [V("KITCHEN GEMS Coriander (Dhania) Whole", "200 g", 90), V("Coriander Leaves (Kothimbir)", "100 g", 15, 1)]}
+    monkeypatch.setattr(swiggy, "search", lambda q: cat.get(q, []))
+    ctx = {"task": type("T", (), {"task_id": "i_c"})(), "card": lambda t, c: CARDS.append((t, c)), "step_id": "s2"}
+    out = tools.shop_list(ME, {"ingredients": [{"name": "Coriander leaves", "search_query": "coriander leaves", "grams": 30}]}, ctx)
+    assert out["rows"][0]["product"] == "Coriander Leaves (Kothimbir)" and "check" in out["rows"][0]["note"]
