@@ -59,3 +59,9 @@ def test_model_code_digits_not_numbers():
     n = normalise("Jaquar model ALD-0517 rendu kavali")
     assert ("model_code", "ALD-0517") in {(s.kind, s.value) for s in n.spans}
     assert [s.value for s in n.spans if s.kind == "number"] == [2] and "ALD-0517" in n.text
+
+
+def test_text_kept_exactly_except_numbers():
+    s = "I'm free tomorrow. Bill bills@sai.example under WO-117, rendu valves."
+    n = normalise(s)
+    assert n.text == "I'm free tomorrow. Bill bills@sai.example under WO-117, 2 valves."

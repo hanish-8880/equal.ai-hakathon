@@ -118,27 +118,33 @@ def normalise(text: str) -> Normalised:
     protected = text
     for k, c in enumerate(codes):
         protected = protected.replace(c, f"MODELCODE{k}X", 1)
-    toks = _tokens(protected)
+    # tokens WITH positions: only number words are replaced, in place; everything else (emails, apostrophes,
+    # spacing, punctuation) stays exactly as written
+    found = list(re.finditer(r"\d+(?:[.,]\d+)*|[\wఀ-౿]+|[^\s\w]", protected))
+    toks = [m.group(0) for m in found]
+    repl: list[tuple[int, int, str]] = []
     i = 0
     while i < len(toks):
         t = toks[i]
-        # numeric literal, possibly with decimal + lakh/crore ("1.5 lakh")
+        # numeric literal, possibly with decimal + lakh/crore ("1.5 lakh") — only if it is a whole word (not inside an email/code)
         if re.fullmatch(r"\d+(?:[.,]\d+)*", t):
-            num = float(t.replace(",", "")) if "." in t else int(t.replace(",", ""))
             j = i + 1
+            num = float(t.replace(",", "")) if "." in t else int(t.replace(",", ""))
             if j < len(toks) and _W.get(toks[j].lower(), (0, ""))[1] in ("lakh", "crore", "thousand"):
                 num = num * _W[toks[j].lower()][0]
                 j += 1
             num = int(num) if float(num).is_integer() else num
-            raw = " ".join(toks[i:j])
-            out.append(str(num)); spans.append(Span(raw=raw, kind="number", value=num)); i = j
+            a, b = found[i].start(), found[j - 1].end()
+            spans.append(Span(raw=protected[a:b], kind="number", value=num))
+            if j - i > 1 or str(num) != t:
+                repl.append((a, b, str(num)))
+            i = j
             continue
         if t.lower() in _W:
             j = i
             while j < len(toks) and toks[j].lower() in _W:
                 j += 1
-            # longest prefix that parses
-            while j > i and words_to_number(toks[i:j]) is None:
+            while j > i and words_to_number(toks[i:j]) is None:  # longest prefix that parses
                 j -= 1
             n = words_to_number(toks[i:j]) if j > i else None
             if n is not None and j - i == 1 and t.lower() in AMBIGUOUS:
@@ -146,13 +152,15 @@ def normalise(text: str) -> Normalised:
                 if nxt not in UNIT_WORDS and not nxt.isdigit():
                     n = None  # "what do you need" stays text
             if n is not None and not (j - i == 1 and _W[t.lower()][1] in ("hundred", "thousand", "lakh", "crore")):
-                raw = " ".join(toks[i:j])
-                out.append(str(n)); spans.append(Span(raw=raw, kind="number", value=n)); i = j
+                a, b = found[i].start(), found[j - 1].end()
+                spans.append(Span(raw=protected[a:b], kind="number", value=n))
+                repl.append((a, b, str(n)))
+                i = j
                 continue
-        out.append(t)
         i += 1
-    norm = re.sub(r"\s+([.,!?;:])", r"\1", " ".join(out))
-    norm = re.sub(r"(₹|Rs\.?)\s+(\d)", r"\1\2", norm)
+    norm = protected
+    for a, b, r in sorted(repl, reverse=True):
+        norm = norm[:a] + r + norm[b:]
     for k, c in enumerate(codes):
         norm = norm.replace(f"MODELCODE{k}X", c)
     # units / money for each number span (look at text after the number in the normalised string)

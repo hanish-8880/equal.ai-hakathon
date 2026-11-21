@@ -192,6 +192,19 @@ def start_booking(user: str, job: Job, send: Send) -> str | None:
     return None
 
 
+ACTION_WORDS = {"create_job": "create the job", "book_visit": "CALL the customer to book a visit", "source_part": "CALL shops about the part",
+                "set_dependency": "apply your part-before-visit rule", "request_approval": "ASK the approver", "cancel": "CANCEL",
+                "close_job_invoice": "draft the invoice", "make_estimate": "draft an estimate", "correct_detail": "change a detail",
+                "status_query": "show status", "report_delay": "tell the customer about the delay"}
+
+
+def plan_lines(actions: list[Any]) -> str:
+    """Built in CODE from the actions (never only the LLM readback): every consequential step is listed before the yes."""
+    return "\n".join(f"{i}) {ACTION_WORDS.get(a.intent, a.intent.replace('_', ' '))}"
+                     + (f" ({a.job_ref})" if a.job_ref and a.job_ref not in ("new", "ambiguous") else "")
+                     for i, a in enumerate(a for a in actions if a.intent not in ("small_talk", "other")), start=1))
+
+
 def _log_understanding(job: Job, heard: Any, readback: str) -> None:
     if heard is not None and getattr(heard, "source", "text") != "text":
         jobs.log(job, "heard", f"Heard ({heard.source}): {heard.text[:200]}", actor="plumber", channel=heard.source, ref=heard.audio_ref)
@@ -300,7 +313,7 @@ def handle(user: str, text: str, image: dict[str, Any] | None, send: Send, force
     if g == "confirm":
         store().put("contacts", f"pendingact:{user}", {"owner": user, "actions": [a.model_dump() for a in res.actions],
                                                          "readback": res.readback, "text": text, "ts": time.time()})
-        send(f"{res.readback} — shall I go ahead? (yes / no)")
+        send(f"{res.readback}\n{plan_lines(res.actions)}\nShall I go ahead? (yes / no)")
         return
     replies = []
     for a in res.actions:

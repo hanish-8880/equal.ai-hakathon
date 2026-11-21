@@ -60,7 +60,8 @@ def test_consequential_waits_for_yes_then_starts_booking_call(wired, monkeypatch
     assistant.handle(ME, "new job", None, out.append)
     st["res"] = R(Action(intent="book_visit", job_ref="J21", confidence=0.95), rb="J21 · call customer · tomorrow 4–7")
     assistant.handle(ME, "J21 customer ki call chesi book chey", None, out.append)
-    assert out[-1].startswith("J21 · call customer") and "shall I go ahead" in out[-1] and dispatched == []  # waits for yes
+    assert out[-1].startswith("J21 · call customer") and "Shall I go ahead" in out[-1] and dispatched == []  # waits for yes
+    assert "1) CALL the customer to book a visit (J21)" in out[-1]  # plan listed in code
     assistant.handle(ME, "avunu", None, out.append)
     assert len(dispatched) == 1 and dispatched[0][0] == "+919848012321"
     assert "Calling" in cards[-1][0] and "Tomorrow 4–7" in cards[-1][0]
