@@ -10,11 +10,11 @@
 | Eval harness | NOT BUILT |
 | Specs: warranty_email | BUILT — LIVE via script (vision, web-search lookup, draft, confirm, Gmail send). Emails are delivered to my own inbox in demo mode (SIMULATED recipient) |
 | Specs: passbook_explain | BUILT — engine flow tested with mocks; vision + brief LIVE-tested on a mock passbook (fictional bank); live phone run pending |
-| Specs: appointment | NOT BUILT |
+| Specs: appointment | BUILT — engine flow tested with mocks; datetime extraction LIVE-tested. In the demo the reminder fires after 60 s (SIMULATED time via DEMO_REMINDER_SECONDS); real time = slot − 60 min |
 | Phone number, voice, live call execution | REUSED — OmniDimension (one generic agent, per-call brief injected) |
 | WhatsApp transport | REUSED — Twilio sandbox |
 | Transcription, vision, TTS | REUSED — OpenAI APIs |
 | Storage | Local JSON-file store (same interface as planned DynamoDB) — DynamoDB NOT yet connected |
-| Scheduler | In-process timer for retries — EventBridge NOT yet connected |
+| Scheduler | Schedules persisted in task state + 15 s tick loop (survives restart); /internal/fire endpoint ready for EventBridge — EventBridge NOT connected. Retries/wait reminders use in-process timers (lost on restart) |
 | Public URL | Cloudflare quick tunnel (temporary) |
 | Test calls / mock banner / mock passbook | SIMULATED inputs, played by consenting people (me so far) |

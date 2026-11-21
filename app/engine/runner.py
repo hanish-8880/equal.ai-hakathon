@@ -212,7 +212,7 @@ def advance(task_id: str, send) -> None:
             task["step_idx"] += 1
             save_task(task)
             continue
-        if state in ("running", "awaiting_confirm", "waiting"):
+        if state in ("running", "awaiting_confirm", "waiting", "scheduled"):
             return  # waiting on webhooks / user / a contact's WhatsApp input
         result = steps.run(step, spec, task, send)
         if result["status"] == "running":
@@ -223,6 +223,8 @@ def advance(task_id: str, send) -> None:
             task["status"] = "awaiting_confirm"
         if result["status"] == "waiting":
             task["status"] = "waiting_input"
+        if result["status"] == "failed":
+            task["status"] = "failed"
         save_task(task, f"step_{result['status']}")
         if result["status"] != "done":
             return
@@ -263,3 +265,24 @@ def _late_terminal(task_id: str, step_id: str) -> None:
 
 
 steps.ON_CALL_TERMINAL = _late_terminal
+
+
+def fire_schedule(task_id: str, step_id: str) -> bool:
+    """Fire one scheduled step (from the tick loop, or POST /internal/fire for EventBridge). Idempotent."""
+    if not store().claim(f"fire:{task_id}:{step_id}"):
+        return False
+    task = store().get("tasks", task_id)
+    if not task or task["steps"].get(step_id, {}).get("status") != "scheduled":
+        return False
+    task["steps"][step_id] = {**task["steps"][step_id], "status": "done", "output": {"fired_at": now()}}
+    save_task(task, "schedule_fired")
+    owner = task["user"]
+    advance(task_id, lambda m: steps.NOTIFY(owner, m, None))
+    return True
+
+
+def tick_schedules() -> int:
+    n = 0
+    for task_id, step_id in steps.due_schedules():
+        n += fire_schedule(task_id, step_id)
+    return n

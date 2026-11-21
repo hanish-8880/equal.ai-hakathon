@@ -1,5 +1,7 @@
 """FastAPI app, routes only."""
 import json
+import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +25,27 @@ def notify(to: str, text: str, audio: bytes | None = None) -> None:
 
 
 steps.NOTIFY = notify
+
+
+def _scheduler_loop() -> None:
+    """Persisted schedules (task state) → survives restarts. EventBridge can call /internal/fire instead."""
+    while True:
+        try:
+            runner.tick_schedules()
+        except Exception as e:  # noqa: BLE001
+            store().add_event("-", "error", {"where": "scheduler", "error": str(e)[:300]})
+        time.sleep(15)
+
+
+@app.on_event("startup")
+def _start_scheduler() -> None:
+    threading.Thread(target=_scheduler_loop, daemon=True).start()
+
+
+@app.post("/internal/fire/{task_id}/{step_id}")
+def internal_fire(task_id: str, step_id: str, bg: BackgroundTasks) -> dict[str, bool]:
+    bg.add_task(runner.fire_schedule, task_id, step_id)
+    return {"ok": True}
 EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response></Response>'
 
 

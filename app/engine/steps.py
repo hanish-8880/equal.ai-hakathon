@@ -2,6 +2,7 @@
 import threading
 import time
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.actions import email as email_action
@@ -12,6 +13,7 @@ from app.engine.specs_loader import arith, render
 from app.store.dynamo import store
 from app.voice import omni
 
+IST = timezone(timedelta(hours=5, minutes=30))
 TERMINAL = {"completed", "no_answer", "failed"}
 RETRY_DELAY_S = 300
 DISPATCH = omni.dispatch_call  # swapped in tests
@@ -259,7 +261,48 @@ def find_waiting(sender: str, has_image: bool) -> tuple[dict[str, Any], str] | N
     return None
 
 
+# ---------------- schedule ----------------
+def _field_from_step(task: dict[str, Any], step_id: str, field: str) -> Any:
+    out = task.get("steps", {}).get(step_id, {}).get("output")
+    rows = out if isinstance(out, list) else [out] if out else []
+    for r in rows:
+        f = ((r or {}).get("fields") or {}).get(field) or {}
+        if f.get("value") not in (None, "") and f.get("status") in ("confirmed", "tentative"):
+            return f["value"]
+    return None
+
+
+def run_schedule(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+    """Deterministic fire time = datetime from a prior step + offset. Persisted in task state; runner.tick_schedules fires it."""
+    src = step["at_from"]
+    raw = _field_from_step(task, src["step"], src["field"])
+    try:
+        at = datetime.fromisoformat(str(raw))
+        if at.tzinfo is None:
+            at = at.replace(tzinfo=IST)
+    except (TypeError, ValueError):
+        send(f"Time sariga ardham kaaledu ({raw!r}) — reminder set cheyyalekapoyanu.")
+        return {"status": "failed", "error": f"bad datetime {raw!r}"}
+    real_fire = at.timestamp() + int(step.get("offset_min", 0)) * 60
+    demo = settings().demo_reminder_seconds
+    fire_at = time.time() + demo if demo > 0 else max(real_fire, time.time())
+    store().add_event(task["task_id"], "scheduled", {"step": step["id"], "real_fire_at": real_fire, "fire_at": fire_at, "demo": demo > 0})
+    return {"status": "scheduled", "fire_at": fire_at, "real_fire_at": real_fire, "slot": at.isoformat(), "demo_time": demo > 0}
+
+
+def due_schedules(now_ts: float | None = None) -> list[tuple[str, str]]:
+    now_ts = now_ts or time.time()
+    out = []
+    for t in store().scan("tasks", status="running"):
+        for sid, st in t["steps"].items():
+            if st.get("status") == "scheduled" and st.get("fire_at", 0) <= now_ts:
+                out.append((t["task_id"], sid))
+    return out
+
+
 def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+    if step["type"] == "schedule":
+        return run_schedule(step, spec, task, send)
     if step["type"] == "wait_for":
         return run_wait_for(step, spec, task, send)
     return _run(step, spec, task, send)

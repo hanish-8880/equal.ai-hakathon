@@ -125,3 +125,12 @@ Observed: Sarvam "kavya" via PUT {"voice":{"provider":"sarvam","voice_id":"kavya
 (user feedback; LLM latency p50 0.97 s was fine → the TTS was the problem). Same test showed gpt-4.1 now speaks 18,500 and 54,882 exactly.
 Chose: Cartesia 9cebb910… "Aarti – Conversationalist" (test call 11132725), user OK'd. tts_cartesia_language stays "en" (not settable via API) → keep romanized call scripts.
 Would change if: native Telugu pronunciation needed → set voice language in Omni dashboard.
+
+## [Sat 15:15] F5 appointment + `schedule` step
+Chose: generic `schedule` step (at_from {step, field} + offset_min). Fire time computed deterministically from the extracted ISO datetime
+(extractor now gets now_ist; "repu podduna padakondu gantalaki" → 2026-11-22T11:00+05:30, VERIFIED live).
+Persisted in task state; a 15 s tick loop fires due schedules (idempotent claim "fire:{task}:{step}"); POST /internal/fire/{task}/{step} for EventBridge later.
+Chose: report to Hanish BEFORE the wait, short "reminder done" after.
+Chose: DEMO_REMINDER_SECONDS=60 in the live demo (SIMULATED time) — nobody waits until tomorrow. Real mode = slot − 60 min.
+Gave up: AWS EventBridge for now (no AWS creds configured). /internal/fire has no auth yet — only fires already-scheduled steps (low risk); add a token before AWS.
+Bad/unclear time → schedule step fails the task and tells the user (never guesses a time).

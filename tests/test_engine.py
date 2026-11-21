@@ -274,3 +274,48 @@ def test_concurrency_limit_queues_calls(fake, monkeypatch):
     calls = store().scan("calls")
     assert len(fake) == 2 and all(c["status"] == "dispatched" for c in calls)
     assert any(c.get("waited_in_queue") for c in calls)
+
+
+def test_appointment_flow_schedule_fires_reminder(fake, monkeypatch):
+    import time as _t
+    from app.config import settings as _settings
+    notes = []
+    monkeypatch.setattr(steps, "NOTIFY", lambda to, text, audio=None: notes.append((to, text)))
+    monkeypatch.setattr(steps.decider, "compose_reply", lambda hint, i, res, rank, lang, tid=None: hint[:80])
+    monkeypatch.setattr(runner.router, "route", lambda msg, image, catalog, contacts, tid=None: RouteResult(
+        spec="appointment", inputs={"person_phone": "9876543210", "clinic_phone": "9123456789", "clinic_name": "Care Plus"}))
+    slot = "2030-01-01T11:00:00+05:30"
+    def ex(tr, must, schema, tid=None):
+        vals = {"slot_datetime": slot, "doctor_name": "Dr Rao", "consultation_fee": 500, "time_ok": True, "acknowledged": True}
+        return Extraction(call_outcome="completed", follow_up_needed=False,
+                          fields=[ExtractedField(name=m, value=vals[m], status="confirmed", evidence_quote="q") for m in must])
+    monkeypatch.setattr(steps.extractor, "extract", ex)
+    out = []
+    runner.handle_message("me", "repu mummy ki doctor appointment book chey", None, out.append)
+    runner.handle_message("me", "yes", None, out.append)
+    def finish_last_call():
+        [c] = [c for c in store().scan("calls") if c["status"] == "dispatched"]
+        runner.on_call_result({"call_id": c["omni_call_id"], "transcript": "user: ok"}, lambda u, m: notes.append((u, m)))
+        return c
+    assert finish_last_call()["to_number"] == "+919123456789"  # clinic first
+    assert finish_last_call()["to_number"] == "+919876543210"  # then mummy
+    t = store().scan("tasks")[0]
+    st = t["steps"]["wait_until_reminder"]
+    assert st["status"] == "scheduled" and t["status"] == "running"
+    from datetime import datetime
+    assert st["real_fire_at"] == datetime.fromisoformat(slot).timestamp() - 3600
+    assert any("appointment booked" in n[1] for n in notes)  # report sent BEFORE the reminder
+    assert runner.tick_schedules() == 0 and len(fake) == 2  # not due yet
+    assert steps.due_schedules(st["fire_at"] + 1) == [(t["task_id"], "wait_until_reminder")]
+    runner.fire_schedule(t["task_id"], "wait_until_reminder")
+    assert runner.fire_schedule(t["task_id"], "wait_until_reminder") is False  # idempotent
+    assert len(fake) == 3 and fake[-1][0] == "+919876543210"  # reminder call
+    finish_last_call()
+    assert store().scan("tasks")[0]["status"] == "done"
+
+
+def test_schedule_bad_datetime_fails_task():
+    task = {"task_id": "t", "steps": {"a": {"output": [{"fields": {"slot_datetime": {"value": "sometime", "status": "tentative"}}}]}}}
+    out = []
+    r = steps.run_schedule({"id": "s", "at_from": {"step": "a", "field": "slot_datetime"}, "offset_min": -60}, {}, task, out.append)
+    assert r["status"] == "failed" and "Time" in out[0]

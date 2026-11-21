@@ -13,6 +13,8 @@ For EVERY field return: name, value, unit, status, evidence_quote.
   the person said themselves.
 - Numbers: normalise to digits and INR ("pannendu velu" = 12000, "65 lakhs" = 6500000).
   Keep the unit the person used (per bag / total / per sq ft) in the unit field.
+- Dates/times: resolve relative words ("repu"/tomorrow, "ellundi", "Monday", "11 ki") against now_ist and
+  give ISO 8601 with +05:30 when the field type is datetime. If the time is unclear, status "tentative".
 - An extra charge mentioned separately (transport, GST, loading) is NOT part of the unit price.
 - call_outcome: completed | no_answer | wrong_number | callback_requested | refused | cut_off.
 - follow_up_needed: true if any must_collect field is tentative, refused or not_mentioned.

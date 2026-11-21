@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.brain.client import json_call, prompt
@@ -8,8 +9,9 @@ from app.config import settings
 
 def extract(transcript: str, must_collect: list[str], result_schema: dict[str, Any],
             task_id: str | None = None) -> Extraction:
-    user = json.dumps({"must_collect": must_collect, "result_schema": result_schema, "transcript": transcript},
-                      ensure_ascii=False)
+    now_ist = datetime.now(timezone(timedelta(hours=5, minutes=30))).strftime("%Y-%m-%dT%H:%M:%S+05:30 (%A)")
+    user = json.dumps({"now_ist": now_ist, "must_collect": must_collect, "result_schema": result_schema,
+                       "transcript": transcript}, ensure_ascii=False)
     ex = json_call(settings().openai_model_brain, prompt("extractor"), user, Extraction, task_id, "extract")
     # deterministic guard: a value without an evidence quote can never be "confirmed"
     names = {f.name for f in ex.fields}

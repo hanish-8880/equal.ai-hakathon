@@ -1,0 +1,59 @@
+name: appointment
+description: "Book a doctor/clinic appointment for a family member: call the clinic for a slot, tell the family member the slot by phone, and give a reminder call before the appointment"
+route_examples:
+  - "Repu mummy ki doctor appointment book chey, slot cheppu, 1 hr mundu gurthu chey"
+  - "book a dentist appointment for amma tomorrow and remind her an hour before"
+inputs:
+  person_name:   {source: text, default: "Amma"}
+  person_phone:  {source: contacts, required: true, validate: indian_mobile}
+  clinic_name:   {source: text_or_contacts, default: "the clinic"}
+  clinic_phone:  {source: text_or_contacts, required: true, validate: indian_mobile}
+  doctor_or_specialty: {source: text, default: "general physician"}
+  preferred_day: {source: text, default: "tomorrow"}
+  reason:        {source: text}
+confirm_before: [call]
+steps:
+  - id: ask_clinic
+    type: call
+    to: "{inputs.clinic_phone}"
+    callee: {name: "{inputs.clinic_name}", role: "clinic receptionist"}
+    goal: "Book an appointment for {inputs.person_name} with a {inputs.doctor_or_specialty} on {inputs.preferred_day}. Get the exact date and time slot, the doctor's name, and the consultation fee. Patient name is {inputs.person_name}."
+    must_collect: [slot_datetime, doctor_name, consultation_fee]
+    shareable: [person_name]
+    language: Telugu-English mix
+    max_minutes: 3
+    retry_on_no_answer: 1
+  - id: tell_person
+    type: call
+    to: "{inputs.person_phone}"
+    callee: {name: "{inputs.person_name}", role: "my mother"}
+    goal: "Tell {inputs.person_name} her doctor appointment details from prior_results (date, time, doctor, fee) slowly, twice, and say Chinku will call again one hour before. Ask if the time is OK for her."
+    must_collect: [time_ok]
+    language: Telugu
+    max_minutes: 2
+    retry_on_no_answer: 1
+  - id: report
+    type: reply
+    template_hint: "Tell Hanish: appointment booked (date, time, doctor, fee — quote the clinic's words), {inputs.person_name} informed (time OK or not), and that a reminder call is scheduled 1 hour before."
+  - id: wait_until_reminder
+    type: schedule
+    at_from: {step: ask_clinic, field: slot_datetime}
+    offset_min: -60
+  - id: remind_person
+    type: call
+    to: "{inputs.person_phone}"
+    callee: {name: "{inputs.person_name}", role: "my mother"}
+    goal: "Reminder: {inputs.person_name}'s doctor appointment is in about one hour (details in prior_results). Remind her to leave on time and carry old prescriptions."
+    must_collect: [acknowledged]
+    language: Telugu
+    max_minutes: 2
+    retry_on_no_answer: 1
+  - id: reminder_done
+    type: reply
+    template_hint: "One short line to Hanish: reminder call to {inputs.person_name} done (did she acknowledge?)."
+result_schema:
+  slot_datetime:    {type: datetime, format: "ISO 8601 with +05:30, e.g. 2026-11-22T11:00:00+05:30"}
+  doctor_name:      {type: string}
+  consultation_fee: {type: number, unit: INR}
+  time_ok:          {type: boolean}
+  acknowledged:     {type: boolean}
