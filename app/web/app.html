@@ -268,6 +268,7 @@ const I = {
   "Email this photo": ["ఈ ఫోటో ఇమెయిల్ చేయి", "यह फ़ोटो ईमेल करो", "Ee photo email cheyyi"], "Book a doctor": ["డాక్టర్ అపాయింట్‌మెంట్", "डॉक्टर बुक करो", "Doctor book cheyyi"],
   "Complain & follow up": ["ఫిర్యాదు & ఫాలో అప్", "शिकायत और फ़ॉलो अप", "Complaint & follow up"], "Call from a photo": ["ఫోటో నుంచి కాల్", "फ़ोटो से कॉल", "Photo nunchi call"],
   "Is this a scam?": ["ఇది మోసమా?", "क्या यह धोखा है?", "Idi scam aa?"],
+  "approx. area": ["సుమారు ప్రాంతం", "अनुमानित इलाका", "approx. area"], "not on map": ["మ్యాప్‌లో లేదు", "नक्शे पर नहीं", "map lo ledu"],
   "Hotels": ["హోటళ్ళు", "होटल", "Hotels"], "Restaurants": ["రెస్టారెంట్లు", "रेस्टोरेंट", "Restaurants"], "by rating": ["రేటింగ్ ప్రకారం", "रेटिंग के हिसाब से", "rating prakaram"],
   "days": ["రోజులు", "दिन", "rojulu"], "No phone number found": ["ఫోన్ నంబర్ దొరకలేదు", "फ़ोन नंबर नहीं मिला", "Phone number dorakaledu"],
   "Call selected to book": ["ఎంచుకున్నవాటికి కాల్ చేసి బుక్ చేయి", "चुने हुए को कॉल करके बुक करो", "Select chesinavaatiki call chesi book cheyyi"],
@@ -426,7 +427,7 @@ function card(c) {
       ${(c.items || []).length ? `<ol>${c.items.map(i => `<li><b>${esc(i.name)}</b>${i.address ? " · " + esc(i.address) : ""}${i.phone ? " · ☎ " + esc(i.phone) : ""}${i.email ? " · " + esc(i.email) : ""}</li>`).join("")}</ol>` : ""}
       <div class="src">${L("Sources")}: ${(c.sources || []).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\//, "").slice(0, 50))}</a>`).join(" · ") || "—"} · ${L("checked")} ${esc(c.checked || "")}</div></div>`;
   if (c.type === "map") { const id = "map" + (++mapN); setTimeout(() => drawMap(id, c.rows || []), 50);
-    return `<div class="rc"><h4>🗺️ ${L("Which one?")}</h4><div class="mapbox" id="${id}"></div><ol>${(c.rows || []).map(r => `<li><button class="btn" style="min-height:36px;margin:2px 0" data-say="${esc("Choose " + r.name)}">${r.n}. ${esc(r.name)}</button>${r.address ? `<div class="src">${esc(r.address)}</div>` : ""}</li>`).join("")}</ol></div>`; }
+    return `<div class="rc"><h4>🗺️ ${L("Which one?")}</h4><div class="mapbox" id="${id}"></div><ol>${(c.rows || []).map(r => `<li><button class="btn" style="min-height:36px;margin:2px 0" data-say="${esc("Choose " + r.name)}">${r.n}. ${esc(r.name)}</button>${r.address ? `<div class="src">${esc(r.address)}${r.pin === "area" ? " · 📍 " + L("approx. area") : r.lat == null ? " · " + L("not on map") : ""}</div>` : ""}</li>`).join("")}</ol></div>`; }
   if (c.type === "compare") { const w = c.winner || {}, id = "cmp" + (++mapN);
     const money = o => o.final_payable == null ? L("unknown") : (o.currency === "INR" ? "₹" + Number(o.final_payable).toLocaleString("en-IN") : o.final_payable + " " + o.currency);
     const hm = m => m == null ? L("unknown") : (m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m` : `${m}m`);
@@ -503,7 +504,7 @@ function card(c) {
 function drawMap(id, rows) { const el = $(id); if (!el || !window.L) return; const pts = rows.filter(r => r.lat != null);
   if (!pts.length) { el.remove(); return; }
   const m = window.L.map(el, {zoomControl: false, attributionControl: true}); window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 19, attribution: "© OpenStreetMap"}).addTo(m);
-  const b = []; pts.forEach(r => { const ll = [r.lat, r.lon]; b.push(ll); window.L.marker(ll, {icon: window.L.divIcon({className: "pin", html: String(r.n), iconSize: [26, 26]})}).addTo(m).bindPopup(esc(r.name)); });
+  const b = []; pts.forEach(r => { const ll = r.pin === "area" ? [r.lat + Math.sin(r.n * 2.1) * 0.0025, r.lon + Math.cos(r.n * 2.1) * 0.0025] : [r.lat, r.lon]; b.push(ll); window.L.marker(ll, {icon: window.L.divIcon({className: "pin", html: String(r.n), iconSize: [26, 26]})}).addTo(m).bindPopup(esc(r.name)); });
   b.length > 1 ? m.fitBounds(b, {padding: [24, 24]}) : m.setView(b[0], 15); }
 function row(m) { const d = document.createElement("div"); const mine = m.dir === "in" || m.dir === "heard"; d.className = "msg fade " + (mine ? "me" : "bot");
   let inner;

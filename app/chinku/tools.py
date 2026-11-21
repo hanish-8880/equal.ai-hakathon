@@ -5,6 +5,7 @@ import ast
 import json
 import operator
 import re
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -186,14 +187,24 @@ def map_(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, An
     rows = []
     for i, it in enumerate(items[:6], start=1):
         it = it if isinstance(it, dict) else {"name": str(it)}
-        g = None
-        try:
-            if it.get("address"):
-                g = maps.geocode(it["address"]) or maps.geocode(f"{it['name']}, {it['address']}")
-        except Exception:  # noqa: BLE001
-            g = None
+        g, how = None, None
+        addr = str(it.get("address") or "")
+        parts = [p.strip() for p in addr.split(",") if p.strip() and not re.search(r"\d+(st|nd|rd|th)? floor|^sy|^plot|^#|^no\.?\s*\d", p.strip(), re.I)]
+        tries = [(addr, "address"), (f"{it.get('name')}, Hyderabad", "name"),
+                 (", ".join(parts[-3:]), "area"), (", ".join(parts[-2:]), "area")]  # long Indian addresses → locality fallback
+        for q, kind in tries:
+            if not q or not q.strip(", "):
+                continue
+            try:
+                g = maps.geocode(q)
+            except Exception:  # noqa: BLE001
+                g = None
+            time.sleep(1.0)  # Nominatim usage policy: max 1 request per second
+            if g:
+                how = kind
+                break
         rows.append({"n": i, "name": it.get("name"), "address": it.get("address"), "phone": it.get("phone"),
-                     "lat": g[0] if g else None, "lon": g[1] if g else None, "source": it.get("url"),
+                     "lat": g[0] if g else None, "lon": g[1] if g else None, "source": it.get("url"), "pin": how,
                      "map_url": f"https://www.openstreetmap.org/?mlat={g[0]}&mlon={g[1]}#map=17/{g[0]}/{g[1]}" if g else None})
     if not rows:
         raise ToolError("I didn't find any places to show on the map.")
