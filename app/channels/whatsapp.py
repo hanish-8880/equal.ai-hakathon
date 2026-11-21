@@ -63,3 +63,33 @@ def send_voice(to: str, audio_mp3: bytes, caption: str = "") -> dict[str, Any]:
     name = f"{uuid.uuid4().hex}.mp3"
     (MEDIA_DIR / name).write_bytes(audio_mp3)
     return send(to, caption, f"{settings().public_base_url}/media/{name}")
+
+
+def fetch_recent_inbound(since_ts: float) -> list[dict[str, Any]]:
+    """Backstop for webhook mis-routing: inbound sandbox messages Twilio received since `since_ts`,
+    in the same shape as parse_inbound(). Media URLs come from each message's Media subresource."""
+    from email.utils import parsedate_to_datetime
+    s = settings()
+    if not (s.twilio_account_sid and s.twilio_auth_token):
+        return []
+    auth = (s.twilio_account_sid, s.twilio_auth_token)
+    base = f"https://api.twilio.com/2010-04-01/Accounts/{s.twilio_account_sid}"
+    r = httpx.get(f"{base}/Messages.json", params={"To": s.twilio_whatsapp_from, "PageSize": 30}, auth=auth, timeout=20)
+    r.raise_for_status()
+    out = []
+    for m in r.json().get("messages", []):
+        if not m["direction"].startswith("inbound"):
+            continue
+        try:
+            ts = parsedate_to_datetime(m["date_created"]).timestamp()
+        except Exception:  # noqa: BLE001
+            continue
+        if ts < since_ts:
+            continue
+        media = []
+        if int(m.get("num_media") or 0):
+            mr = httpx.get(f"{base}/Messages/{m['sid']}/Media.json", auth=auth, timeout=20).json()
+            media = [{"url": f"{base}/Messages/{m['sid']}/Media/{x['sid']}", "type": x.get("content_type", "")}
+                     for x in mr.get("media_list", [])]
+        out.append({"sid": m["sid"], "from": m["from"], "body": (m.get("body") or "").strip(), "media": media, "ts": ts})
+    return sorted(out, key=lambda x: x["ts"])

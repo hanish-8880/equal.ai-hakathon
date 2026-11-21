@@ -70,9 +70,27 @@ def _scheduler_loop() -> None:
         time.sleep(15)
 
 
+STARTED_AT = time.time()
+
+
+def _wa_poll_loop() -> None:
+    """Twilio's sandbox sometimes sends our webhook to a stale URL. Poll Twilio's log every 10 s and process any
+    inbound message the webhook missed (deduped by MessageSid, so webhook + poller never double-process)."""
+    while True:
+        try:
+            for msg in whatsapp.fetch_recent_inbound(STARTED_AT - 120):
+                if store().claim(f"wa:{msg['sid']}"):
+                    store().add_event("-", "wa_recovered_by_poll", {"sid": msg["sid"], "age_s": round(time.time() - msg["ts"])})
+                    threading.Thread(target=process_whatsapp, args=(msg,), daemon=True).start()
+        except Exception as e:  # noqa: BLE001
+            store().add_event("-", "error", {"where": "wa_poll", "error": str(e)[:300]})
+        time.sleep(10)
+
+
 @app.on_event("startup")
 def _start_scheduler() -> None:
     threading.Thread(target=_scheduler_loop, daemon=True).start()
+    threading.Thread(target=_wa_poll_loop, daemon=True).start()
 
 
 @app.post("/internal/fire/{task_id}/{step_id}")

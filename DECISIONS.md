@@ -220,3 +220,10 @@ Chose: /chat web page (secret CHAT_KEY in URL) on the same engine and the SAME o
 Every outgoing message is mirrored into the web chat; WhatsApp is sent only if the owner's last message came from WhatsApp.
 Photos/PDFs upload in the page; voice notes and PPTs render inline. Calls are unchanged (real Omni calls).
 Gave up: nothing on WhatsApp — it still works whenever Twilio routes correctly.
+
+## [Sat 17:35] Twilio routes inbound inconsistently → poll Twilio's message log as a backstop (VERIFIED misrouting)
+Observed: "hi" 17:29:53 → AWS (replied); "Call him for chair price…" 17:30:16 (23 s later) → old trycloudflare URL (11210).
+Not time-based flip; Twilio sandbox serves stale config for some requests. Messages still exist in Twilio's log.
+Chose: server polls GET /Messages.json?To=<sandbox> every 10 s and processes inbound messages the webhook missed
+(claim on wa:{MessageSid} → webhook and poller never double-process; on startup only the last 2 min are replayed).
+Cost: up to ~10 s extra latency when Twilio misroutes. Web chat remains the demo fallback.
