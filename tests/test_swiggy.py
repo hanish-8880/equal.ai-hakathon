@@ -86,3 +86,16 @@ def test_unreadable_existing_cart_is_never_overwritten(monkeypatch):
                         if name == "get_cart" else (_ for _ in ()).throw(AssertionError("must not update")))
     with pytest.raises(swiggy.SwiggyError, match="won't touch it"):
         swiggy.add_to_cart([{"spinId": "NEW1", "quantity": 1}])
+
+
+def test_no_single_pack_big_enough_takes_several_and_short_query_retry(monkeypatch):
+    cat = {"chicken curry cut": [V("Shah Fresh Chicken Curry Cut", "400 g", 119), V("Shah Fresh Chicken Curry Cut", "250 g", 90)],
+           "mint leaves": [], "mint": [V("Mint (Pudina)", "100 g", 12)]}
+    monkeypatch.setattr(swiggy, "search", lambda q: cat.get(q, []))
+    ctx = {"task": type("T", (), {"task_id": "i_q"})(), "card": lambda t, c: CARDS.append((t, c)), "step_id": "s2"}
+    out = tools.shop_list(ME, {"ingredients": [{"name": "Chicken", "search_query": "chicken curry cut", "grams": 800},
+                                               {"name": "Mint leaves", "search_query": "mint leaves", "grams": 30}]}, ctx)
+    rows = {r["ingredient"]: r for r in out["rows"]}
+    assert rows["Chicken"]["pack"] == "400 g" and rows["Chicken"]["quantity"] == 2 and rows["Chicken"]["line_total"] == 238
+    assert rows["Mint leaves"]["product"] == "Mint (Pudina)" and out["missing"] == []
+    assert out["total"] == 238 + 12 and {i["spinId"]: i["quantity"] for i in out["items"]}[rows["Chicken"]["spinId"]] == 2

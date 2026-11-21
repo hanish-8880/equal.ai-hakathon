@@ -424,7 +424,7 @@ function card(c) {
       ${c.can_shop ? `<div class="btns"><button class="btn primary" data-say="Find the ingredients for ${esc(c.dish)} on Swiggy Instamart and add them to my cart">🛒 ${L("Find ingredients on Swiggy Instamart")}</button></div>` : ""}</div>`;
   if (c.type === "cart_plan") { const rows = c.rows || []; const inr = v => v == null ? L("unknown") : "₹" + Number(v).toLocaleString("en-IN");
     return `<div class="rc"><h4>🛒 ${esc(c.provider)} <span class="status ok">LIVE</span> ${c.state === "waiting" ? `<span class="status wait">${L("Waiting for you")}</span>` : ""}</h4>
-      <ol>${rows.map(r => `<li><b>${esc(r.product)}</b> · ${esc(r.pack || "")} · <b>${inr(r.price)}</b>${r.mrp && r.price && r.mrp > r.price ? ` <s class="src">${inr(r.mrp)}</s>` : ""}
+      <ol>${rows.map(r => `<li><b>${esc(r.product)}</b> · ${r.quantity > 1 ? esc(r.quantity) + " × " : ""}${esc(r.pack || "")} · <b>${inr(r.line_total != null ? r.line_total : r.price)}</b>${r.mrp && r.price && r.mrp > r.price ? ` <s class="src">${inr(r.mrp)}</s>` : ""}
         <div class="src">${L("for")} ${esc(r.ingredient)}${r.need ? " (" + esc(r.need) + ")" : ""}${r.per_100 ? ` · ₹${esc(r.per_100)}/100 g` : ""}${r.note ? " · ⚠️ " + esc(r.note) : ""}</div></li>`).join("")}</ol>
       <div style="font-size:18px;margin-top:6px"><b>${L("Items total")}: ${inr(c.total)}</b></div>
       ${(c.missing || []).length ? `<div class="src">${L("Not found")}: ${esc(c.missing.join(", "))}</div>` : ""}

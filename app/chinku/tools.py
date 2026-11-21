@@ -449,20 +449,36 @@ def recipe(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, 
     return r.model_dump()
 
 
-def _pick(variants: list[dict[str, Any]], query: str, need_g: float | None) -> tuple[dict[str, Any] | None, str]:
-    """Code chooses the pack: relevant name, enough quantity, then lowest price. Never the model."""
+def _pick(variants: list[dict[str, Any]], query: str, need_g: float | None) -> tuple[dict[str, Any] | None, int, str]:
+    """Code chooses the pack and how many: relevant name → one pack that covers the amount (cheapest) →
+    else the best value pack × as many as needed. Never the model."""
+    import math
+    from app.chinku.adapters.swiggy import grams
     words = [w for w in re.findall(r"[a-z]+", query.lower()) if len(w) > 2]
     rel = [v for v in variants if v["rank"] <= 3 and any(w in (v["name"] or "").lower() for w in words)]
     pool, note = (rel, "") if rel else ([v for v in variants if v["rank"] == 0], "check: closest match")
     if not pool:
-        return None, "not found"
+        return None, 0, "not found"
     if need_g:
-        from app.chinku.adapters.swiggy import grams
         enough = [v for v in pool if (grams(v["pack"]) or 0) >= need_g]
         if enough:
-            pool = enough
-    best = min(pool, key=lambda v: (v["price"] is None, v["price"] or 0))
-    return best, note
+            return min(enough, key=lambda v: (v["price"] is None, v["price"] or 0)), 1, note
+        sized = [v for v in pool if grams(v["pack"]) and v["price"]]
+        if sized:  # no single pack is big enough → best value per 100 g, as many packs as needed (max 5)
+            best = min(sized, key=lambda v: v["price"] / grams(v["pack"]))
+            return best, min(5, math.ceil(need_g / grams(best["pack"]))), note
+    return min(pool, key=lambda v: (v["price"] is None, v["price"] or 0)), 1, note
+
+
+def _search_with_fallback(swiggy: Any, q: str) -> tuple[list[dict[str, Any]], str]:
+    """'mint leaves' finds nothing but 'mint' does — retry once with the main word."""
+    found = swiggy.search(q)
+    if found:
+        return found, q
+    words = [w for w in re.findall(r"[A-Za-z]+", q) if w.lower() not in ("leaves", "leaf", "fresh", "whole", "powder", "paste")]
+    if words and words[0].lower() != q.lower():
+        return swiggy.search(words[0]), words[0]
+    return [], q
 
 
 def shop_list(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
@@ -481,7 +497,8 @@ def shop_list(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[st
             skipped.append(ing.get("name") or q)
             continue
         try:
-            best, note = _pick(swiggy.search(q), q, ing.get("grams"))
+            found, used = _search_with_fallback(swiggy, q)
+            best, qty, note = _pick(found, used, ing.get("grams"))
         except swiggy.SwiggyError as e:
             raise ToolError(str(e)) from e
         if not best:
@@ -489,8 +506,9 @@ def shop_list(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[st
             continue
         rows.append({"ingredient": ing.get("name") or q, "need": ing.get("quantity"), "product": best["name"], "brand": best["brand"],
                      "pack": best["pack"], "price": best["price"], "mrp": best["mrp"], "per_100": best["per_100"],
-                     "spinId": best["spinId"], "skuId": best["skuId"], "quantity": 1, "note": note, "eta_min": best["eta_min"]})
-    total = sum(r["price"] for r in rows if r["price"] is not None)  # code adds, never the model
+                     "spinId": best["spinId"], "skuId": best["skuId"], "quantity": qty, "note": note, "eta_min": best["eta_min"],
+                     "line_total": (best["price"] * qty) if best["price"] is not None else None})
+    total = sum(r["line_total"] for r in rows if r["line_total"] is not None)  # code adds, never the model
     unknown = [r["product"] for r in rows if r["price"] is None]
     card = {"type": "cart_plan", "state": "ready", "provider": "Swiggy Instamart", "status": "LIVE", "rows": rows,
             "total": total, "unknown_prices": unknown, "missing": missing, "skipped": skipped,
