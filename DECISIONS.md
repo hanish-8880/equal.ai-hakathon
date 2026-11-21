@@ -54,3 +54,9 @@ Would change if: webhook payload lacks custom_variables → correlate on request
 ## [Sat 13:12] Twilio — creds VERIFIED, sandbox NOT joined
 Observed: account active (Trial). Test send to +91…3607 → failed 63015 (recipient not in sandbox).
 Next: user sends "join <code>" to +14155238886.
+
+## [Sat 13:20] Public URL = Cloudflare quick tunnel (not ngrok)
+Observed: ngrok needs an account token; cloudflared quick tunnel needs none. URL https://speak-car-facilities-forests.trycloudflare.com → /health 200, /webhooks/omni 200, /webhooks/whatsapp 200.
+Omni agent 286768 webhook set via PUT /agents/{id} post_call_actions.webhook → post_call_config 455762 points at {URL}/webhooks/omni.
+Gave up: stable URL — it changes on every tunnel restart (then: update .env, re-PUT Omni webhook, update Twilio sandbox URL).
+Would change if: tunnel drops during demo → deploy to AWS (stable URL).
