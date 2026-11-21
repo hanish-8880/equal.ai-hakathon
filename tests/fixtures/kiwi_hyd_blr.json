@@ -1,0 +1,404 @@
+{
+ "query": "Hyderabad → Bengaluru on 27/11/2026, 1 adult",
+ "currency": "EUR",
+ "passengers": {
+  "adults": 1,
+  "children": 0,
+  "infants": 0
+ },
+ "resultsCount": 15,
+ "itineraries": [
+  {
+   "id": "06c118c7513000008ab372ef_0|06c118c7513000008ab372ef_1",
+   "tripType": "oneway",
+   "price": 66.0,
+   "priceFormatted": "66 EUR",
+   "totalDurationSeconds": 17100,
+   "bookingUrl": "https://kiwi.com/u/mzspjzvsvs",
+   "imageId": "bengaluru_in",
+   "baggage": {
+    "personalItem": 1,
+    "cabinBag": 1,
+    "checkedBag": 0
+   },
+   "outbound": {
+    "from": "HYD",
+    "to": "BLR",
+    "departureTime": "2026-11-27T07:00:00",
+    "arrivalTime": "2026-11-27T11:45:00",
+    "durationSeconds": 17100,
+    "stops": 1,
+    "route": [
+     "HYD",
+     "VTZ",
+     "BLR"
+    ],
+    "cabinClass": "Economy",
+    "segments": [
+     {
+      "from": "HYD",
+      "to": "VTZ",
+      "fromCity": "Hyderabad",
+      "toCity": "Visakhapatnam",
+      "fromName": "Rajiv Gandhi International",
+      "toName": "Alluri Sitarama Raju International Airport",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T07:00:00",
+      "arrivalTime": "2026-11-27T08:15:00",
+      "durationSeconds": 4500,
+      "carrier": "AI",
+      "carrierName": "Air India Limited",
+      "flightNumber": "AI9887",
+      "cabinClass": "Economy"
+     },
+     {
+      "from": "VTZ",
+      "to": "BLR",
+      "fromCity": "Visakhapatnam",
+      "toCity": "Bengaluru",
+      "fromName": "Alluri Sitarama Raju International Airport",
+      "toName": "Bengaluru International",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T10:05:00",
+      "arrivalTime": "2026-11-27T11:45:00",
+      "durationSeconds": 6000,
+      "carrier": "AI",
+      "carrierName": "Air India Limited",
+      "flightNumber": "AI9886",
+      "cabinClass": "Economy"
+     }
+    ]
+   },
+   "inbound": null
+  },
+  {
+   "id": "06c118c7513000003d163897_0|06c118c7513000003d163897_1",
+   "tripType": "oneway",
+   "price": 72.0,
+   "priceFormatted": "72 EUR",
+   "totalDurationSeconds": 20700,
+   "bookingUrl": "https://kiwi.com/u/rnhtrj224p",
+   "imageId": "bengaluru_in",
+   "baggage": {
+    "personalItem": 1,
+    "cabinBag": 1,
+    "checkedBag": 0
+   },
+   "outbound": {
+    "from": "HYD",
+    "to": "BLR",
+    "departureTime": "2026-11-27T17:35:00",
+    "arrivalTime": "2026-11-27T23:20:00",
+    "durationSeconds": 20700,
+    "stops": 1,
+    "route": [
+     "HYD",
+     "VTZ",
+     "BLR"
+    ],
+    "cabinClass": "Economy",
+    "segments": [
+     {
+      "from": "HYD",
+      "to": "VTZ",
+      "fromCity": "Hyderabad",
+      "toCity": "Visakhapatnam",
+      "fromName": "Rajiv Gandhi International",
+      "toName": "Alluri Sitarama Raju International Airport",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T17:35:00",
+      "arrivalTime": "2026-11-27T19:00:00",
+      "durationSeconds": 5100,
+      "carrier": "AI",
+      "carrierName": "Air India Limited",
+      "flightNumber": "AI9473",
+      "cabinClass": "Economy"
+     },
+     {
+      "from": "VTZ",
+      "to": "BLR",
+      "fromCity": "Visakhapatnam",
+      "toCity": "Bengaluru",
+      "fromName": "Alluri Sitarama Raju International Airport",
+      "toName": "Bengaluru International",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T21:40:00",
+      "arrivalTime": "2026-11-27T23:20:00",
+      "durationSeconds": 6000,
+      "carrier": "AI",
+      "carrierName": "Air India Limited",
+      "flightNumber": "AI9708",
+      "cabinClass": "Economy"
+     }
+    ]
+   },
+   "inbound": null
+  },
+  {
+   "id": "06c118c75130000066a10aa0_0|06c118c75130000066a10aa0_1",
+   "tripType": "oneway",
+   "price": 81.0,
+   "priceFormatted": "81 EUR",
+   "totalDurationSeconds": 15300,
+   "bookingUrl": "https://kiwi.com/u/zcugw7xq3b",
+   "imageId": "bengaluru_in",
+   "baggage": {
+    "personalItem": 1,
+    "cabinBag": 1,
+    "checkedBag": 1
+   },
+   "outbound": {
+    "from": "HYD",
+    "to": "BLR",
+    "departureTime": "2026-11-27T07:10:00",
+    "arrivalTime": "2026-11-27T11:25:00",
+    "durationSeconds": 15300,
+    "stops": 1,
+    "route": [
+     "HYD",
+     "MAA",
+     "BLR"
+    ],
+    "cabinClass": "Economy",
+    "segments": [
+     {
+      "from": "HYD",
+      "to": "MAA",
+      "fromCity": "Hyderabad",
+      "toCity": "Chennai",
+      "fromName": "Rajiv Gandhi International",
+      "toName": "Chennai International",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T07:10:00",
+      "arrivalTime": "2026-11-27T08:30:00",
+      "durationSeconds": 4800,
+      "carrier": "6E",
+      "carrierName": "IndiGo Airlines",
+      "flightNumber": "6E243",
+      "cabinClass": "Economy"
+     },
+     {
+      "from": "MAA",
+      "to": "BLR",
+      "fromCity": "Chennai",
+      "toCity": "Bengaluru",
+      "fromName": "Chennai International",
+      "toName": "Bengaluru International",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T10:20:00",
+      "arrivalTime": "2026-11-27T11:25:00",
+      "durationSeconds": 3900,
+      "carrier": "6E",
+      "carrierName": "IndiGo Airlines",
+      "flightNumber": "6E562",
+      "cabinClass": "Economy"
+     }
+    ]
+   },
+   "inbound": null
+  },
+  {
+   "id": "06c118c751300000b17de8fd_0|06c118c751300000b17de8fd_1",
+   "tripType": "oneway",
+   "price": 85.0,
+   "priceFormatted": "85 EUR",
+   "totalDurationSeconds": 14100,
+   "bookingUrl": "https://kiwi.com/u/9thsz3b87m",
+   "imageId": "bengaluru_in",
+   "baggage": {
+    "personalItem": 1,
+    "cabinBag": 1,
+    "checkedBag": 1
+   },
+   "outbound": {
+    "from": "HYD",
+    "to": "BLR",
+    "departureTime": "2026-11-27T16:10:00",
+    "arrivalTime": "2026-11-27T20:05:00",
+    "durationSeconds": 14100,
+    "stops": 1,
+    "route": [
+     "HYD",
+     "GOI",
+     "BLR"
+    ],
+    "cabinClass": "Economy",
+    "segments": [
+     {
+      "from": "HYD",
+      "to": "GOI",
+      "fromCity": "Hyderabad",
+      "toCity": "Goa",
+      "fromName": "Rajiv Gandhi International",
+      "toName": "Goa International",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T16:10:00",
+      "arrivalTime": "2026-11-27T17:35:00",
+      "durationSeconds": 5100,
+      "carrier": "6E",
+      "carrierName": "IndiGo Airlines",
+      "flightNumber": "6E6329",
+      "cabinClass": "Economy"
+     },
+     {
+      "from": "GOI",
+      "to": "BLR",
+      "fromCity": "Goa",
+      "toCity": "Bengaluru",
+      "fromName": "Goa International",
+      "toName": "Bengaluru International",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T18:55:00",
+      "arrivalTime": "2026-11-27T20:05:00",
+      "durationSeconds": 4200,
+      "carrier": "6E",
+      "carrierName": "IndiGo Airlines",
+      "flightNumber": "6E6163",
+      "cabinClass": "Economy"
+     }
+    ]
+   },
+   "inbound": null
+  },
+  {
+   "id": "06c118c75130000014eaffc6_0|06c118c75130000014eaffc6_1",
+   "tripType": "oneway",
+   "price": 85.0,
+   "priceFormatted": "85 EUR",
+   "totalDurationSeconds": 17700,
+   "bookingUrl": "https://kiwi.com/u/pjj6t8mt7z",
+   "imageId": "bengaluru_in",
+   "baggage": {
+    "personalItem": 1,
+    "cabinBag": 1,
+    "checkedBag": 1
+   },
+   "outbound": {
+    "from": "HYD",
+    "to": "BLR",
+    "departureTime": "2026-11-27T12:30:00",
+    "arrivalTime": "2026-11-27T17:25:00",
+    "durationSeconds": 17700,
+    "stops": 1,
+    "route": [
+     "HYD",
+     "MAA",
+     "BLR"
+    ],
+    "cabinClass": "Economy",
+    "segments": [
+     {
+      "from": "HYD",
+      "to": "MAA",
+      "fromCity": "Hyderabad",
+      "toCity": "Chennai",
+      "fromName": "Rajiv Gandhi International",
+      "toName": "Chennai International",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T12:30:00",
+      "arrivalTime": "2026-11-27T13:45:00",
+      "durationSeconds": 4500,
+      "carrier": "6E",
+      "carrierName": "IndiGo Airlines",
+      "flightNumber": "6E514",
+      "cabinClass": "Economy"
+     },
+     {
+      "from": "MAA",
+      "to": "BLR",
+      "fromCity": "Chennai",
+      "toCity": "Bengaluru",
+      "fromName": "Chennai International",
+      "toName": "Bengaluru International",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T16:20:00",
+      "arrivalTime": "2026-11-27T17:25:00",
+      "durationSeconds": 3900,
+      "carrier": "6E",
+      "carrierName": "IndiGo Airlines",
+      "flightNumber": "6E847",
+      "cabinClass": "Economy"
+     }
+    ]
+   },
+   "inbound": null
+  },
+  {
+   "id": "06c118c751300000da8103e5_0|06c118c751300000da8103e5_1",
+   "tripType": "oneway",
+   "price": 89.0,
+   "priceFormatted": "89 EUR",
+   "totalDurationSeconds": 16500,
+   "bookingUrl": "https://kiwi.com/u/yu3s3vs6sx",
+   "imageId": "bengaluru_in",
+   "baggage": {
+    "personalItem": 1,
+    "cabinBag": 1,
+    "checkedBag": 1
+   },
+   "outbound": {
+    "from": "HYD",
+    "to": "BLR",
+    "departureTime": "2026-11-27T01:45:00",
+    "arrivalTime": "2026-11-27T06:20:00",
+    "durationSeconds": 16500,
+    "stops": 1,
+    "route": [
+     "HYD",
+     "PNQ",
+     "BLR"
+    ],
+    "cabinClass": "Economy",
+    "segments": [
+     {
+      "from": "HYD",
+      "to": "PNQ",
+      "fromCity": "Hyderabad",
+      "toCity": "Pune",
+      "fromName": "Rajiv Gandhi International",
+      "toName": "Pune",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T01:45:00",
+      "arrivalTime": "2026-11-27T02:55:00",
+      "durationSeconds": 4200,
+      "carrier": "6E",
+      "carrierName": "IndiGo Airlines",
+      "flightNumber": "6E6471",
+      "cabinClass": "Economy"
+     },
+     {
+      "from": "PNQ",
+      "to": "BLR",
+      "fromCity": "Pune",
+      "toCity": "Bengaluru",
+      "fromName": "Pune",
+      "toName": "Bengaluru International",
+      "fromCountry": "India",
+      "toCountry": "India",
+      "departureTime": "2026-11-27T04:40:00",
+      "arrivalTime": "2026-11-27T06:20:00",
+      "durationSeconds": 6000,
+      "carrier": "6E",
+      "carrierName": "IndiGo Airlines",
+      "flightNumber": "6E6877",
+      "cabinClass": "Economy"
+     }
+    ]
+   },
+   "inbound": null
+  }
+ ],
+ "searchTimeMs": 2604,
+ "error": null
+}

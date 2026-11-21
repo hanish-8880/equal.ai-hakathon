@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-TOOLS = ("analyze", "transcribe_image", "extract", "search", "map", "call", "draft_email", "send_email", "remind",
+TOOLS = ("compare", "analyze", "transcribe_image", "extract", "search", "map", "call", "draft_email", "send_email", "remind",
          "remember", "recall", "compute", "scam_check", "reply")
 
 

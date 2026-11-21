@@ -15,6 +15,12 @@ TOOLS (inputs → output fields you can reference as {step_id.field}):
 - remember {items: [{key, value, kind: contact|place|preference|account|ticket|fact}]}  (e.g. key "my email", "Mummy phone", "Suresh email")
 - recall {about} → memory[]
 - compute {expression} → value (arithmetic is ALWAYS done by this tool, never by you)
+- compare {category: "flight", from, to, date (YYYY-MM-DD, resolved from now_ist: "next Friday" = the coming Friday),
+     adults, priority: cheapest|fastest|earliest, max_stops?, arrive_by? (ISO local), return_date?}
+     → asks every connected provider (flights: Kiwi.com LIVE), ranks in code, shows a comparison card with the
+     provider's booking link. No approval needed (nothing is bought — the user books on the provider's page).
+     Priority from the request: "cheapest"/"budget" → cheapest; "fastest"/"quick"/"non-stop" → fastest;
+     "reach early"/"earliest" → earliest; default cheapest.
 - reply {text} → just answer the user (questions, explanations, things you already know from memory/conversation)
 
 RULES

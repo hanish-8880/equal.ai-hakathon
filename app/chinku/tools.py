@@ -368,7 +368,49 @@ def call(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, An
     return {"spec_task_id": spec_task["task_id"], "async": True, "targets": targets}
 
 
+# ---------------- compare across connected services (CLAUDE.md §6A, J9) ----------------
+def compare(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    """Ask every connected provider of a category, rank in CODE by this request's priority, explain the winner.
+    Chinku never pays: the card's button opens the provider's own booking page."""
+    from app.chinku import adapters
+    cat = str(inputs.get("category") or "").lower()
+    provs = adapters.registry().get(cat)
+    if not provs:
+        raise ToolError(f"I can't compare “{cat}” yet — connected today: {', '.join(adapters.registry())}.")
+    priority = inputs.get("priority") if inputs.get("priority") in ("cheapest", "fastest", "earliest") else "cheapest"
+    req = dict(inputs) | {"priority": priority}
+    if cat == "flight":
+        if not (req.get("from") and req.get("to") and req.get("date")):
+            raise ToolError("For flights I need from, to and the date.")
+        try:
+            day = datetime.fromisoformat(str(req["date"])[:10]).date()
+        except ValueError as e:
+            raise ToolError(f"I couldn't read the date “{req['date']}”.") from e
+        if day < datetime.now(IST).date():
+            raise ToolError(f"{day:%a %d %b} is already past — which date?")
+    offers, failed = [], []
+    for p in provs:
+        try:
+            offers += p.search(req)
+        except Exception as e:  # noqa: BLE001 — one provider failing never hides the others
+            failed.append(f"{p.name}: {str(e)[:120]}")
+    rec = adapters.rank(offers, priority, inputs.get("max_stops"), inputs.get("arrive_by"))
+    if not rec:
+        raise ToolError("No options found" + (f" ({'; '.join(failed)})" if failed else "") + ".")
+    w = rec.winner
+    head = {"flight": f"{req.get('from')} → {req.get('to')} · {day:%a %d %b} · {int(req.get('adults') or 1)} adult(s)"}.get(cat, cat)
+    card = {"type": "compare", "category": cat, "title": head, "priority": priority,
+            "winner": w.model_dump(), "why": rec.why, "change": rec.what_would_change,
+            "rows": [o.model_dump() for o in rec.table[:8]], "excluded": rec.excluded, "providers": [p.name for p in provs],
+            "status": sorted({p.status for p in provs}), "failed": failed, "checked": w.fetched_at, "total_found": len(offers)}
+    ctx["card"](f"✈️ Recommended ({priority}): {w.item} — "
+                f"{'₹' + format(w.final_payable, ',.0f') if w.currency == 'INR' and w.final_payable is not None else w.final_payable}. "
+                f"Why: {'; '.join(rec.why)}. Booking happens on {w.provider} — Chinku never pays.", card)
+    return {"recommended": w.model_dump(), "why": rec.why, "count": len(offers), "priority": priority, "failed": failed}
+
+
 REGISTRY: dict[str, Callable[[str, dict[str, Any], dict[str, Any]], dict[str, Any]]] = {
+    "compare": compare,
     "analyze": analyze, "transcribe_image": transcribe_image, "extract": extract, "search": search, "map": map_,
     "draft_email": draft_email, "send_email": send_email, "remind": remind, "remember": remember, "recall": recall,
     "compute": compute, "reply": reply, "call": call,
