@@ -365,3 +365,10 @@ Today screen has a "Type or talk to Chinku…" bar (typing was only in the chat 
 uses the owner's own number for every sample customer (no button can call a stranger). scripts/e2e_owner.py: full flow as the owner,
 real WhatsApp/email/maps/PDF, scripted (simulated, 🧪-marked) call answers; fires the confirmation-call schedule itself so the server
 never rings the phone during the test.
+
+## Sat 22:10 — Customers can call in and book (inbound, customer side)
+- Before: inbound calls from any number except the owner were ignored (owner-only task taking). The inbound agent still had the v1 errands prompt.
+- Now: one inbound agent, two modes (customer receptionist / plumber task). Free slots = WORK_HOURS (default 10–12, 12–14, 16–18) for SLOT_DAYS=3 minus locked/past slots, computed in code and pushed into the agent prompt (startup, every 5 min if changed, after every booking). VERIFIED live: agent prompt shows the 4 real free slots.
+- After the call: brain reads the transcript (caller_kind, fields with evidence, chosen slot id); CODE maps the slot to a real window and books only if read back/confirmed AND the conditional-write lock wins. Otherwise pending + plumber asked. WhatsApp confirmation only if the caller's number joined the sandbox.
+- The owner's number can test as a customer (routed by what was said; tasks are still accepted only from the owner's number). 5 new tests (98 total).
+- UNVERIFIED until a real customer-style call is made.
