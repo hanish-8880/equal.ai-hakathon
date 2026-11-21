@@ -87,6 +87,8 @@ def dispatch_one(task: dict[str, Any], step: dict[str, Any], target: dict[str, A
         from app.engine.specs_loader import load_specs
         fields, _, qmap = resolve_collect(step, load_specs()[task["spec"]], task)
         bstep = {**step, "must_collect": fields, "field_questions": qmap}
+        if (task.get("inputs") or {}).get("language"):  # per-call language (callee's language: Telugu for Mummy, Kannada shop…)
+            bstep["language"] = task["inputs"]["language"]
         brief = brief_writer.write_brief(bstep, task["inputs"], target["callee"], _prior_results(task), task["task_id"])
         call["brief"] = brief.model_dump()
         ctx = {**{k: (v if isinstance(v, (str, int, float)) else str(v)) for k, v in brief.model_dump().items()

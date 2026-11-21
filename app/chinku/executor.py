@@ -21,7 +21,8 @@ STEP_WORDS = {"analyze": "look at the {what}", "transcribe_image": "type out the
               "send_email": "send it (I'll ask you first)", "remind": "remind you: {text}", "remember": "remember that",
               "recall": "check what I remember", "compute": "calculate", "reply": "answer",
               "recipe": "write the recipe", "shop_list": "find the ingredients on Swiggy Instamart", "cart_add": "add them to your Swiggy cart (I'll ask you first)",
-              "compare": "compare options"}
+              "compare": "compare options", "find_support": "find the official support contact",
+              "promise": "track their promise", "promise_update": "update the promise", "scam_check": "check if it's a scam"}
 
 
 # ---------------- persistence ----------------
@@ -108,6 +109,9 @@ def _preview(tool: str, inputs: dict[str, Any]) -> dict[str, Any]:
         return {"type": "cart_plan", "state": "waiting", "provider": "Swiggy Instamart", "status": "LIVE", "rows": inputs.get("rows") or [],
                 "total": inputs.get("total"), "count": len(inputs.get("items") or []),
                 "note": "Adds to your Swiggy cart only. You check out and pay in the Swiggy app — Chinku never pays."}
+    if tool == "remind" and inputs.get("call_phone"):
+        return {"type": "call_plan", "targets": [{"name": inputs.get("for_person") or "them", "phone": inputs.get("call_phone")}],
+                "purpose": f"Reminder call at the set time: {inputs.get('text')}", "questions": [], "language": inputs.get("call_language")}
     if tool == "call":
         return {"type": "call_plan", "targets": inputs.get("targets"), "purpose": inputs.get("purpose"), "questions": inputs.get("questions")}
     return {"type": "approval", "tool": tool, "inputs": inputs}
@@ -135,7 +139,7 @@ def run(t: Task, send: Send, card: Card) -> Task:
             send(f"⚠️ I couldn't find {hint} for this step, so I didn't do it. Please type it in.")
             save(t)
             continue
-        needs = s.needs_approval or s.tool in tools.ALWAYS_APPROVE
+        needs = s.needs_approval or s.tool in tools.ALWAYS_APPROVE or (s.tool == "remind" and bool(inputs.get("call_phone")))
         if needs and not st.output.get("approved"):
             st.status, st.preview = "waiting", _preview(s.tool, inputs)
             t.status = "waiting"
@@ -242,6 +246,8 @@ def tick(send_to: Callable[[str, str], None], card_to: Callable[[str, str, dict[
     now = time.time()
     for r in tools.due_reminders(now):
         tools.fire_reminder(r, send_to)
+    for p in tools.due_promises(now):
+        tools.fire_promise(p, card_to)
     for d in store().scan("contacts", kind="itask"):
         if d.get("status") != "waiting":
             continue
@@ -250,10 +256,72 @@ def tick(send_to: Callable[[str, str], None], card_to: Callable[[str, str, dict[
             if st.status == "waiting" and st.output.get("async"):
                 spec = store().get("tasks", st.output["spec_task_id"])
                 if spec and spec.get("status") in ("done", "failed", "cancelled"):
-                    calls = [c for c in store().scan("calls", task_id=spec["task_id"])]
-                    st.output = {**st.output, "async": False, "calls": [{"to": c.get("callee"), "status": c.get("status"),
-                                                                         "fields": c.get("fields"), "transcript": (c.get("transcript") or "")[:2000]}
-                                                                        for c in calls]}
+                    calls = [call_summary(c) for c in store().scan("calls", task_id=spec["task_id"])]
+                    st.output = {**st.output, "async": False, "calls": calls}
                     st.status = "done" if spec["status"] == "done" else "failed"
                     _remember_output(t.user, "call", st.output)
+                    for c in calls:
+                        card_to(t.user, call_headline(c), {"type": "call_result", **c})
+                        auto_promises(t, c, card_to)
                     run(t, lambda x, u=t.user: send_to(u, x), lambda x, c, u=t.user: card_to(u, x, c))
+
+
+BOOK_WORDS = re.compile(r"(confirm|book|appointment|slot|reserv|hold)", re.I)
+
+
+def call_summary(c: dict[str, Any]) -> dict[str, Any]:
+    """Answers with their status + the person's exact words. 'Booked' only when a booking field is CONFIRMED (code rule)."""
+    fields = (c.get("extracted") or {}).get("fields") or []
+    answers = [{"name": f.get("name"), "value": f.get("value"), "status": f.get("status"), "quote": f.get("evidence_quote")} for f in fields]
+    booked = any(BOOK_WORDS.search(a["name"] or "") and a["status"] == "confirmed" and str(a["value"]).strip().lower()
+                 not in ("", "none", "no", "false", "not available") for a in answers)
+    return {"who": (c.get("callee") or {}).get("name") or (c.get("callee") or {}).get("role"), "to_last4": (c.get("to_number") or "")[-4:],
+            "status": c.get("status"), "outcome": c.get("outcome"), "answers": answers, "booked": booked,
+            "transcript": (c.get("transcript") or "")[:3000], "call_id": c.get("call_id")}
+
+
+def call_headline(c: dict[str, Any]) -> str:
+    if c["status"] == "no_answer":
+        return f"📞 {c['who']} didn't answer."
+    if c["status"] != "completed":
+        return f"📞 Call to {c['who']}: {c['status']}."
+    sure = [a for a in c["answers"] if a["status"] == "confirmed"]
+    return f"📞 Call to {c['who']} done" + (" · Booked ✅" if c["booked"] else "") + f" · {len(sure)} of {len(c['answers'])} answers confirmed."
+
+
+class _Prom(tools.BaseModel):
+    who: str
+    what: str
+    by_when_iso: str | None = None
+    ticket: str | None = None
+    evidence_quote: str
+
+
+class _Proms(tools.BaseModel):
+    promises: list[_Prom] = []
+
+
+def auto_promises(t: Task, c: dict[str, Any], card_to: Callable[[str, str, dict[str, Any] | None], None]) -> None:
+    """Any commitment heard on the call becomes a tracked Promise (only with an exact quote that is really in the transcript)."""
+    tr = c.get("transcript") or ""
+    if c.get("status") != "completed" or not re.search(r"(call ?back|will|by|tomorrow|today|within|days|hours|ticket|complaint|refund|technician|visit)", tr, re.I):
+        return
+    from datetime import datetime
+    try:
+        out = tools.json_call(tools.settings().openai_model_brain,
+                              "From this phone-call transcript, list promises THE OTHER PERSON made (callback, technician visit, refund, "
+                              "delivery, fix). by_when_iso: ISO 8601 with +05:30 resolved from now_ist, null if no time. ticket: complaint/"
+                              "ticket/reference number exactly as said. evidence_quote: their exact words. No promise → empty list. JSON only.",
+                              json.dumps({"now_ist": datetime.now(tools.IST).isoformat(timespec="minutes"), "transcript": tr}, ensure_ascii=False),
+                              _Proms, t.task_id, "promises")
+    except Exception:  # noqa: BLE001
+        return
+    for p in out.promises:
+        if not p.by_when_iso or not p.evidence_quote or p.evidence_quote.strip()[:30].lower() not in tr.lower():
+            continue  # no time or no real quote → not tracked as a promise
+        try:
+            tools.promise(t.user, {"who": c.get("who") or p.who, "what": p.what, "by_when_iso": p.by_when_iso, "ticket": p.ticket,
+                                   "evidence_quote": p.evidence_quote},
+                          {"task": t, "card": lambda x, cd, u=t.user: card_to(u, x, cd)})
+        except tools.ToolError:
+            continue

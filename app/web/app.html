@@ -261,6 +261,17 @@ const I = {
   "Email this photo": ["ఈ ఫోటో ఇమెయిల్ చేయి", "यह फ़ोटो ईमेल करो", "Ee photo email cheyyi"], "Book a doctor": ["డాక్టర్ అపాయింట్‌మెంట్", "डॉक्टर बुक करो", "Doctor book cheyyi"],
   "Complain & follow up": ["ఫిర్యాదు & ఫాలో అప్", "शिकायत और फ़ॉलो अप", "Complaint & follow up"], "Call from a photo": ["ఫోటో నుంచి కాల్", "फ़ोटो से कॉल", "Photo nunchi call"],
   "Is this a scam?": ["ఇది మోసమా?", "क्या यह धोखा है?", "Idi scam aa?"],
+  "Official": ["అధికారికం", "आधिकारिक", "Official"], "Not official — check": ["అధికారికం కాదు — చూసుకోండి", "आधिकारिक नहीं — जाँचें", "Official kadu — check"],
+  "Phone": ["ఫోన్", "फ़ोन", "Phone"], "Form": ["ఫారం", "फ़ॉर्म", "Form"], "Source": ["మూలం", "स्रोत", "Source"],
+  "Write complaint email": ["ఫిర్యాదు ఇమెయిల్ రాయి", "शिकायत ईमेल लिखो", "Complaint email rayi"], "Call support": ["సపోర్ట్‌కి కాల్", "सपोर्ट को कॉल", "Support ki call"],
+  "Demo: shortened": ["డెమో: సమయం తగ్గించాం", "डेमो: समय घटाया", "Demo: time takkuva"], "By": ["ఎప్పటికి", "कब तक", "Eppatiki"], "Ticket": ["టికెట్", "टिकट", "Ticket"],
+  "Did they do it?": ["వాళ్ళు చేశారా?", "क्या उन्होंने किया?", "Vallu chesara?"], "Yes, fixed": ["అవును, అయ్యింది", "हाँ, हो गया", "Avunu, ayyindi"],
+  "No, not fixed": ["లేదు, కాలేదు", "नहीं, नहीं हुआ", "Ledu, kaledu"], "Next steps": ["తర్వాత ఏం చేయాలి", "आगे क्या करें", "Next steps"],
+  "Call again": ["మళ్ళీ కాల్ చేయి", "फिर कॉल करो", "Malli call cheyyi"], "Escalation email": ["పై స్థాయికి ఇమెయిల్", "शिकायत आगे भेजें", "Escalation email"],
+  "Likely scam": ["మోసం అయి ఉండొచ్చు", "धोखा लगता है", "Scam laga undi"], "Looks genuine": ["నిజమైనదిలా ఉంది", "असली लगता है", "Genuine laga undi"],
+  "Unsure": ["ఖచ్చితంగా చెప్పలేను", "पक्का नहीं", "Kachitanga cheppalenu"], "What to do": ["ఏం చేయాలి", "क्या करें", "Em cheyyali"],
+  "Calling…": ["కాల్ చేస్తున్నా…", "कॉल कर रहा हूँ…", "Call chestunna…"], "No answer": ["ఎత్తలేదు", "उठाया नहीं", "Ethaledu"],
+  "Confirmed": ["ఖరారు", "पक्का", "Confirm"], "Tentative": ["ఇంకా ఖరారు కాలేదు", "पक्का नहीं", "Inka confirm kaledu"], "Not said": ["చెప్పలేదు", "नहीं बताया", "Cheppaledu"],
   "Ingredients": ["కావలసినవి", "सामग्री", "Ingredients"], "Steps": ["తయారీ విధానం", "बनाने की विधि", "Steps"], "at home": ["ఇంట్లో ఉంటుంది", "घर पर होगा", "intlo untundi"],
   "Find ingredients on Swiggy Instamart": ["Swiggy Instamart లో సామాన్లు వెతుకు", "Swiggy Instamart पर सामान ढूँढो", "Swiggy Instamart lo items vethuku"],
   "for": ["కోసం", "के लिए", "kosam"], "Items total": ["వస్తువుల మొత్తం", "सामान का कुल", "Items total"], "Not found": ["దొరకలేదు", "नहीं मिला", "Dorakaledu"],
@@ -418,6 +429,27 @@ function card(c) {
       <div id="${id}" class="hidden"><ol>${(c.rows || []).map(o => `<li><b>${money(o)}</b> · ${esc(o.item)}<br><span class="src">${tm(o.depart)} → ${tm(o.arrive)} · ${hm(o.duration_min)}${o.link ? ` · <a href="${esc(o.link)}" target="_blank" rel="noopener">${L("Open booking link")}</a>` : ""}</span></li>`).join("")}</ol>
         ${(c.excluded || []).length ? `<div class="src">${L("Not shown")}: ${(c.excluded || []).map(x => esc(x.item + " — " + x.why)).join("; ")}</div>` : ""}</div>
       <div class="src">${esc(c.total_found)} ${L("options")} · ${L("checked")} ${(() => { try { return esc(new Date(c.checked).toLocaleString(LOC(), {weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"})); } catch (e) { return esc(c.checked || ""); } })()} · ${L("Price as shown by the provider; you book and pay on their page — Chinku never pays.")}</div></div>`; }
+  if (c.type === "support") return `<div class="rc"><h4>🛠️ ${esc(c.brand)} ${c.official ? `<span class="status ok">${L("Official")}</span>` : `<span class="status wait">${L("Not official — check")}</span>`}</h4>
+      <dl class="kv">${c.email ? `<dt>${L("Email")}</dt><dd>${esc(c.email)}</dd>` : ""}${c.phone ? `<dt>${L("Phone")}</dt><dd>${esc(c.phone)}</dd>` : ""}${c.whatsapp ? `<dt>WhatsApp</dt><dd>${esc(c.whatsapp)}</dd>` : ""}${c.web_form ? `<dt>${L("Form")}</dt><dd><a href="${esc(c.web_form)}" target="_blank" rel="noopener">${esc(c.web_form.replace(/^https?:\/\//, "").slice(0, 40))}</a></dd>` : ""}</dl>
+      <div class="src">${L("Source")}: ${c.source_url ? `<a href="${esc(c.source_url)}" target="_blank" rel="noopener">${esc(c.source_url.replace(/^https?:\/\//, "").slice(0, 60))}</a>` : "—"} · ${L("checked")} ${esc(c.checked)}</div>
+      <div class="btns">${c.email ? `<button class="btn primary" data-say="Write the complaint email to ${esc(c.brand)} support">${L("Write complaint email")}</button>` : ""}${c.phone ? `<button class="btn" data-say="Call ${esc(c.brand)} support and raise a complaint">${L("Call support")}</button>` : ""}</div></div>`;
+  if (c.type === "promise") return `<div class="rc"><h4>🤝 ${L("Promised")} <span class="status ${c.status === "resolved" ? "ok" : "wait"}">${esc(L(c.status === "resolved" ? "Resolved" : "Promised"))}</span>${c.demo_shortened ? ` <span class="status sim">${L("Demo: shortened")}</span>` : ""}</h4>
+      <b>${esc(c.who)}</b>: ${esc(c.what)}<div>${L("By")}: <b>${esc(c.by_words || c.by_when)}</b>${c.ticket ? ` · ${L("Ticket")} <b>${esc(c.ticket)}</b>` : ""}</div>${c.evidence_quote ? `<div class="src">“${esc(c.evidence_quote)}”</div>` : ""}</div>`;
+  if (c.type === "followup") return `<div class="rc"><h4>⏰ ${L("Did they do it?")}</h4><b>${esc(c.who)}</b>: ${esc(c.what)}${c.ticket ? ` · ${L("Ticket")} ${esc(c.ticket)}` : ""}
+      <div class="btns"><button class="btn primary" data-say="Yes, it's fixed — mark the promise resolved">${L("Yes, fixed")}</button><button class="btn" data-say="No, it's not fixed — what next?">${L("No, not fixed")}</button></div></div>`;
+  if (c.type === "escalate") return `<div class="rc"><h4>📣 ${L("Next steps")}${c.ticket ? ` · ${L("Ticket")} ${esc(c.ticket)}` : ""}</h4><ol>${(c.ladder || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol>
+      <div class="btns">${c.contact_phone ? `<button class="btn primary" data-say="Call them again about ticket ${esc(c.ticket || "")}">${L("Call again")}</button>` : ""}<button class="btn" data-say="Write an escalation email quoting the ticket and their promise">${L("Escalation email")}</button></div></div>`;
+  if (c.type === "scam") { const col = c.verdict === "Likely scam" ? "bad" : c.verdict === "Looks genuine" ? "ok" : "wait";
+    return `<div class="rc"><h4>🛡️ <span class="status ${col}" style="font-size:15px">${esc(L(c.verdict))}</span></h4>
+      ${c.excerpt ? `<div class="src">“${esc(c.excerpt.slice(0, 160))}${c.excerpt.length > 160 ? "…" : ""}”</div>` : ""}
+      <ul style="margin:6px 0;padding-left:20px">${(c.reasons || []).map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+      ${(c.red_flags || []).length ? `<div class="src">🚩 ${esc(c.red_flags.join(" · "))}</div>` : ""}
+      ${(c.what_to_do || []).length ? `<b>${L("What to do")}</b><ul style="margin:4px 0;padding-left:20px">${c.what_to_do.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      <div class="src">${L("Sources")}: ${(c.official_sources || []).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\//, "").slice(0, 40))}</a>`).join(" · ") || "—"} · ${L("checked")} ${esc(c.checked)}</div></div>`; }
+  if (c.type === "call_live") return `<div class="rc"><h4>📞 ${esc((c.targets || []).map(t => t.name).join(", "))} <span class="status wait">${L("Calling…")}</span>${c.language && c.language !== "English" ? ` <span class="status">${esc(c.language)}</span>` : ""}</h4><div class="src">${esc(c.purpose || "")}</div></div>`;
+  if (c.type === "call_result") return `<div class="rc"><h4>📞 ${esc(c.who)} <span class="status ${c.status === "completed" ? "ok" : "bad"}">${esc(L(c.status === "completed" ? "Done" : c.status === "no_answer" ? "No answer" : "Failed"))}</span>${c.booked ? ` <span class="status ok">${L("Booked")}</span>` : ""}</h4>
+      ${(c.answers || []).length ? `<dl class="kv">${c.answers.map(a => `<dt>${esc((a.name || "").replace(/_/g, " "))}</dt><dd><b>${esc(a.value == null ? L("Not said") : a.value)}</b> <span class="status ${a.status === "confirmed" ? "ok" : "wait"}">${esc(L(a.status === "confirmed" ? "Confirmed" : a.status === "tentative" ? "Tentative" : "Not said"))}</span>${a.quote ? `<div class="src">“${esc(a.quote)}”</div>` : ""}</dd>`).join("")}</dl>` : ""}
+      ${c.transcript ? `<details><summary>${L("Transcript")}</summary><pre>${esc(c.transcript)}</pre></details>` : ""}</div>`;
   if (c.type === "recipe") return `<div class="rc"><h4>🍳 ${esc(c.dish)} <span class="status">${esc(c.servings)} 👤${c.time_minutes ? " · ~" + esc(c.time_minutes) + " min" : ""}</span></h4>
       <b>${L("Ingredients")}</b><ul style="margin:4px 0 8px;padding-left:20px">${(c.ingredients || []).map(i => `<li>${esc(i.name)}${i.quantity ? " — " + esc(i.quantity) : ""}${i.pantry ? ` <span class="src">(${L("at home")})</span>` : ""}</li>`).join("")}</ul>
       <b>${L("Steps")}</b><ol>${(c.steps || []).map(s => `<li>${esc(s)}</li>`).join("")}</ol>${c.tip ? `<div class="src">💡 ${esc(c.tip)}</div>` : ""}

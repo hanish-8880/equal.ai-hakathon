@@ -18,7 +18,7 @@ steps:
     goal: "{inputs.purpose}"
     plan_text: "{inputs.purpose}"
     must_collect_from: inputs.questions
-    language: English
+    language: English  # overridden per call by inputs.language (steps.dispatch_one)
     max_minutes: 3
     retry_on_no_answer: 1
   - id: report

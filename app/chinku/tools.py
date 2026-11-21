@@ -275,12 +275,19 @@ def remind(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, 
     if repeat not in ("none", "daily", "weekly"):
         repeat = "none"
     rid = "r_" + uuid.uuid4().hex[:8]
+    from app.engine.validate import indian_mobile
+    call_phone = indian_mobile(str(inputs.get("call_phone") or "")) if inputs.get("call_phone") else None
+    if inputs.get("call_phone") and not call_phone:
+        raise ToolError(f"“{inputs.get('call_phone')}” is not a valid Indian mobile number for the reminder call.")
     store().put("contacts", f"rem:{rid}", {"kind": "reminder", "owner": user, "rid": rid, "text": text, "due": dt.timestamp(),
                                           "repeat": repeat, "status": "scheduled", "task_id": ctx["task"].task_id,
-                                          "for_person": inputs.get("for_person")})
+                                          "for_person": inputs.get("for_person"), "call_phone": call_phone,
+                                          "call_language": inputs.get("call_language") or "English"})
     words = when_words(dt)
-    ctx["card"](f"⏰ Reminder set · {words}{' · repeats ' + repeat if repeat != 'none' else ''}: {text}",
-                {"type": "reminder", "rid": rid, "text": text, "when": words, "repeat": repeat})
+    who = f" · I'll call {inputs.get('for_person') or 'them'}" if call_phone else ""
+    ctx["card"](f"⏰ Reminder set · {words}{' · repeats ' + repeat if repeat != 'none' else ''}{who}: {text}",
+                {"type": "reminder", "rid": rid, "text": text, "when": words, "repeat": repeat,
+                 "call": bool(call_phone), "for_person": inputs.get("for_person")})
     return {"rid": rid, "when": words, "due": dt.isoformat(), "text": text}
 
 
@@ -292,6 +299,17 @@ def fire_reminder(r: dict[str, Any], deliver: Callable[[str, str], None]) -> Non
     if not store().claim(f"remfire:{r['rid']}:{int(r['due'])}"):
         return
     deliver(r["owner"], f"⏰ Reminder: {r['text']}")
+    if r.get("call_phone"):  # reminder CALL to someone (approved when the reminder was set)
+        from app.engine import runner
+        try:
+            runner.start_spec(r["owner"], "call_and_ask", {
+                "targets": [{"label": r.get("for_person") or "them", "phone": r["call_phone"], "role": "family"}],
+                "purpose": f"Remind {r.get('for_person') or 'them'}: {r['text']}. Say it slowly and clearly, then ask if they understood.",
+                "questions": [{"field": "understood", "question": "Did they understand the reminder?"}],
+                "language": r.get("call_language") or "English"}, lambda t, u=r["owner"]: deliver(u, t))
+            deliver(r["owner"], f"📞 Calling {r.get('for_person') or 'them'} with the reminder.")
+        except Exception as e:  # noqa: BLE001 — never silent
+            deliver(r["owner"], f"⚠️ I couldn't place the reminder call to {r.get('for_person') or 'them'}: {str(e)[:120]}")
     if r.get("repeat") in ("daily", "weekly"):
         r["due"] += 86400 * (1 if r["repeat"] == "daily" else 7)
     else:
@@ -360,9 +378,14 @@ def call(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, An
         raise ToolError("Whom should I call? I need a phone number.")
     qs = [{"field": re.sub(r"[^a-z0-9]+", "_", (q if isinstance(q, str) else q.get("question", "")).lower())[:40] or f"q{i}",
            "question": q if isinstance(q, str) else q.get("question")} for i, q in enumerate(inputs.get("questions") or [])]
+    lang = inputs.get("language") or "English"
     spec_task = runner.start_spec(user, "call_and_ask", {"targets": targets, "purpose": inputs.get("purpose") or "",
-                                                          "questions": qs or [{"field": "answer", "question": inputs.get("purpose")}]},
+                                                          "questions": qs or [{"field": "answer", "question": inputs.get("purpose")}],
+                                                          "language": lang, "chinku_task": ctx["task"].task_id},
                                   ctx["send"])
+    ctx["card"](f"📞 Calling {', '.join(t['label'] for t in targets)}" + (f" in {lang}" if lang != "English" else "") + "…",
+                {"type": "call_live", "targets": [{"name": t["label"], "phone": t["phone"][-4:]} for t in targets], "language": lang,
+                 "spec_task_id": spec_task.get("task_id"), "purpose": inputs.get("purpose")})
     if spec_task.get("status") == "failed":
         raise ToolError("I couldn't start the call: " + ", ".join(spec_task.get("problems") or ["unknown problem"]))
     return {"spec_task_id": spec_task["task_id"], "async": True, "targets": targets}
@@ -547,7 +570,163 @@ def cart_add(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str
     return {"added": len(items), "to_pay": pay}
 
 
+# ---------------- J3: official support contact · promises + follow-up · escalation ----------------
+def _domain(url: str | None) -> str:
+    m = re.match(r"https?://([^/]+)", url or "")
+    return (m.group(1).lower().removeprefix("www.") if m else "")
+
+
+def is_official(brand: str | None, url: str | None) -> bool:
+    """Code decides 'official': the brand's name must be in the web domain (bajajelectricals.com for Bajaj)."""
+    d = _domain(url)
+    toks = [t for t in re.findall(r"[a-z0-9]+", (brand or "").lower()) if len(t) > 2]
+    return bool(d and toks and any(t in d for t in toks)) and not any(x in d for x in ("justdial", "quora", "reddit", "facebook", "mouthshut",
+                                                                                         "consumercomplaints", "sulekha", "youtube"))
+
+
+class Support(BaseModel):
+    email: str | None = None
+    phone: str | None = None
+    whatsapp: str | None = None
+    web_form: str | None = None
+    source_url: str | None = None
+    note: str | None = None
+
+
+def find_support(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    from app.brain.client import oai
+    brand, product = inputs.get("brand"), inputs.get("product") or ""
+    if not brand:
+        raise ToolError("Which company is it? I couldn't see the brand.")
+    r = oai().responses.create(model=settings().openai_model_brain, tools=[{"type": "web_search"}], input=(
+        f"Find the OFFICIAL customer-support contact in India for {brand} {product}. Use ONLY {brand}'s own official website "
+        "(their own domain). Return ONLY JSON {\"email\", \"phone\", \"whatsapp\", \"web_form\", \"source_url\" (the exact official page), "
+        "\"note\"}. null for anything not found on the official site. Never guess an email or number."))
+    m = re.search(r"\{.*\}", r.output_text or "", re.S)
+    try:
+        s = Support.model_validate(json.loads(m.group(0))) if m else Support()
+    except Exception:  # noqa: BLE001
+        s = Support()
+    official = is_official(brand, s.source_url)
+    if s.email and not EMAIL_RX.match(s.email.strip()):
+        s.email = None
+    checked = datetime.now(IST).strftime("%d %b %Y")
+    ctx["card"](("✅ Official support found" if official else "⚠️ Support contact found, but NOT on the company's own website")
+                + f" · {brand}", {"type": "support", "brand": brand, "product": product, **s.model_dump(), "official": official, "checked": checked})
+    return s.model_dump() | {"official": official, "checked": checked, "brand": brand}
+
+
+ESCALATION = [
+    ("Call the helpline again with your ticket number", "call"),
+    ("Email support, quoting the ticket number and the promise they made", "email"),
+    ("Write to the company's Grievance Officer (listed on their website)", "email"),
+    ("National Consumer Helpline: call 1915 or file at consumerhelpline.gov.in (Govt. of India)", "web"),
+]
+
+
+def promise(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    """A commitment someone made ('callback by 4 PM', 'technician tomorrow 10-12') → tracked → follow_up at by_when."""
+    what = str(inputs.get("what") or "").strip()
+    if not what:
+        raise ToolError("What did they promise?")
+    dt = parse_when(inputs.get("by_when_iso"))
+    demo = inputs.get("demo_minutes")
+    due = (datetime.now(IST) + timedelta(minutes=float(demo))) if demo else dt  # shortened for the demo — labelled
+    pid = "p_" + uuid.uuid4().hex[:8]
+    rec = {"kind": "promise", "owner": user, "pid": pid, "who": inputs.get("who") or "they", "what": what,
+           "by_when": dt.isoformat(), "due": due.timestamp(), "ticket": inputs.get("ticket"), "evidence_quote": inputs.get("evidence_quote"),
+           "contact_phone": inputs.get("contact_phone"), "contact_email": inputs.get("contact_email"), "status": "promised",
+           "task_id": ctx["task"].task_id, "demo_shortened": bool(demo)}
+    store().put("contacts", f"prom:{pid}", rec)
+    ctx["card"](f"🤝 Promised: {rec['who']} — {what} · by {when_words(dt)}" + (" (follow-up shortened for the demo)" if demo else ""),
+                {"type": "promise", **rec, "by_words": when_words(dt)})
+    return {"pid": pid, "by": when_words(dt), "what": what}
+
+
+def due_promises(now_ts: float) -> list[dict[str, Any]]:
+    return [p for p in store().scan("contacts", kind="promise") if p.get("status") == "promised" and p.get("due", 0) <= now_ts]
+
+
+def fire_promise(p: dict[str, Any], card_to: Callable[[str, str, dict[str, Any] | None], None]) -> None:
+    if not store().claim(f"promfire:{p['pid']}"):
+        return
+    p["status"] = "follow_up_asked"
+    store().put("contacts", f"prom:{p['pid']}", p)
+    card_to(p["owner"], f"⏰ Follow-up: {p['who']} promised “{p['what']}” by {when_words(datetime.fromisoformat(p['by_when']))}. "
+                        f"Did they do it? (yes / no)", {"type": "followup", **p, "ladder": [x[0] for x in ESCALATION]})
+
+
+def promise_update(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    pid = inputs.get("pid")
+    rows = [p for p in store().scan("contacts", kind="promise") if p.get("owner") == user and p.get("status") in ("promised", "follow_up_asked")]
+    p = next((x for x in rows if x["pid"] == pid), None) or (sorted(rows, key=lambda x: x.get("due", 0))[-1] if rows else None)
+    if not p:
+        raise ToolError("I don't see an open promise to update.")
+    done = bool(inputs.get("resolved"))
+    p["status"] = "resolved" if done else "not_kept"
+    store().put("contacts", f"prom:{p['pid']}", p)
+    if done:
+        ctx["card"](f"✅ Resolved: {p['what']}", {"type": "promise", **p})
+        return {"resolved": True}
+    ladder = [x[0] for x in ESCALATION]
+    ctx["card"](f"They didn't keep it: {p['what']}. Next steps:", {"type": "escalate", **p, "ladder": ladder})
+    return {"resolved": False, "ladder": ladder, "ticket": p.get("ticket")}
+
+
+# ---------------- J7: scam check (code red flags + model + official sources) ----------------
+RED_FLAGS = [
+    (r"\b(otp|one time password|pin|cvv)\b", "asks for an OTP / PIN"),
+    (r"\b(kyc|pan|aadhaar).{0,40}(update|expire|block|suspend)", "threatens your KYC/account"),
+    (r"\b(block(ed)?|suspend(ed)?|deactivat\w*|disconnect\w*)\b.{0,40}\b(today|immediately|24 ?h|tonight)\b", "urgent threat"),
+    (r"\b(won|winner|lottery|lucky draw|prize|cashback of)\b", "prize / lottery bait"),
+    (r"(bit\.ly|tinyurl|t\.co|is\.gd|cutt\.ly|rb\.gy|wa\.me/\d)", "shortened or WhatsApp link"),
+    (r"\b(electricity|power).{0,40}(cut|disconnect)", "electricity disconnection threat (common scam)"),
+    (r"\b(customs|parcel|courier).{0,40}(held|seized|pay|fee)", "parcel/customs fee demand"),
+    (r"\b(work from home|part[- ]time job|earn ₹?\d+ ?(per|/) ?(day|hour))", "easy-money job offer"),
+    (r"\b(anydesk|teamviewer|quick ?support|screen ?share)\b", "asks to install a remote-access app"),
+    (r"\b(upi|collect request|scan (the )?qr).{0,40}(receive|get) (money|refund)", "'scan/approve to RECEIVE money' trick"),
+]
+
+
+class Verdict(BaseModel):
+    verdict: Literal["Likely scam", "Looks genuine", "Unsure"]
+    reasons: list[str] = Field(default_factory=list)
+    what_to_do: list[str] = Field(default_factory=list)
+    sender: str | None = None
+    official_sources: list[str] = Field(default_factory=list)
+
+
+def scam_check(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    from app.brain.client import oai
+    text = str(inputs.get("text") or "")
+    if not text and ctx.get("attachments"):
+        a = attachment(ctx, inputs.get("attachment"))
+        if not a["mime"].endswith("pdf"):
+            text = transcribe_image(user, {"attachment": a["id"]}, ctx | {"card": lambda *x: None}).get("text", "")
+    if not text.strip():
+        raise ToolError("Send me the message text or a screenshot to check.")
+    flags = sorted({why for rx, why in RED_FLAGS if re.search(rx, text, re.I)})
+    r = oai().responses.create(model=settings().openai_model_brain, tools=[{"type": "web_search"}], input=(
+        "You check if a message received in India is a scam. Search official sources (the real company's or bank's own site, "
+        "RBI, cybercrime.gov.in, PIB Fact Check) when useful. Return ONLY JSON {\"verdict\": \"Likely scam\"|\"Looks genuine\"|\"Unsure\", "
+        "\"reasons\": [short], \"what_to_do\": [short], \"sender\": str|null, \"official_sources\": [urls]}.\nMESSAGE:\n" + text[:3000]))
+    m = re.search(r"\{.*\}", r.output_text or "", re.S)
+    try:
+        v = Verdict.model_validate(json.loads(m.group(0))) if m else Verdict(verdict="Unsure", reasons=["I couldn't check this properly."])
+    except Exception:  # noqa: BLE001
+        v = Verdict(verdict="Unsure", reasons=["I couldn't check this properly."])
+    if v.verdict == "Looks genuine" and len(flags) >= 2:  # code never lets 2+ red flags pass as genuine
+        v.verdict = "Unsure"
+        v.reasons.insert(0, "It has several common scam signs, so I can't call it genuine.")
+    if not v.what_to_do:
+        v.what_to_do = ["Don't click links or share OTPs", "Report at cybercrime.gov.in or call 1930"] if v.verdict != "Looks genuine" else []
+    ctx["card"](f"🛡️ {v.verdict}", {"type": "scam", **v.model_dump(), "red_flags": flags, "checked": datetime.now(IST).strftime("%d %b %Y"),
+                                    "excerpt": text[:300]})
+    return v.model_dump() | {"red_flags": flags}
+
+
 REGISTRY: dict[str, Callable[[str, dict[str, Any], dict[str, Any]], dict[str, Any]]] = {
+    "find_support": find_support, "promise": promise, "promise_update": promise_update, "scam_check": scam_check,
     "recipe": recipe, "shop_list": shop_list, "cart_add": cart_add,
     "compare": compare,
     "analyze": analyze, "transcribe_image": transcribe_image, "extract": extract, "search": search, "map": map_,
