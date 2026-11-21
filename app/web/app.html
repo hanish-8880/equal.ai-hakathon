@@ -216,34 +216,34 @@
       <div class="mid"><b id="hello">Hello</b><span id="todaydate"></span></div>
       <button class="round press" id="searchbtn" aria-label="Search jobs"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     </div>
-    <div class="searchbox" id="searchbox"><input id="search" placeholder="Search jobs, sites, customers…" aria-label="Search"></div>
+    <div class="searchbox" id="searchbox"><input id="search" data-i18n-ph placeholder="Search jobs, sites, customers…" aria-label="Search"></div>
     <div id="hero"></div>
     <div class="week fade" style="--i:2" id="week" role="tablist" aria-label="Week"></div>
     <button class="typebar press fade" style="--i:3" id="typebar" aria-label="Type or talk to Chinku">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1-5.2A8 8 0 1 1 21 12Z"/></svg>
-      <span>Type or talk to Chinku…</span></button>
+      <span data-i18n>Type or talk to Chinku…</span></button>
     <button class="typebar press fade" style="--i:3;margin-top:8px" id="nearme" aria-label="Plumbing shops near me">
-      <span aria-hidden="true">📍</span><span>Plumbing shops near me</span></button>
-    <h2 class="fade" style="--i:3">Your jobs</h2>
+      <span aria-hidden="true">📍</span><span data-i18n>Plumbing shops near me</span></button>
+    <h2 class="fade" style="--i:3" data-i18n>Your jobs</h2>
     <div class="bento" id="bento"></div>
   </section>
 
   <!-- JOBS -->
   <section class="view" id="jobs" aria-label="Jobs">
-    <h1 class="fade">Jobs</h1><p class="meta fade" style="--i:1">Every job, its next step and how we know it.</p>
+    <h1 class="fade" data-i18n>Jobs</h1><p class="meta fade" style="--i:1" data-i18n>Every job, its next step and how we know it.</p>
     <div class="seg fade" style="--i:2" id="jobfilter"></div>
     <div class="list" id="joblist"></div>
   </section>
 
   <!-- CALLS -->
   <section class="view" id="calls" aria-label="Calls">
-    <h1 class="fade">Calls</h1><p class="meta fade" style="--i:1">Calls Chinku made for you — with what people actually said.</p>
+    <h1 class="fade" data-i18n>Calls</h1><p class="meta fade" style="--i:1" data-i18n>Calls Chinku made for you — with what people actually said.</p>
     <div class="list" id="calllist"></div>
   </section>
 
   <!-- BILLS -->
   <section class="view" id="bills" aria-label="Bills">
-    <h1 class="fade">Bills</h1><p class="meta fade" style="--i:1">Invoices from finished jobs.</p>
+    <h1 class="fade" data-i18n>Bills</h1><p class="meta fade" style="--i:1" data-i18n>Invoices from finished jobs.</p>
     <div class="list" id="billlist"></div>
   </section>
 
@@ -261,33 +261,33 @@
       <div class="field">
         <label class="attach" aria-label="Attach photo or PDF"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg><input id="file" type="file" accept="image/*,application/pdf" hidden></label>
         <span id="fname"></span>
-        <textarea id="text" rows="1" placeholder="Message Chinku…" aria-label="Message"></textarea>
+        <textarea id="text" rows="1" data-i18n-ph placeholder="Message Chinku…" aria-label="Message"></textarea>
       </div>
       <button class="fab" id="csend" type="submit" aria-label="Send"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"/></svg></button>
       <button class="fab" id="cmic" type="button" aria-label="Hold to talk"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
       <div id="rec" aria-live="assertive"><span class="live"></span><span class="time" id="rectime">0:00</span><canvas id="wave"></canvas>
-        <span class="cancel" id="cancelhint">‹ slide to cancel</span>
+        <span class="cancel" id="cancelhint" data-i18n>‹ slide to cancel</span>
         <span class="fab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></span></div>
     </form>
   </section>
 </div>
 
 <nav aria-label="Main">
-  <button data-go="today" aria-label="Today"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg><span class="lbl">Today</span></button>
-  <button data-go="jobs" aria-label="Jobs"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/></svg><span class="lbl">Jobs</span></button>
+  <button data-go="today" aria-label="Today"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg><span class="lbl" data-i18n>Today</span></button>
+  <button data-go="jobs" aria-label="Jobs"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/></svg><span class="lbl" data-i18n>Jobs</span></button>
   <button class="mic" data-go="chat" aria-label="Talk to Chinku"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
-  <button data-go="calls" aria-label="Calls"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1"/></svg><span class="lbl">Calls</span></button>
-  <button data-go="bills" aria-label="Bills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span class="lbl">Bills</span></button>
+  <button data-go="calls" aria-label="Calls"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1"/></svg><span class="lbl" data-i18n>Calls</span></button>
+  <button data-go="bills" aria-label="Bills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span class="lbl" data-i18n>Bills</span></button>
 </nav>
 
 <div id="onboard" role="dialog" aria-label="Choose language"><div class="in">
   <div class="av fade" style="width:64px;height:64px;font-size:24px;background:var(--violet-d)">C</div>
-  <h1 class="fade" style="--i:1;margin-top:18px">Namaste! I'm Chinku.</h1>
-  <p class="meta fade" style="--i:2;font-size:15px">Your office assistant. I call customers and shops, get approvals and make bills — you keep working.</p>
-  <h2 class="fade" style="--i:3">Which language should I reply in?</h2>
+  <h1 class="fade" style="--i:1;margin-top:18px" data-i18n>Namaste! I'm Chinku.</h1>
+  <p class="meta fade" style="--i:2;font-size:15px" data-i18n>Your office assistant. I call customers and shops, get approvals and make bills — you keep working.</p>
+  <h2 class="fade" style="--i:3" data-i18n>Which language should I reply in?</h2>
   <div class="langs" id="langs"></div>
-  <p class="meta fade" style="--i:8">You can talk to me in any language. Calls to customers and shops are in English for now. Change this anytime from your avatar.</p>
-  <button class="btn press fade" style="--i:9;width:100%;justify-content:center;padding:15px" id="langgo" disabled>Continue</button>
+  <p class="meta fade" style="--i:8" data-i18n>You can talk to me in any language. Calls to customers and shops are in English for now. Change this anytime from your avatar.</p>
+  <button class="btn press fade" style="--i:9;width:100%;justify-content:center;padding:15px" id="langgo" disabled data-i18n>Continue</button>
 </div></div>
 
 <div id="scrim"></div>
@@ -304,10 +304,10 @@ const ls = { get(k) { try { return localStorage.getItem(k); } catch (e) { return
 const vib = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), 1900); }
 const art = (id, cls) => `<svg class="${cls}" aria-hidden="true"><use href="#art-${id}"/></svg>`;
-const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"}); } catch (e) { return iso; } };
-const fmtDay = iso => { try { return new Date(iso).toLocaleDateString([], {weekday: "short", day: "numeric", month: "short"}); } catch (e) { return iso; } };
-const hhmm = ts => new Date(ts * 1000).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
-const inr = n => n == null ? "unknown" : "₹" + Number(n).toLocaleString("en-IN");
+const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString(LOC(), {hour: "numeric", minute: "2-digit"}); } catch (e) { return iso; } };
+const fmtDay = iso => { try { return new Date(iso).toLocaleDateString(LOC(), {weekday: "short", day: "numeric", month: "short"}); } catch (e) { return iso; } };
+const hhmm = ts => new Date(ts * 1000).toLocaleTimeString(LOC(), {hour: "numeric", minute: "2-digit"});
+const inr = n => n == null ? L("unknown") : "₹" + Number(n).toLocaleString("en-IN");
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 const WORD = { open:"Open", booked:"Booked", in_progress:"In progress", awaiting_approval:"Awaiting approval", invoicing:"Invoicing", closed:"Closed",
   cancelled:"Cancelled", not_booked:"Not booked", proposed:"Proposed", pending:"Pending", approved:"Approved", rejected:"Rejected", question:"Question",
@@ -315,7 +315,98 @@ const WORD = { open:"Open", booked:"Booked", in_progress:"In progress", awaiting
   failed:"Failed", dispatched:"On call", queued:"Queued", retry_scheduled:"Retry scheduled", exact:"Exact model", different_model:"Different model",
   available_now:"In stock now", tomorrow:"Tomorrow", none:"Not in stock", usually_stocked:"Usually stocked", unknown:"Unknown", confirmed:"Confirmed",
   tentative:"Tentative", not_mentioned:"Not said", refused:"Refused", conflicting:"Conflicting", met:"Condition met", not_met:"Condition not met", waiting:"Waiting" };
-const chip = (k, extra) => `<span class="chip ${extra || ""}">${esc(WORD[k] || k)}</span>`;
+/* ---------------- language: every visible label in te / hi / te-en (Chinku's messages are translated on the server) ---------------- */
+let LANG = ls.get("chinku_lang") || "en";
+const I18N = {
+  "Today": ["ఈ రోజు", "आज", "Ee roju"], "today": ["ఈ రోజు", "आज", "ee roju"], "Jobs": ["పనులు", "काम", "Jobs"], "Calls": ["కాల్స్", "कॉल", "Calls"], "Bills": ["బిల్లులు", "बिल", "Bills"],
+  "Hello": ["నమస్కారం", "नमस्ते", "Namaskaram"],
+  "Search jobs, sites, customers…": ["పనులు, సైట్లు, కస్టమర్లను వెతకండి…", "काम, साइट, ग्राहक खोजें…", "Jobs, sites, customers vethakandi…"],
+  "Type or talk to Chinku…": ["చింకూకి టైప్ చేయండి లేదా మాట్లాడండి…", "चिंकू से लिखें या बोलें…", "Chinku ki type cheyyandi leda matladandi…"],
+  "Plumbing shops near me": ["నా దగ్గర్లో ప్లంబింగ్ షాపులు", "मेरे पास प्लंबिंग की दुकानें", "Naa daggarlo plumbing shops"],
+  "Your jobs": ["మీ పనులు", "आपके काम", "Mee jobs"],
+  "Every job, its next step and how we know it.": ["ప్రతి పని, తర్వాత ఏం చేయాలి, అది మనకు ఎలా తెలిసింది.", "हर काम, उसका अगला कदम और हमें कैसे पता चला।", "Prathi job, next em cheyyali, adi manaki ela telisindi."],
+  "Calls Chinku made for you — with what people actually said.": ["మీ కోసం చింకూ చేసిన కాల్స్ — వాళ్ళు నిజంగా ఏమన్నారో తో సహా.", "चिंकू ने आपके लिए जो कॉल किए — लोगों ने असल में क्या कहा, उसके साथ।", "Mee kosam Chinku chesina calls — vallu nijanga em annaro tho saha."],
+  "Invoices from finished jobs.": ["పూర్తైన పనుల బిల్లులు, అంచనాలు.", "पूरे हुए कामों के बिल और अनुमान।", "Finish ayina jobs bills, estimates."],
+  "Online": ["ఆన్‌లైన్", "ऑनलाइन", "Online"], "Message Chinku…": ["చింకూకి మెసేజ్ చేయండి…", "चिंकू को संदेश लिखें…", "Chinku ki message cheyyandi…"],
+  "‹ slide to cancel": ["‹ రద్దుకి పక్కకు జరపండి", "‹ रद्द करने के लिए खिसकाएँ", "‹ cancel ki slide cheyyandi"],
+  "Release to cancel": ["వదిలితే రద్దు", "छोड़ें तो रद्द", "Vadilithe cancel"],
+  "Namaste! I'm Chinku.": ["నమస్కారం! నేను చింకూ.", "नमस्ते! मैं चिंकू हूँ।", "Namaskaram! Nenu Chinku."],
+  "Your office assistant. I call customers and shops, get approvals and make bills — you keep working.": ["మీ ఆఫీస్ అసిస్టెంట్‌ని. కస్టమర్లకు, షాపులకు కాల్ చేస్తాను, అనుమతులు తీసుకుంటాను, బిల్లులు చేస్తాను — మీరు మీ పని చూసుకోండి.", "मैं आपका ऑफिस असिस्टेंट हूँ। ग्राहकों और दुकानों को कॉल करता हूँ, मंज़ूरी लेता हूँ और बिल बनाता हूँ — आप अपना काम करते रहिए।", "Mee office assistant ni. Customers ki, shops ki call chestha, approvals theskunta, bills chestha — meeru mee pani chusukondi."],
+  "Which language should I reply in?": ["ఏ భాషలో జవాబివ్వాలి?", "मैं किस भाषा में जवाब दूँ?", "Ye language lo reply ivvali?"],
+  "You can talk to me in any language. Calls to customers and shops are in English for now. Change this anytime from your avatar.": ["మీరు ఏ భాషలోనైనా మాట్లాడవచ్చు. కస్టమర్లకు, షాపులకు కాల్స్ ప్రస్తుతానికి ఇంగ్లీష్‌లోనే. పైన మీ బొమ్మ నొక్కి ఎప్పుడైనా మార్చుకోండి.", "आप किसी भी भाषा में बात कर सकते हैं। ग्राहकों और दुकानों को कॉल अभी अंग्रेज़ी में होते हैं। ऊपर अपने अवतार से इसे कभी भी बदलें।", "Meeru ye language lo aina matladachu. Customers ki, shops ki calls ippatiki English lo ne. Paina mee avatar nokki eppudaina marchukondi."],
+  "Continue": ["కొనసాగించు", "आगे बढ़ें", "Continue"],
+  "Visit now": ["ఇప్పుడు విజిట్", "अभी विज़िट", "Ippudu visit"],
+  "When you finish, tell me what you did — I'll make the bill.": ["పని అయ్యాక ఏం చేశారో చెప్పండి — నేను బిల్ చేస్తాను.", "काम खत्म होने पर बताइए क्या किया — मैं बिल बना दूँगा।", "Pani ayyaka em chesaro cheppandi — nenu bill chestha."],
+  "Finish & invoice": ["పని పూర్తి, బిల్ చేయి", "काम पूरा, बिल बनाओ", "Finish chesi bill"],
+  "Decision needed": ["మీ నిర్ణయం కావాలి", "आपका फ़ैसला चाहिए", "Mee decision kavali"], "Needs your decision": ["మీ నిర్ణయం కావాలి", "आपका फ़ैसला चाहिए", "Mee decision kavali"],
+  "Open job": ["పని చూడండి", "काम खोलें", "Job chudandi"], "Next visit": ["తర్వాతి విజిట్", "अगली विज़िट", "Next visit"], "Details": ["వివరాలు", "विवरण", "Details"],
+  "next step": ["తర్వాత చేయాల్సింది", "अगला कदम", "next step"], "Do it with Chinku": ["చింకూతో చేయండి", "चिंकू के साथ करें", "Chinku tho cheyyandi"],
+  "No jobs yet": ["ఇంకా పనులు లేవు", "अभी कोई काम नहीं", "Inka jobs levu"],
+  "Tap the mic and tell me about a job — any language.": ["మైక్ నొక్కి పని గురించి చెప్పండి — ఏ భాషైనా పర్వాలేదు.", "माइक दबाकर काम के बारे में बताइए — कोई भी भाषा चलेगी।", "Mic nokki job gurinchi cheppandi — ye language aina parledu."],
+  "Talk to Chinku": ["చింకూతో మాట్లాడండి", "चिंकू से बात करें", "Chinku tho matladandi"],
+  "Site contact": ["సైట్‌లో ఎవరు", "साइट पर संपर्क", "Site contact"], "Customer": ["కస్టమర్", "ग्राहक", "Customer"],
+  "Your free time": ["మీ ఖాళీ సమయం", "आपका खाली समय", "Mee free time"], "Visit to book": ["బుక్ చేయాల్సిన విజిట్", "विज़िट बुक करनी है", "Book cheyyalsina visit"],
+  "Visits": ["విజిట్లు", "विज़िट", "Visits"], "No visits": ["విజిట్లు లేవు", "कोई विज़िट नहीं", "Visits levu"],
+  "When a customer confirms a slot, it shows here.": ["కస్టమర్ సమయం ఖరారు చేస్తే ఇక్కడ కనిపిస్తుంది.", "ग्राहक समय पक्का करेगा तो यहाँ दिखेगा।", "Customer slot confirm cheste ikkada kanipisthundi."],
+  "Part": ["పార్ట్", "पार्ट", "Part"], "Pickup": ["పికప్", "पिकअप", "Pickup"], "Parts": ["పార్ట్స్", "पार्ट्स", "Parts"],
+  "No part quotes yet": ["ఇంకా పార్ట్ రేట్లు రాలేదు", "अभी पार्ट के रेट नहीं आए", "Inka part rates raledu"],
+  "Send a part photo and I'll ring your shops.": ["పార్ట్ ఫోటో పంపండి, మీ షాపులకు కాల్ చేస్తాను.", "पार्ट की फ़ोटो भेजिए, मैं आपकी दुकानों को कॉल करूँगा।", "Part photo pampandi, mee shops ki call chestha."],
+  "Approver": ["అనుమతి ఇచ్చేవారు", "मंज़ूरी देने वाले", "Approver"], "Approvals": ["అనుమతులు", "मंज़ूरियाँ", "Approvals"],
+  "No approvals waiting": ["ఆగిన అనుమతులు లేవు", "कोई मंज़ूरी बाकी नहीं", "Pending approvals levu"],
+  "Extra work? Tell me and I'll ask the supervisor.": ["అదనపు పని ఉందా? చెప్పండి, సూపర్‌వైజర్‌ని అడుగుతాను.", "अतिरिक्त काम? बताइए, मैं सुपरवाइज़र से पूछूँगा।", "Extra pani unda? Cheppandi, supervisor ni adugutha."],
+  "No bills yet": ["ఇంకా బిల్లులు లేవు", "अभी कोई बिल नहीं", "Inka bills levu"],
+  "Finish a job with a voice note — I'll make the invoice.": ["వాయిస్ నోట్‌తో పని ముగించండి — నేను బిల్ చేస్తాను.", "वॉइस नोट से काम पूरा करें — मैं बिल बना दूँगा।", "Voice note tho job finish cheyyandi — nenu bill chestha."],
+  "Site": ["సైట్", "साइट", "Site"], "Bill to": ["బిల్ ఎవరికి", "बिल किसे", "Bill evariki"], "Work order": ["వర్క్ ఆర్డర్", "वर्क ऑर्डर", "Work order"], "WO": ["WO", "WO", "WO"],
+  "Simulated": ["టెస్ట్ (సిమ్యులేటెడ్)", "टेस्ट (नकली)", "Simulated"], "Sample": ["నమూనా", "नमूना", "Sample"], "Visit": ["విజిట్", "विज़िट", "Visit"], "Job": ["పని", "काम", "Job"],
+  "Next": ["తర్వాత", "आगे", "Next"], "Blocked": ["ఆగింది", "रुका है", "Aagindi"], "Timeline": ["జరిగినవి", "क्या-क्या हुआ", "Timeline"],
+  "All": ["అన్నీ", "सभी", "Anni"], "No match": ["ఏమీ దొరకలేదు", "कुछ नहीं मिला", "Emi dorakaledu"], "No jobs here yet": ["ఇక్కడ ఇంకా పనులు లేవు", "यहाँ अभी कोई काम नहीं", "Ikkada inka jobs levu"],
+  "Tap the mic and describe a job.": ["మైక్ నొక్కి పని చెప్పండి.", "माइक दबाकर काम बताइए।", "Mic nokki job cheppandi."],
+  "Retry": ["మళ్ళీ", "दोबारा", "Retry"], "Live call": ["లైవ్ కాల్", "लाइव कॉल", "Live call"], "Call": ["కాల్", "कॉल", "Call"], "Transcript": ["ఏం మాట్లాడారు", "बातचीत", "Transcript"],
+  "No calls yet": ["ఇంకా కాల్స్ లేవు", "अभी कोई कॉल नहीं", "Inka calls levu"],
+  "When I ring a customer or a shop, the call and what they said appear here.": ["కస్టమర్‌కి లేదా షాపుకి కాల్ చేసినప్పుడు, వాళ్ళు ఏమన్నారో ఇక్కడ కనిపిస్తుంది.", "जब मैं ग्राहक या दुकान को कॉल करूँगा, उन्होंने क्या कहा वो यहाँ दिखेगा।", "Customer ki leda shop ki call chesinappudu, vallu em annaro ikkada kanipisthundi."],
+  "Invoice": ["బిల్", "बिल", "Invoice"], "Estimate": ["అంచనా", "अनुमान", "Estimate"], "Draft": ["డ్రాఫ్ట్", "ड्राफ़्ट", "Draft"], "Labour": ["కూలీ", "मज़दूरी", "Labour"],
+  "Download PDF": ["PDF డౌన్‌లోడ్", "PDF डाउनलोड करें", "PDF download"], "Download": ["డౌన్‌లోడ్", "डाउनलोड", "Download"], "Open PDF": ["PDF చూడండి", "PDF खोलें", "PDF open"],
+  "When a job is finished, send me a closing voice note — I'll read back the total and make the invoice.": ["పని అయ్యాక ఒక వాయిస్ నోట్ పంపండి — మొత్తం చదివి వినిపించి బిల్ చేస్తాను.", "काम पूरा होने पर वॉइस नोट भेजिए — मैं कुल रकम पढ़कर बिल बना दूँगा।", "Job ayyaka voice note pampandi — total cheppi bill chestha."],
+  "Chinku heard": ["చింకూ విన్నది", "चिंकू ने सुना", "Chinku vinnadi"], "Play": ["వినండి", "सुनें", "Play"], "tap to correct": ["సరిచేయడానికి నొక్కండి", "ठीक करने के लिए दबाएँ", "correct cheyyadaniki nokkandi"],
+  "Hold the mic and talk": ["మైక్ నొక్కి పట్టి మాట్లాడండి", "माइक दबाकर बोलिए", "Mic nokki patti matladandi"], "Hold the mic and speak": ["మైక్ నొక్కి పట్టి మాట్లాడండి", "माइक दबाकर बोलिए", "Mic nokki patti matladandi"],
+  "Telugu, English or both. I'll show you what I heard before I act.": ["తెలుగు, ఇంగ్లీష్ లేదా రెండూ. ఏదైనా చేసే ముందు నేను విన్నది చూపిస్తాను.", "तेलुगु, अंग्रेज़ी या दोनों। कुछ करने से पहले जो सुना वो दिखाऊँगा।", "Telugu, English leda rendu. Edaina chese mundu nenu vinnadi chupistha."],
+  "Yes": ["అవును", "हाँ", "Avunu"], "No": ["వద్దు", "नहीं", "Vaddu"], "Change": ["మార్చు", "बदलें", "Marchu"],
+  "Thinking…": ["ఆలోచిస్తున్నా…", "सोच रहा हूँ…", "Alochistunna…"], "Listening…": ["వింటున్నా…", "सुन रहा हूँ…", "Vintunna…"], "Reading the file…": ["ఫైల్ చదువుతున్నా…", "फ़ाइल पढ़ रहा हूँ…", "File chaduvutunna…"],
+  "Understanding…": ["అర్థం చేసుకుంటున్నా…", "समझ रहा हूँ…", "Ardham chesukuntunna…"], "Reconnecting…": ["మళ్ళీ కలుపుతున్నా…", "फिर से जोड़ रहा हूँ…", "Malli connect chestunna…"],
+  "Voice note": ["వాయిస్ నోట్", "वॉइस नोट", "Voice note"], "Saved": ["సేవ్ అయ్యింది", "सेव हो गया", "Save ayyindi"], "Couldn't save — try again": ["సేవ్ కాలేదు — మళ్ళీ ప్రయత్నించండి", "सेव नहीं हुआ — फिर कोशिश करें", "Save kaledu — malli try cheyyandi"],
+  "Getting your location…": ["మీ లొకేషన్ తీసుకుంటున్నా…", "आपकी लोकेशन ले रहा हूँ…", "Mee location theskuntunna…"],
+  "Location is off — type an area": ["లొకేషన్ ఆఫ్‌లో ఉంది — ఏరియా పేరు టైప్ చేయండి", "लोकेशन बंद है — इलाके का नाम लिखें", "Location off lo undi — area peru type cheyyandi"],
+  "Replies read aloud": ["జవాబులు చదివి వినిపిస్తాను", "जवाब पढ़कर सुनाऊँगा", "Replies chadivi vinipistha"], "Read-aloud off": ["చదివి వినిపించడం ఆపాను", "पढ़कर सुनाना बंद", "Read-aloud off"],
+  "Recording cancelled": ["రికార్డింగ్ రద్దు చేశాను", "रिकॉर्डिंग रद्द की", "Recording cancel chesa"], "No connection — try again": ["నెట్ లేదు — మళ్ళీ ప్రయత్నించండి", "नेटवर्क नहीं — फिर कोशिश करें", "Net ledu — malli try cheyyandi"],
+  "Couldn't send": ["పంపలేకపోయాను", "भेज नहीं पाया", "Pampaleka poyanu"], "Allow the microphone to talk": ["మాట్లాడటానికి మైక్‌కి అనుమతి ఇవ్వండి", "बोलने के लिए माइक की अनुमति दें", "Matladataniki mic ki permission ivvandi"],
+  "Start a new chat? Jobs and history stay saved.": ["కొత్త చాట్ మొదలుపెట్టాలా? పనులు, పాత వివరాలు సేవ్‌లోనే ఉంటాయి.", "नई चैट शुरू करें? काम और पुरानी जानकारी सेव रहेगी।", "Kotha chat start cheyyala? Jobs, history save lone untayi."],
+  "Shop quotes": ["షాపు రేట్లు", "दुकान के रेट", "Shop rates"], "Hold offered": ["పక్కన పెడతామన్నారు", "रोककर रखने को कहा", "Hold chestamannaru"],
+  "delivery": ["డెలివరీ", "डिलीवरी", "delivery"], "total": ["మొత్తం", "कुल", "total"], "from": ["నుంచి", "से", "nunchi"],
+  "What they said": ["వాళ్ళు ఏమన్నారు", "उन्होंने क्या कहा", "Vallu em annaru"], "No answers yet.": ["ఇంకా జవాబులు రాలేదు.", "अभी कोई जवाब नहीं।", "Inka answers raledu."],
+  "Nearby shops · OpenStreetMap": ["దగ్గర్లో షాపులు · OpenStreetMap", "पास की दुकानें · OpenStreetMap", "Daggarlo shops · OpenStreetMap"],
+  "no phone listed": ["ఫోన్ నంబర్ లేదు", "फ़ोन नंबर नहीं दिया", "phone number ledu"], "Map": ["మ్యాప్", "नक्शा", "Map"], "Demo rates": ["డెమో రేట్లు", "डेमो रेट", "Demo rates"], "Free": ["ఖాళీ", "खाली", "Free"],
+  "Open": ["ఓపెన్", "खुले", "Open"], "Booked": ["బుక్ అయ్యింది", "बुक हुआ", "Book ayyindi"], "In progress": ["జరుగుతోంది", "चल रहा है", "Jarugutondi"],
+  "Awaiting approval": ["అనుమతి కోసం", "मंज़ूरी का इंतज़ार", "Approval kosam"], "Invoicing": ["బిల్ అవుతోంది", "बिल बन रहा है", "Bill avutondi"], "Closed": ["ముగిసింది", "बंद", "Closed"],
+  "Cancelled": ["రద్దు", "रद्द", "Cancel"], "Not booked": ["బుక్ కాలేదు", "बुक नहीं", "Book kaledu"], "Proposed": ["సూచించాం", "सुझाया", "Propose chesam"], "Pending": ["పెండింగ్", "बाकी", "Pending"],
+  "Approved": ["అనుమతి వచ్చింది", "मंज़ूर", "Approve ayyindi"], "Rejected": ["వద్దన్నారు", "नामंज़ूर", "Reject chesaru"], "Question": ["ప్రశ్న అడిగారు", "सवाल पूछा", "Question adigaru"],
+  "Waiting for you": ["మీ కోసం ఆగింది", "आपका इंतज़ार", "Mee kosam waiting"], "Sent": ["పంపాను", "भेज दिया", "Pampa"], "Delivery failed": ["పంపడం కుదరలేదు", "भेजना विफल", "Delivery fail"],
+  "Paid": ["డబ్బు వచ్చింది", "भुगतान हुआ", "Paid"], "Completed": ["పూర్తైంది", "पूरा हुआ", "Complete"], "No answer": ["ఎత్తలేదు", "उठाया नहीं", "Ethaledu"], "Failed": ["కుదరలేదు", "विफल", "Fail"],
+  "On call": ["కాల్‌లో", "कॉल पर", "Call lo"], "Queued": ["వరుసలో", "कतार में", "Line lo"], "Retry scheduled": ["మళ్ళీ చేస్తాను", "दोबारा कोशिश होगी", "Retry untundi"],
+  "Exact model": ["అదే మోడల్", "वही मॉडल", "Exact model"], "Different model": ["వేరే మోడల్", "अलग मॉडल", "Vere model"], "In stock now": ["ఇప్పుడు ఉంది", "अभी स्टॉक में", "Ippudu undi"],
+  "Tomorrow": ["రేపు", "कल", "Repu"], "Not in stock": ["స్టాక్ లేదు", "स्टॉक में नहीं", "Stock ledu"], "Usually stocked": ["సాధారణంగా ఉంటుంది", "आमतौर पर रहता है", "Usually untundi"],
+  "Unknown": ["తెలియదు", "पता नहीं", "Teliyadu"], "unknown": ["తెలియదు", "पता नहीं", "teliyadu"], "Confirmed": ["ఖరారు", "पक्का", "Confirm"], "Tentative": ["ఇంకా ఖరారు కాలేదు", "अभी पक्का नहीं", "Inka confirm kaledu"],
+  "Not said": ["చెప్పలేదు", "नहीं बताया", "Cheppaledu"], "Refused": ["కుదరదన్నారు", "मना किया", "Kudaradannaru"], "Conflicting": ["రెండు రకాలుగా చెప్పారు", "अलग-अलग बताया", "Rendu rakaluga chepparu"],
+  "Condition met": ["మీ షరతు నెరవేరింది", "शर्त पूरी हुई", "Condition met"], "Condition not met": ["మీ షరతు నెరవేరలేదు", "शर्त पूरी नहीं हुई", "Condition met kaledu"], "Waiting": ["ఎదురుచూస్తున్నా", "इंतज़ार", "Waiting"],
+};
+const L = s => { const i = {te: 0, hi: 1, "te-en": 2}[LANG]; const r = i === undefined ? null : I18N[s]; return r ? r[i] : s; };
+const LOC = () => ({te: "te-IN", hi: "hi-IN"}[LANG] || "en-IN");
+function applyStatic() {
+  document.documentElement.lang = {te: "te", hi: "hi"}[LANG] || "en";
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.dataset.en = el.dataset.en || el.textContent; el.textContent = L(el.dataset.en); });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.dataset.enph = el.dataset.enph || el.placeholder; el.placeholder = L(el.dataset.enph); });
+}
+function setLang(code) { LANG = code || "en"; ls.set("chinku_lang", LANG); applyStatic(); }
+const chip = (k, extra) => `<span class="chip ${extra || ""}">${esc(L(WORD[k] || k))}</span>`;
 
 /* ---------------- data ---------------- */
 let me = {}, jobs = [], calls = [], selDay = new Date();
@@ -335,20 +426,20 @@ function heroData() {
   const nowT = new Date();
   const live = slots().find(x => new Date(x.slot.start) <= nowT && nowT <= new Date(new Date(x.slot.end).getTime() + 3 * 3600e3)
                               && !(x.job.full.invoice && ["sent", "paid"].includes(x.job.full.invoice.state)));
-  if (live) return {k: "Visit now", t: `${live.job.site || live.job.issue}`, s: `${live.job.issue || ""} · ${fmtTime(live.slot.start)}–${fmtTime(live.slot.end)}. When you finish, tell me what you did — I'll make the bill.`,
-                    b: "Finish & invoice", go: () => { go("chat"); $("text").placeholder = "e.g. Fitted 2 angle valves at 350 each, hose 300, labour 400…"; }};
+  if (live) return {k: L("Visit now"), t: `${live.job.site || live.job.issue}`, s: `${live.job.issue || ""} · ${fmtTime(live.slot.start)}–${fmtTime(live.slot.end)}. ${L("When you finish, tell me what you did — I'll make the bill.")}`,
+                    b: L("Finish & invoice"), go: () => { go("chat"); $("text").placeholder = "e.g. Fitted 2 angle valves at 350 each, hose 300, labour 400…"; }};
   const blocked = openJobs().find(j => j.next_action && j.next_action.owner === "plumber" && j.next_action.blocked_by);
-  if (blocked) return {k: "Decision needed", t: `${blocked.job_id} · ${blocked.site || blocked.issue || ""}`, s: blocked.next_action.what, b: "Open job", go: () => openJob(blocked.job_id)};
+  if (blocked) return {k: L("Decision needed"), t: `${blocked.job_id} · ${blocked.site || blocked.issue || ""}`, s: blocked.next_action.what, b: L("Open job"), go: () => openJob(blocked.job_id)};
   const now = new Date(); const next = slots().filter(x => new Date(x.slot.end || x.slot.start) >= now).sort((a, b) => new Date(a.slot.start) - new Date(b.slot.start))[0];
-  if (next) return {k: "Next visit", t: `${next.job.site || next.job.issue} · ${fmtTime(next.slot.start)}`, s: `${fmtDay(next.slot.start)} · ${next.job.issue || ""}`, b: "Details", go: () => openJob(next.job.job_id)};
+  if (next) return {k: L("Next visit"), t: `${next.job.site || next.job.issue} · ${fmtTime(next.slot.start)}`, s: `${fmtDay(next.slot.start)} · ${next.job.issue || ""}`, b: L("Details"), go: () => openJob(next.job.job_id)};
   const j = openJobs()[0];
-  if (j && j.next_action) return {k: `${j.job_id} · next step`, t: j.next_action.what, s: `${j.issue || ""}${j.site ? " · " + j.site : ""}`, b: "Do it with Chinku", go: () => go("chat")};
-  return {k: "Today", t: "No jobs yet", s: "Tap the mic and tell me about a job — any language.", b: "Talk to Chinku", go: () => go("chat")};
+  if (j && j.next_action) return {k: `${j.job_id} · ${L("next step")}`, t: j.next_action.what, s: `${j.issue || ""}${j.site ? " · " + j.site : ""}`, b: L("Do it with Chinku"), go: () => go("chat")};
+  return {k: L("Today"), t: L("No jobs yet"), s: L("Tap the mic and tell me about a job — any language."), b: L("Talk to Chinku"), go: () => go("chat")};
 }
 function renderToday() {
   const now = new Date();
-  $("hello").textContent = `Hello, ${me.name || "there"}`;
-  $("todaydate").textContent = "Today " + now.toLocaleDateString([], {day: "numeric", month: "short"});
+  $("hello").textContent = `${L("Hello")}, ${me.name || ""}`;
+  $("todaydate").textContent = L("Today") + " " + now.toLocaleDateString(LOC(), {day: "numeric", month: "short"});
   $("avatar").textContent = me.initials || "C";
   const h = heroData();
   $("hero").innerHTML = `<div class="hero c-violet fade" style="--i:1"><div class="txt"><div class="kicker">${esc(h.k)}</div><h1>${esc(h.t)}</h1>
@@ -360,36 +451,36 @@ function renderToday() {
   $("week").innerHTML = [...Array(7)].map((_, i) => { const d = new Date(start); d.setDate(start.getDate() + i);
     const cls = ["day", "press", sameDay(d, now) ? "today" : "", sameDay(d, selDay) ? "sel" : ""].join(" ");
     const dot = have.some(x => sameDay(x, d)) ? `<span class="dot" aria-label="has visits"></span>` : "";
-    return `<button class="${cls}" role="tab" aria-selected="${sameDay(d, selDay)}" data-d="${d.toISOString()}">${dot}<small>${d.toLocaleDateString([], {weekday: "short"})}</small><b>${d.getDate()}</b></button>`; }).join("");
+    return `<button class="${cls}" role="tab" aria-selected="${sameDay(d, selDay)}" data-d="${d.toISOString()}">${dot}<small>${d.toLocaleDateString(LOC(), {weekday: "short"})}</small><b>${d.getDate()}</b></button>`; }).join("");
   $("week").querySelectorAll(".day").forEach(b => b.onclick = () => { selDay = new Date(b.dataset.d); renderToday(); });
   // bento
-  const dayLabel = sameDay(selDay, now) ? "today" : selDay.toLocaleDateString([], {weekday: "long"});
+  const dayLabel = sameDay(selDay, now) ? L("today") : selDay.toLocaleDateString(LOC(), {weekday: "long"});
   const visit = slots().filter(x => sameDay(new Date(x.slot.start), selDay)).sort((a, b) => new Date(a.slot.start) - new Date(b.slot.start))[0];
   const toBook = openJobs().find(j => j.appointment === "not_booked" && (j.plumber_windows || []).length);
   let mango;
   if (visit) { const sc = visit.job.full.roles.site_contact || {};
     mango = `<div class="card tall c-mango press fade" style="--i:4" data-job="${esc(visit.job.job_id)}">${chip(visit.job.appointment)}
-      <h3>${esc(visit.job.issue || "Visit")}</h3><p>${esc(fmtDay(visit.slot.start))}</p><p><b>${esc(fmtTime(visit.slot.start))}–${esc(fmtTime(visit.slot.end))}</b></p><p>${esc(visit.job.site || "")}</p>
-      <div class="foot"><span class="ico">${esc((sc.name || "C")[0])}</span><span><span class="meta">Site contact</span><br><b>${esc(sc.name || sc.phone || "—")}</b></span></div>${art("wrench", "mini")}</div>`; }
+      <h3>${esc(visit.job.issue || L("Visit"))}</h3><p>${esc(fmtDay(visit.slot.start))}</p><p><b>${esc(fmtTime(visit.slot.start))}–${esc(fmtTime(visit.slot.end))}</b></p><p>${esc(visit.job.site || "")}</p>
+      <div class="foot"><span class="ico">${esc((sc.name || "C")[0])}</span><span><span class="meta">${L("Site contact")}</span><br><b>${esc(sc.name || sc.phone || "—")}</b></span></div>${art("wrench", "mini")}</div>`; }
   else if (toBook && sameDay(selDay, now)) { const sc = toBook.site_contact || {};
     mango = `<div class="card tall c-mango press fade" style="--i:4" data-job="${esc(toBook.job_id)}">${chip("not_booked")}
-      <h3>${esc(toBook.issue || "Visit to book")}</h3><p>${esc(toBook.site || "")}</p><p class="meta">Your free time</p><p><b>${esc((toBook.plumber_windows || []).join(", "))}</b></p>
-      <div class="foot"><span class="ico">${esc((sc.name || "C")[0])}</span><span><span class="meta">Customer</span><br><b>${esc(sc.name || sc.phone || "—")}</b></span></div>${art("wrench", "mini")}</div>`; }
-  else mango = `<div class="card tall c-mango empty fade" style="--i:4">${chip("Visits")}<h3>No visits ${esc(dayLabel)}</h3><p>When a customer confirms a slot, it shows here.</p>${art("wrench", "mini")}</div>`;
+      <h3>${esc(toBook.issue || L("Visit to book"))}</h3><p>${esc(toBook.site || "")}</p><p class="meta">${L("Your free time")}</p><p><b>${esc((toBook.plumber_windows || []).join(", "))}</b></p>
+      <div class="foot"><span class="ico">${esc((sc.name || "C")[0])}</span><span><span class="meta">${L("Customer")}</span><br><b>${esc(sc.name || sc.phone || "—")}</b></span></div>${art("wrench", "mini")}</div>`; }
+  else mango = `<div class="card tall c-mango empty fade" style="--i:4">${chip("Visits")}<h3>${L("No visits")} · ${esc(dayLabel)}</h3><p>${L("When a customer confirms a slot, it shows here.")}</p>${art("wrench", "mini")}</div>`;
   const offers = jobs.flatMap(j => ((j.full && j.full.shop_offers) || []).filter(o => !o.superseded_by).map(o => ({o, j})));
   const best = offers.filter(x => x.o.unit_price != null).sort((a, b) => (a.o.matches_requested === "exact" ? 0 : 1) - (b.o.matches_requested === "exact" ? 0 : 1) || a.o.unit_price - b.o.unit_price)[0];
   const sky = best ? `<div class="card c-sky press fade" style="--i:5" data-job="${esc(best.j.job_id)}">${chip(best.o.matches_requested)}
-      <h3>${esc(best.o.exact_model_quoted || "Part")}</h3><p>${esc(best.o.shop)}</p><p><span class="price">${esc(inr(best.o.unit_price))}</span>${best.o.mrp ? `<span class="mrp">${esc(inr(best.o.mrp))}</span>` : ""}</p>
-      <div class="foot">${chip(best.o.stock)}${best.o.earliest_pickup ? `<span class="meta">Pickup ${esc(best.o.earliest_pickup)}</span>` : ""}</div>${art("valve", "mini")}</div>`
-    : `<div class="card c-sky empty fade" style="--i:5">${chip("Parts")}<h3>No part quotes yet</h3><p>Send a part photo and I'll ring your shops.</p>${art("valve", "mini")}</div>`;
+      <h3>${esc(best.o.exact_model_quoted || L("Part"))}</h3><p>${esc(best.o.shop)}</p><p><span class="price">${esc(inr(best.o.unit_price))}</span>${best.o.mrp ? `<span class="mrp">${esc(inr(best.o.mrp))}</span>` : ""}</p>
+      <div class="foot">${chip(best.o.stock)}${best.o.earliest_pickup ? `<span class="meta">${L("Pickup")} ${esc(best.o.earliest_pickup)}</span>` : ""}</div>${art("valve", "mini")}</div>`
+    : `<div class="card c-sky empty fade" style="--i:5">${chip("Parts")}<h3>${L("No part quotes yet")}</h3><p>${L("Send a part photo and I'll ring your shops.")}</p>${art("valve", "mini")}</div>`;
   const appr = jobs.flatMap(j => ((j.full && j.full.extra_work) || []).map(a => ({a, j}))).find(x => x.a.response === "pending") ||
                jobs.flatMap(j => ((j.full && j.full.extra_work) || []).map(a => ({a, j})))[0];
   const pink = appr ? `<div class="card c-pink press fade" style="--i:6" data-job="${esc(appr.j.job_id)}">${chip(appr.a.response)}<h3>${esc(inr(appr.a.amount))}</h3><p>${esc(appr.a.scope)}</p>
-      <div class="foot"><span class="meta">Approver</span><b>${esc((appr.a.sent_to && appr.a.sent_to.name) || "—")}</b></div></div>`
-    : `<div class="card c-pink empty fade" style="--i:6">${chip("Approvals")}<h3>No approvals waiting</h3><p>Extra work? Tell me and I'll ask the supervisor.</p></div>`;
+      <div class="foot"><span class="meta">${L("Approver")}</span><b>${esc((appr.a.sent_to && appr.a.sent_to.name) || "—")}</b></div></div>`
+    : `<div class="card c-pink empty fade" style="--i:6">${chip("Approvals")}<h3>${L("No approvals waiting")}</h3><p>${L("Extra work? Tell me and I'll ask the supervisor.")}</p></div>`;
   const bill = jobs.map(j => ({j, inv: j.full && j.full.invoice})).filter(x => x.inv && x.inv.state && x.inv.state !== "none")[0];
-  const mint = bill ? `<div class="card c-mint press fade" style="--i:7" data-job="${esc(bill.j.job_id)}">${chip(bill.inv.state)}<h3>${esc(inr(bill.inv.total))}</h3><p>${esc(bill.j.job_id)} · ${esc(bill.inv.number || "draft")}</p>${art("bill", "mini")}</div>`
-    : `<div class="card c-mint empty fade" style="--i:7">${chip("Bills")}<h3>No bills yet</h3><p>Finish a job with a voice note — I'll make the invoice.</p>${art("bill", "mini")}</div>`;
+  const mint = bill ? `<div class="card c-mint press fade" style="--i:7" data-job="${esc(bill.j.job_id)}">${chip(bill.inv.state)}<h3>${esc(inr(bill.inv.total))}</h3><p>${esc(bill.j.job_id)} · ${esc(bill.inv.number || L("Draft"))}</p>${art("bill", "mini")}</div>`
+    : `<div class="card c-mint empty fade" style="--i:7">${chip("Bills")}<h3>${L("No bills yet")}</h3><p>${L("Finish a job with a voice note — I'll make the invoice.")}</p>${art("bill", "mini")}</div>`;
   const blocked = openJobs().filter(j => j.next_action && j.next_action.blocked_by);
   const coral = blocked.length ? `<div class="card wide c-coral press fade" style="--i:8" data-job="${esc(blocked[0].job_id)}">${chip("Needs your decision")}
       <h3>${esc(blocked[0].job_id)} · ${esc(blocked[0].next_action.what)}</h3><p>${esc(blocked[0].next_action.blocked_by)}</p></div>` : "";
@@ -403,21 +494,21 @@ const jobColor = j => j.next_action && j.next_action.blocked_by ? "c-coral" : j.
 function jobItem(j, i) {
   const sc = j.site_contact || {};
   const rows = [["Site", j.site], ["Customer", [sc.name, sc.phone].filter(Boolean).join(" · ")], ["Your free time", (j.plumber_windows || []).join(", ")],
-                ["Bill to", j.billing_to], ["Work order", j.work_order]].filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+                ["Bill to", j.billing_to], ["Work order", j.work_order]].filter(([, v]) => v).map(([k, v]) => `<dt>${esc(L(k))}</dt><dd>${esc(v)}</dd>`).join("");
   const tl = (j.timeline || []).slice().reverse().map(e => `<li><b>${esc(hhmm(e.ts))}</b> · ${esc(e.summary)} ${e.simulated ? chip("Simulated", "dash") : ""}</li>`).join("");
   return `<article class="item ${jobColor(j)} press fade" style="--i:${i}" data-job="${esc(j.job_id)}"><div class="top"><span class="chip solid">${esc(j.job_id)}</span>${chip(j.status)}${chip(j.appointment)}${j.sample ? chip("Sample", "dash") : ""}</div>
-    ${j.slot ? `<p style="margin:6px 0 0"><b>Visit:</b> ${esc(j.slot)}</p>` : ""}
-    <h3>${esc(j.issue || "Job")}</h3><dl class="kv">${rows}</dl>
-    ${j.next_action ? `<p style="margin:10px 0 0"><b>Next:</b> ${esc(j.next_action.what)}${j.next_action.blocked_by ? " " + chip("Blocked: " + j.next_action.blocked_by) : ""}</p>` : ""}
-    ${tl ? `<details><summary>Timeline (${(j.timeline || []).length})</summary><ul class="tl">${tl}</ul></details>` : ""}</article>`;
+    ${j.slot ? `<p style="margin:6px 0 0"><b>${L("Visit")}:</b> ${esc(j.slot)}</p>` : ""}
+    <h3>${esc(j.issue || L("Job"))}</h3><dl class="kv">${rows}</dl>
+    ${j.next_action ? `<p style="margin:10px 0 0"><b>${L("Next")}:</b> ${esc(j.next_action.what)}${j.next_action.blocked_by ? " " + chip(L("Blocked") + ": " + j.next_action.blocked_by) : ""}</p>` : ""}
+    ${tl ? `<details><summary>${L("Timeline")} (${(j.timeline || []).length})</summary><ul class="tl">${tl}</ul></details>` : ""}</article>`;
 }
 function renderJobs() {
   const filters = [["open", "Open"], ["all", "All"], ["closed", "Closed"]];
-  $("jobfilter").innerHTML = filters.map(([k, l]) => `<button class="${k === jobFilter ? "on" : ""}" data-f="${k}">${l}</button>`).join("");
+  $("jobfilter").innerHTML = filters.map(([k, l]) => `<button class="${k === jobFilter ? "on" : ""}" data-f="${k}">${L(l)}</button>`).join("");
   $("jobfilter").querySelectorAll("button").forEach(b => b.onclick = () => { jobFilter = b.dataset.f; renderJobs(); });
   let list = jobFilter === "open" ? openJobs() : jobFilter === "closed" ? jobs.filter(j => ["closed", "cancelled"].includes(j.status)) : jobs;
   if (jobQuery) list = list.filter(j => JSON.stringify(j).toLowerCase().includes(jobQuery));
-  $("joblist").innerHTML = list.length ? list.map(jobItem).join("") : `<div class="item c-mango fade"><h3>${jobQuery ? "No match" : "No jobs here yet"}</h3><p>Tap the mic and describe a job.</p></div>`;
+  $("joblist").innerHTML = list.length ? list.map(jobItem).join("") : `<div class="item c-mango fade"><h3>${L(jobQuery ? "No match" : "No jobs here yet")}</h3><p>${L("Tap the mic and describe a job.")}</p></div>`;
   $("joblist").querySelectorAll("details").forEach(d => d.onclick = e => e.stopPropagation());
 }
 
@@ -428,11 +519,11 @@ function renderCalls() {
     const money = n => /price|charge|amount|total|fee|cost|rate/.test(n);
     const val = x => x.value == null || x.value === "" ? "—" : (money(x.name) && !isNaN(Number(x.value)) ? inr(x.value) : (Array.isArray(x.value) ? x.value.join(", ") : x.value));
     const f = Object.values(c.fields || {}).map(x => `<dt>${esc(x.name.replace(/_/g, " "))}</dt><dd>${esc(val(x))} ${chip(x.status)}${x.evidence_quote ? `<br><span class="quote">“${esc(x.evidence_quote)}”</span>` : ""}</dd>`).join("");
-    return `<article class="item ${callColor(c)} fade" style="--i:${Math.min(i, 8)}"><div class="top">${chip(c.status)}${c.attempt ? chip("Retry " + c.attempt) : ""}${chip("Live call")}
+    return `<article class="item ${callColor(c)} fade" style="--i:${Math.min(i, 8)}"><div class="top">${chip(c.status)}${c.attempt ? chip(L("Retry") + " " + c.attempt) : ""}${chip("Live call")}
       <span class="meta" style="margin-left:auto">${c.ts ? esc(hhmm(c.ts)) : ""}</span></div>
-      <h3>${esc((c.callee && (c.callee.name || c.callee.role)) || "Call")}</h3><p class="meta">${esc(c.to)} · ${esc((c.spec || "").replace(/_/g, " "))}</p>
-      ${f ? `<dl class="kv">${f}</dl>` : ""}${c.transcript ? `<details><summary>Transcript</summary><p style="white-space:pre-wrap;font-size:13px">${esc(c.transcript)}</p></details>` : ""}</article>`; }).join("")
-    : `<div class="item c-sky fade"><h3>No calls yet</h3><p>When I ring a customer or a shop, the call and what they said appear here.</p></div>`;
+      <h3>${esc((c.callee && (c.callee.name || c.callee.role)) || L("Call"))}</h3><p class="meta">${esc(c.to)} · ${esc((c.spec || "").replace(/_/g, " "))}</p>
+      ${f ? `<dl class="kv">${f}</dl>` : ""}${c.transcript ? `<details><summary>${L("Transcript")}</summary><p style="white-space:pre-wrap;font-size:13px">${esc(c.transcript)}</p></details>` : ""}</article>`; }).join("")
+    : `<div class="item c-sky fade"><h3>${L("No calls yet")}</h3><p>${L("When I ring a customer or a shop, the call and what they said appear here.")}</p></div>`;
 }
 
 /* ---------------- BILLS ---------------- */
@@ -440,10 +531,10 @@ function renderBills() {
   const bills = jobs.flatMap(j => [{j, inv: j.full && j.full.invoice, kind: "Invoice"}, {j, inv: j.full && j.full.estimate, kind: "Estimate"}])
     .filter(x => x.inv && x.inv.state && x.inv.state !== "none");
   $("billlist").innerHTML = bills.length ? bills.map(({j, inv, kind}, i) => `<article class="item ${kind === "Invoice" ? "c-mint" : "c-sky"} fade" style="--i:${i}"><div class="top">${chip(kind)}${chip(inv.state)}<span class="chip solid">${esc(j.job_id)}</span></div>
-      <h3>${esc(inr(inv.total))}</h3><p class="meta">${esc(inv.number || "Draft")} · ${esc(inv.date || "")}</p>
-      <dl class="kv">${(inv.lines || []).map(l => `<dt>${esc(l.item)}</dt><dd>${esc(l.qty)} × ${esc(inr(l.unit_rate))} = <b>${esc(inr(l.amount))}</b></dd>`).join("")}${inv.labour ? `<dt>Labour</dt><dd>${esc(inr(inv.labour))}</dd>` : ""}</dl>
-      <a class="file" href="/api/jobs/${encodeURIComponent(j.job_id)}/pdf?kind=${kind.toLowerCase()}&key=${encodeURIComponent(key)}" download>⬇️ Download PDF</a></article>`).join("")
-    : `<div class="item c-mint fade"><h3>No bills yet</h3><p>When a job is finished, send me a closing voice note — I'll read back the total and make the invoice.</p></div>`;
+      <h3>${esc(inr(inv.total))}</h3><p class="meta">${esc(inv.number || L("Draft"))} · ${esc(inv.date || "")}</p>
+      <dl class="kv">${(inv.lines || []).map(l => `<dt>${esc(l.item)}</dt><dd>${esc(l.qty)} × ${esc(inr(l.unit_rate))} = <b>${esc(inr(l.amount))}</b></dd>`).join("")}${inv.labour ? `<dt>${L("Labour")}</dt><dd>${esc(inr(inv.labour))}</dd>` : ""}</dl>
+      <a class="file" href="/api/jobs/${encodeURIComponent(j.job_id)}/pdf?kind=${kind.toLowerCase()}&key=${encodeURIComponent(key)}" download>⬇️ ${L("Download PDF")}</a></article>`).join("")
+    : `<div class="item c-mint fade"><h3>${L("No bills yet")}</h3><p>${L("When a job is finished, send me a closing voice note — I'll read back the total and make the invoice.")}</p></div>`;
 }
 function openJob(id) { const j = jobs.find(x => x.job_id === id); if (!j) return; $("sheetbody").innerHTML = jobItem(j, 0); document.body.classList.add("sheet-open"); }
 const closeSheet = () => document.body.classList.remove("sheet-open");
@@ -471,10 +562,10 @@ $("typebar").onclick = () => { go("chat"); setTimeout(() => $("text").focus(), 6
 $("nearme").onclick = () => {
   go("chat");
   if (!navigator.geolocation) { $("text").value = "shops near "; $("text").focus(); return; }
-  toast("Getting your location…");
+  toast(L("Getting your location…"));
   navigator.geolocation.getCurrentPosition(
     p => sendMsg(`nearby shops @${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`),
-    () => { toast("Location is off — type an area"); $("text").value = "shops near "; $("text").focus(); },
+    () => { toast(L("Location is off — type an area")); $("text").value = "shops near "; $("text").focus(); },
     {enableHighAccuracy: true, timeout: 12000, maximumAge: 60000});
 };
 $("searchbtn").onclick = () => { const sb = $("searchbox"); sb.classList.toggle("on"); if (sb.classList.contains("on")) $("search").focus(); };
@@ -489,41 +580,41 @@ function showOnboard() {
   $("onboard").classList.add("on");
 }
 $("langgo").onclick = async () => { if (!pickLang) return; const fd = new FormData(); fd.append("key", key); fd.append("language", pickLang);
-  try { const r = await fetch("/api/me", {method: "POST", body: fd}); if (!r.ok) throw 0; me.language = pickLang; $("onboard").classList.remove("on"); toast("Saved"); }
-  catch (e) { toast("Couldn't save — try again"); } };
+  try { const r = await fetch("/api/me", {method: "POST", body: fd}); if (!r.ok) throw 0; me.language = pickLang; setLang(pickLang); renderAll(false); $("onboard").classList.remove("on"); toast(L("Saved")); }
+  catch (e) { toast(L("Couldn't save — try again")); } };
 $("avatar").onclick = () => { pickLang = me.language; showOnboard(); };
 
 /* ---------------- CHAT ---------------- */
 let since = 0, ctimer = null, firstChat = true, waiting = false, typingEl = null;
-function setCStatus(t, busy) { $("cstatustext").textContent = t; $("cstatus").classList.toggle("busy", !!busy); }
+function setCStatus(t, busy) { $("cstatustext").textContent = L(t); $("cstatus").classList.toggle("busy", !!busy); }
 function showTyping(label) { if (!typingEl) { typingEl = document.createElement("div"); typingEl.className = "row bot typing"; typingEl.innerHTML = `<div class="bub"><span class="dots"><i></i><i></i><i></i></span><span class="tt"></span></div>`; }
-  typingEl.querySelector(".tt").textContent = label; $("log").appendChild(typingEl); $("log").scrollTop = $("log").scrollHeight; }
+  typingEl.querySelector(".tt").textContent = L(label); $("log").appendChild(typingEl); $("log").scrollTop = $("log").scrollHeight; }
 function hideTyping() { if (typingEl && typingEl.parentNode) typingEl.remove(); }
 function startWaiting(s) { waiting = true; setCStatus(s, true); showTyping(s); schedChat(700); }
 function stopWaiting() { waiting = false; setCStatus("Online", false); hideTyping(); }
 function offersCard(c) {
   const rows = (c.rows || []).map(r => `<div class="offer"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><b>${esc(r.shop)}</b>${chip(r.match)}${chip(r.stock)}${r.hold === "offered" ? chip("Hold offered") : ""}</div>
     <div style="margin:4px 0">${esc(r.model || "model ?")} · <span class="price" style="font-size:19px">${esc(inr(r.unit_price))}</span>/pc${r.mrp ? `<span class="mrp">${esc(inr(r.mrp))}</span>` : ""}</div>
-    <div class="meta">${r.price_note ? esc(r.price_note) + " · " : ""}GST ${esc(WORD[r.tax] || r.tax)} · delivery ${esc(inr(r.delivery))} · total ${esc(inr(r.total))}</div>
-    ${r.pickup_address ? `<div class="meta">📍 ${esc(r.pickup_address)}${r.earliest_pickup ? " · from " + esc(r.earliest_pickup) : ""}</div>` : ""}
-    ${r.evidence && Object.keys(r.evidence).length ? `<details><summary>What they said</summary>${Object.entries(r.evidence).map(([k, q]) => `<div class="meta"><b>${esc(k.replace(/_/g, " "))}:</b> <span class="quote">“${esc(q)}”</span></div>`).join("")}</details>` : ""}</div>`).join("");
+    <div class="meta">${r.price_note ? esc(r.price_note) + " · " : ""}GST ${esc(L(WORD[r.tax] || r.tax))} · ${L("delivery")} ${esc(inr(r.delivery))} · ${L("total")} ${esc(inr(r.total))}</div>
+    ${r.pickup_address ? `<div class="meta">📍 ${esc(r.pickup_address)}${r.earliest_pickup ? " · " + L("from") + " " + esc(r.earliest_pickup) : ""}</div>` : ""}
+    ${r.evidence && Object.keys(r.evidence).length ? `<details><summary>${L("What they said")}</summary>${Object.entries(r.evidence).map(([k, q]) => `<div class="meta"><b>${esc(k.replace(/_/g, " "))}:</b> <span class="quote">“${esc(q)}”</span></div>`).join("")}</details>` : ""}</div>`).join("");
   const dep = c.dependency ? `<p style="margin:8px 0 0">${chip(c.dependency === "met" ? "met" : "not_met")}</p>` : "";
   return `<div class="card c-sky"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip("Shop quotes")}</div>
-    <h3>${esc(c.qty)} × ${esc((c.part && (c.part.description + " " + (c.part.model || ""))) || "part")}</h3>${rows || "<p>No answers yet.</p>"}${dep}</div>`;
+    <h3>${esc(c.qty)} × ${esc((c.part && (c.part.description + " " + (c.part.model || ""))) || "part")}</h3>${rows || `<p>${L("No answers yet.")}</p>`}${dep}</div>`;
 }
 function shopsCard(c) {
   return `<div class="card c-violet"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip("Nearby shops · OpenStreetMap")}</div>
     ${(c.rows || []).map(r => `<div class="offer"><b>${esc(r.name)}</b> <span class="meta">${esc(r.kind)} · ${esc(r.distance_km)} km</span>
-      <div class="meta">${r.address ? "📍 " + esc(r.address) + " · " : ""}${r.phone ? "☎ " + esc(r.phone) + " · " : "no phone listed · "}<a href="${esc(r.map_url)}" target="_blank" rel="noopener">🗺️ Map</a></div></div>`).join("")}</div>`;
+      <div class="meta">${r.address ? "📍 " + esc(r.address) + " · " : ""}${r.phone ? "☎ " + esc(r.phone) + " · " : L("no phone listed") + " · "}<a href="${esc(r.map_url)}" target="_blank" rel="noopener">🗺️ ${L("Map")}</a></div></div>`).join("")}</div>`;
 }
 function billCard(c) {
   const col = c.type === "invoice" ? "c-mint" : "c-sky";
   const lines = (c.lines || []).map(l => `<dt>${esc(l.qty)} × ${esc(l.item)}<br><span class="meta">${esc(l.source || "")}</span></dt><dd>${esc(inr(l.amount))}</dd>`).join("");
   return `<div class="card ${col}"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip(c.type === "invoice" ? "Invoice" : "Estimate")}${chip(c.state)}${c.demo_rates ? chip("Demo rates", "dash") : ""}</div>
-    <h3>${esc(inr(c.total))}</h3><dl class="kv bill">${lines}${c.labour ? `<dt>Labour</dt><dd>${esc(inr(c.labour))}</dd>` : ""}</dl>
+    <h3>${esc(inr(c.total))}</h3><dl class="kv bill">${lines}${c.labour ? `<dt>${L("Labour")}</dt><dd>${esc(inr(c.labour))}</dd>` : ""}</dl>
     ${c.number ? `<p class="meta">${esc(c.number)}${c.bill_to ? " · " + esc(c.bill_to) : ""}${c.wo ? " · " + esc(c.wo) : ""}</p>` : ""}
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${c.pdf_url ? `<a class="file" href="${esc(c.pdf_url)}" target="_blank" rel="noopener">📄 Open PDF</a>` : ""}
-    <a class="file" href="/api/jobs/${encodeURIComponent(c.job_id)}/pdf?kind=${esc(c.type)}&key=${encodeURIComponent(key)}" download>⬇️ Download</a></div></div>`;
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${c.pdf_url ? `<a class="file" href="${esc(c.pdf_url)}" target="_blank" rel="noopener">📄 ${L("Open PDF")}</a>` : ""}
+    <a class="file" href="/api/jobs/${encodeURIComponent(c.job_id)}/pdf?kind=${esc(c.type)}&key=${encodeURIComponent(key)}" download>⬇️ ${L("Download")}</a></div></div>`;
 }
 function chatCard(c) {
   if (c && (c.type === "invoice" || c.type === "estimate")) return billCard(c);
@@ -532,9 +623,9 @@ function chatCard(c) {
   if (!c || c.type !== "job") return "";
   const sc = c.site_contact || {};
   const rows = [["Site", c.site], ["Customer", [sc.name, sc.phone].filter(Boolean).join(" · ")], ["Free", (c.plumber_windows || []).join(", ")], ["Bill to", c.billing_to], ["WO", c.work_order]]
-    .filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+    .filter(([, v]) => v).map(([k, v]) => `<dt>${esc(L(k))}</dt><dd>${esc(v)}</dd>`).join("");
   return `<div class="card ${jobColor(c)}"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip(c.status)}${chip(c.appointment)}</div>
-    <h3>${esc(c.issue || "Job")}</h3><dl class="kv">${rows}</dl>${c.next_action ? `<p style="margin:8px 0 0"><b>Next:</b> ${esc(c.next_action.what)}</p>` : ""}</div>`;
+    <h3>${esc(c.issue || L("Job"))}</h3><dl class="kv">${rows}</dl>${c.next_action ? `<p style="margin:8px 0 0"><b>${L("Next")}:</b> ${esc(c.next_action.what)}</p>` : ""}</div>`;
 }
 function media(url) { if (!url) return ""; const u = esc(url), low = url.toLowerCase();
   if (/\.(png|jpe?g|webp|gif)$/.test(low)) return `<img src="${u}" alt="" loading="lazy">`;
@@ -543,8 +634,8 @@ function media(url) { if (!url) return ""; const u = esc(url), low = url.toLower
 function heardHtml(m) { let html = esc(m.text);
   const marks = [...(m.spans || []).map(s => [String(s.raw), "", s.kind]), ...(m.low || []).map(x => [String(x), "low", "unsure"])].filter(([r]) => r && r.trim()).sort((a, b) => b[0].length - a[0].length);
   const seen = new Set(); for (const [raw, cls, kind] of marks) { const e = esc(raw); if (seen.has(e) || !html.includes(e)) continue; seen.add(e);
-    html = html.split(e).join(`<span class="hl ${cls}" data-raw="${esc(raw)}" title="${esc(kind)} — tap to correct">${e}</span>`); }
-  return `<span class="lbl">🎙️ Chinku heard ${m.media_url ? `<a href="${esc(m.media_url)}" target="_blank" rel="noopener">▶ Play</a>` : ""}</span>${html}`; }
+    html = html.split(e).join(`<span class="hl ${cls}" data-raw="${esc(raw)}" title="${esc(kind)} — ${L("tap to correct")}">${e}</span>`); }
+  return `<span class="lbl">🎙️ ${L("Chinku heard")} ${m.media_url ? `<a href="${esc(m.media_url)}" target="_blank" rel="noopener">▶ ${L("Play")}</a>` : ""}</span>${html}`; }
 function row(m) { const r = document.createElement("div"); const mine = m.dir === "in" || m.dir === "heard"; r.className = "row " + (mine ? "me" : "bot");
   let body;
   if (m.dir === "heard") body = `<div class="bub heard">${heardHtml(m)}<span class="t">${hhmm(m.ts)}</span></div>`;
@@ -557,17 +648,17 @@ function addOpt(text, label, voice) { const r = row({dir: "in", text: label || t
 function consumeOpt(m) { const i = optimistic.findIndex(o => (m.dir === "heard" && o.voice) || (m.dir === "in" && !o.voice && (o.text || "").trim() === (m.text || "").trim()));
   if (i < 0) return false; const o = optimistic.splice(i, 1)[0]; o.r.replaceWith(row(m)); return true; }
 function showWelcome() { if ($("log").children.length) return; const w = document.createElement("div"); w.id = "welcome"; w.className = "fade"; w.style.margin = "auto 0";
-  w.innerHTML = `<div class="item c-violet" style="text-align:center"><h3 style="font-size:22px">Hold the mic and talk</h3><p>Telugu, English or both. I'll show you what I heard before I act.</p></div>`;
+  w.innerHTML = `<div class="item c-violet" style="text-align:center"><h3 style="font-size:22px">${L("Hold the mic and talk")}</h3><p>${L("Telugu, English or both. I'll show you what I heard before I act.")}</p></div>`;
   $("log").appendChild(w); }
 const hideWelcome = () => { const w = $("welcome"); if (w) w.remove(); };
 function setQuick(t) { const q = $("quick"); q.innerHTML = ""; t = (t || "").trim();
-  if (/\?\s*(\(yes \/ no\))?\s*$/i.test(t) && /(shall i|should i|go ahead|did i get that right|call|send|book)/i.test(t))
-    [["Yes", 1], ["No"], ["Change"]].forEach(([l, p]) => { const b = document.createElement("button"); b.textContent = l; if (p) b.className = "primary";
-      b.onclick = () => l === "Change" ? $("text").focus() : sendMsg(l); q.appendChild(b); }); }
+  if (/\(yes[^)]*\)\s*$/i.test(t) || (/\?\s*$/.test(t) && /(shall i|should i|go ahead|did i get that right|call|send|book)/i.test(t)))
+    [["Yes", 1], ["No"], ["Change"]].forEach(([l, p]) => { const b = document.createElement("button"); b.textContent = L(l); if (p) b.className = "primary";
+      b.onclick = () => l === "Change" ? $("text").focus() : sendMsg(l.toLowerCase()); q.appendChild(b); }); }
 let speaking = ls.get("chinku_speak") === "1"; $("speak").setAttribute("aria-pressed", speaking);
-$("speak").onclick = () => { speaking = !speaking; ls.set("chinku_speak", speaking ? "1" : "0"); $("speak").setAttribute("aria-pressed", speaking); toast(speaking ? "Replies read aloud" : "Read-aloud off"); };
+$("speak").onclick = () => { speaking = !speaking; ls.set("chinku_speak", speaking ? "1" : "0"); $("speak").setAttribute("aria-pressed", speaking); toast(L(speaking ? "Replies read aloud" : "Read-aloud off")); };
 function speak(t) { if (!speaking || !t || !("speechSynthesis" in window)) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.split("\n")[0].slice(0, 240));
-  u.lang = {te: "te-IN", hi: "hi-IN"}[me.language] || "en-IN"; speechSynthesis.speak(u); } catch (e) {} }
+  u.lang = LOC(); speechSynthesis.speak(u); } catch (e) {} }
 function schedChat(ms) { clearTimeout(ctimer); ctimer = setTimeout(pollChat, ms); }
 async function pollChat() {
   try { const r = await api(`/api/chat/messages?since=${since}`); if (r.ok) { const rows = await r.json(); const log = $("log");
@@ -581,15 +672,15 @@ async function pollChat() {
       if (firstChat) { firstChat = false; if (!rows.length) showWelcome(); } } } catch (e) { setCStatus("Reconnecting…", true); }
   schedChat(waiting ? 800 : (document.body.classList.contains("chat-open") ? 2500 : 6000));
 }
-$("newchat").onclick = async () => { if (!confirm("Start a new chat? Jobs and history stay saved.")) return; const fd = new FormData(); fd.append("key", key);
+$("newchat").onclick = async () => { if (!confirm(L("Start a new chat? Jobs and history stay saved."))) return; const fd = new FormData(); fd.append("key", key);
   try { await fetch("/api/chat/clear", {method: "POST", body: fd}); } catch (e) {} $("log").innerHTML = ""; $("quick").innerHTML = ""; since = Date.now() / 1000; showWelcome(); };
 async function sendMsg(text, file, secs) { text = (text || "").trim(); if (!text && !file) return; $("quick").innerHTML = "";
-  if (file && secs !== undefined) { addOpt("", `🎙️ Voice note · ${fmt(secs)}`, true); startWaiting("Listening…"); }
+  if (file && secs !== undefined) { addOpt("", `🎙️ ${L("Voice note")} · ${fmt(secs)}`, true); startWaiting("Listening…"); }
   else if (file && !text) { addOpt(`(file: ${file.name})`, `📎 ${file.name}`); startWaiting("Reading the file…"); }
   else { addOpt(text, file ? `${text}\n📎 ${file.name}` : ""); startWaiting(file ? "Reading the file…" : "Thinking…"); }
   const fd = new FormData(); fd.append("key", key); fd.append("text", text); if (file) fd.append("file", file, file.name || "voice.webm");
-  try { const r = await fetch(secs !== undefined ? "/api/voice" : "/api/chat", {method: "POST", body: fd}); if (!r.ok) { const j = await r.json().catch(() => ({})); stopWaiting(); toast(j.error || "Couldn't send"); } }
-  catch (e) { stopWaiting(); toast("No connection — try again"); }
+  try { const r = await fetch(secs !== undefined ? "/api/voice" : "/api/chat", {method: "POST", body: fd}); if (!r.ok) { const j = await r.json().catch(() => ({})); stopWaiting(); toast(j.error || L("Couldn't send")); } }
+  catch (e) { stopWaiting(); toast(L("No connection — try again")); }
   optimistic.forEach(o => o.r.classList.remove("pending")); }
 const textEl = $("text");
 const syncBtns = () => $("f").classList.toggle("has-text", !!(textEl.value.trim() || $("file").files[0]));
@@ -601,7 +692,7 @@ const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2,
 let rec = null, chunks = [], stream = null, actx = null, raf = null, t0 = 0, sx = 0, cancelled = false, tick = null, maxT = null;
 async function startRec(e) { e.preventDefault(); sx = e.clientX; cancelled = false;
   if (!navigator.mediaDevices || !window.MediaRecorder) { toast("Voice not supported in this browser"); return; }
-  try { stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); } catch (err) { toast("Allow the microphone to talk"); return; }
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); } catch (err) { toast(L("Allow the microphone to talk")); return; }
   const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
   rec = new MediaRecorder(stream, mime ? {mimeType: mime} : undefined); chunks = []; rec.ondataavailable = ev => ev.data.size && chunks.push(ev.data); rec.onstop = onStop;
   rec.start(250); t0 = Date.now(); vib(20); $("rec").classList.add("on"); $("rec").classList.remove("cancelling");
@@ -612,11 +703,11 @@ function wave() { try { actx = new (window.AudioContext || window.webkitAudioCon
     an.getByteTimeDomainData(d); let pk = 0; for (const v of d) pk = Math.max(pk, Math.abs(v - 128)); bars.push(Math.min(1, pk / 64)); const n = Math.floor(w / 5); while (bars.length > n) bars.shift();
     g.clearRect(0, 0, cv.width, cv.height); g.fillStyle = "#7B61E8"; bars.forEach((b, i) => { const bh = Math.max(2, b * h) * r; g.fillRect(i * 5 * r, (h * r - bh) / 2, 3 * r, bh); });
     raf = requestAnimationFrame(loop); }; loop(); } catch (e) {} }
-function moveRec(e) { if (!rec || rec.state !== "recording") return; cancelled = e.clientX - sx < -80; $("rec").classList.toggle("cancelling", cancelled); $("cancelhint").textContent = cancelled ? "Release to cancel" : "‹ slide to cancel"; }
+function moveRec(e) { if (!rec || rec.state !== "recording") return; cancelled = e.clientX - sx < -80; $("rec").classList.toggle("cancelling", cancelled); $("cancelhint").textContent = L(cancelled ? "Release to cancel" : "‹ slide to cancel"); }
 function stopRec(e) { if (e) e.preventDefault(); if (rec && rec.state === "recording") rec.stop(); }
 function onStop() { clearInterval(tick); clearTimeout(maxT); cancelAnimationFrame(raf); try { actx && actx.close(); } catch (e) {} stream && stream.getTracks().forEach(t => t.stop());
-  $("rec").classList.remove("on"); $("rectime").textContent = "0:00"; $("cancelhint").textContent = "‹ slide to cancel"; const secs = (Date.now() - t0) / 1000; vib(cancelled ? [10, 40, 10] : 15);
-  if (cancelled) { toast("Cancelled"); return; } if (secs < 0.7) { toast("Hold the mic and speak"); return; }
+  $("rec").classList.remove("on"); $("rectime").textContent = "0:00"; $("cancelhint").textContent = L("‹ slide to cancel"); const secs = (Date.now() - t0) / 1000; vib(cancelled ? [10, 40, 10] : 15);
+  if (cancelled) { toast(L("Recording cancelled")); return; } if (secs < 0.7) { toast(L("Hold the mic and speak")); return; }
   const type = rec.mimeType || "audio/webm"; sendMsg("", new File([new Blob(chunks, {type})], `voice.${type.includes("mp4") ? "m4a" : "webm"}`, {type}), secs); }
 const mic = $("cmic");
 mic.addEventListener("pointerdown", e => { mic.setPointerCapture && mic.setPointerCapture(e.pointerId); startRec(e); });
@@ -626,9 +717,10 @@ mic.addEventListener("contextmenu", e => e.preventDefault());
 /* ---------------- start ---------------- */
 (async () => {
   const start = (location.hash || "#today").slice(1).split("?")[0];
-  go(["today", "jobs", "calls", "bills", "chat"].includes(start) ? start : "today");  // render at once, never a blank page
+  applyStatic(); go(["today", "jobs", "calls", "bills", "chat"].includes(start) ? start : "today");  // render at once, never a blank page
   renderAll(false);
-  try { const r = await api("/api/me"); if (r.ok) { me = await r.json(); renderToday(); } else if (r.status === 403) toast("Wrong or missing key in the link"); } catch (e) {}
+  try { const r = await api("/api/me"); if (r.ok) { me = await r.json(); const ql = new URLSearchParams(location.search).get("lang");
+    if (ql || me.language) setLang(ql || me.language); renderAll(false); } else if (r.status === 403) toast("Wrong or missing key in the link"); } catch (e) {}
   if (!me.language && !new URLSearchParams(location.search).get("shot")) { pickLang = null; showOnboard(); }
   await loadAll(); pollChat();
   setInterval(loadAll, 6000);

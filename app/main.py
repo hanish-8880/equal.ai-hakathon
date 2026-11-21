@@ -33,7 +33,15 @@ def _web_preferred(user: str) -> bool:
 
 
 def deliver(to: str, text: str, media_url: str | None = None, card: dict[str, Any] | None = None) -> None:
-    """Every message is mirrored into the web chat; WhatsApp only if the user's last message came from WhatsApp."""
+    """Every message is mirrored into the web chat; WhatsApp only if the user's last message came from WhatsApp.
+    Shown in the plumber's chosen language (numbers guarded in code — see app/brain/translate.py)."""
+    try:
+        from app.brain import translate
+        code = translate.code_of(to)
+        if code != "en":
+            text = translate.to_lang(text, code)
+    except Exception as e:  # noqa: BLE001 — never lose a message because translation failed
+        store().add_event("-", "error", {"where": "translate", "error": str(e)[:300]})
     chat_log(to, "chat_out", text, media_url, card)
     if not _web_preferred(to):
         whatsapp.send(to, text, media_url)
@@ -447,8 +455,21 @@ def api_jobs(key: str = "") -> JSONResponse:
         return JSONResponse({"error": "forbidden"}, status_code=403)
     owner = settings().user_whatsapp
     rows = sorted(store().scan("jobs", plumber_id=owner), key=lambda j: j["created_at"], reverse=True)
-    return JSONResponse([job_store.card(job_store.Job.model_validate(j)) | {"timeline": j.get("timeline", [])[-30:], "full": _mask_job(j)}
-                         for j in rows])
+    out = [job_store.card(job_store.Job.model_validate(j)) | {"timeline": j.get("timeline", [])[-30:], "full": _mask_job(j)} for j in rows]
+    try:  # next steps in the plumber's language (cached; numbers guarded)
+        from app.brain import translate
+        code = translate.code_of(owner)
+        if code != "en":
+            open_ = [c for c in out if c.get("status") not in ("closed", "cancelled")][:12]
+            na = [c["next_action"] for c in open_ if c.get("next_action")]
+            tr = translate.many([x.get("what") for x in na] + [x.get("blocked_by") for x in na], code)
+            for x in na:
+                for k in ("what", "blocked_by"):
+                    if x.get(k):
+                        x[k] = tr.get(x[k], x[k])
+    except Exception as e:  # noqa: BLE001
+        store().add_event("-", "error", {"where": "translate_jobs", "error": str(e)[:300]})
+    return JSONResponse(out)
 
 
 @app.get("/api/calls")
