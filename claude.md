@@ -4,8 +4,8 @@ You are my senior product, design and engineering partner. I am **Hanish**, buil
 Equal AI × OpenAI Builders Hackathon, Equal HQ Hyderabad.
 **Now: Sat 21 Nov, ~11:15 PM IST. Code freeze: Sun 22 Nov, 2:00 PM IST. Push + deploy by 12:00 PM.**
 
-This file replaces every earlier CLAUDE.md (Chinku errands, Chinku for Plumbers, earlier Chinku drafts).
-It is the single source of truth. The existing repo (formerly "Chinku") is the foundation: **reuse it, never rewrite it.**
+This file replaces every earlier CLAUDE.md (Chinku errands, Chinku for Plumbers, Instint drafts). The product name is **Chinku**.
+It is the single source of truth. The existing Chinku repo is the foundation: **reuse it, never rewrite it.**
 
 ---
 
@@ -175,6 +175,66 @@ in the agent if available; verify before demo.)
 **J8 — Group ask (stretch).** "Ask Ravi, Sai and Kiran if they're free Sunday lunch" → calls one after another
 (1 concurrent call on our plan) → table of answers with quotes.
 
+**J9 — Compare & choose across connected services (adapter layer, section 6A).**
+"Cheapest auto home" / "Get me home before 8" / "I need soap" / "Veg lunch under ₹200 in 30 min" →
+Chinku queries every connected provider through adapters → ranks by **this request's priority** → shows
+"**Recommended: X — why it won**" + full comparison + next action (Book / Order / Call / Remind).
+Same engine also covers **local stock and dealer quotes** (calls shops via `call` when no API exists).
+
+---
+
+## 6A. Connected services layer — "if they provide an API, it plugs in"
+
+Goal: show that Chinku brings ride, food, shopping, booking, email and reminder services into **one request, one
+comparison, one approval**. Build the layer for real; connect real providers where an API is available to us; use
+clearly labelled **demo adapters** where it is not.
+
+**Adapter interface (one per provider, same shape):**
+```
+class ProviderAdapter:
+    name, category: ride|food|grocery|booking|email|reminder, status: LIVE|DEMO
+    def search(request: CategoryRequest, user: UserPrefs) -> list[Offer]
+    def book(offer: Offer, approval: Approval) -> Confirmation      # only after approval
+    def track(reference) -> Status
+Offer: provider, item/vehicle/slot, unit_price, fees, taxes, delivery_fee, final_payable,
+       eta/pickup_time/slot_time, pack_size, price_per_100g (computed), match: exact|similar,
+       source: api|call|web|demo, fetched_at, raw_ref
+```
+**Categories and providers:**
+| Category | Providers (adapters) | Real path available to us tonight |
+|---|---|---|
+| Rides | Ola, Uber, Rapido | No public consumer booking API for us → **DEMO adapters** with realistic fares/ETAs, labelled DEMO. Real fallback: deep link to open the provider app with pickup/drop prefilled. |
+| Food | Swiggy, Zomato | No public ordering API → **DEMO adapters**; real fallback: deep link + `call` the restaurant (LIVE). |
+| Grocery / products | Blinkit, Zepto, BigBasket, Amazon | **DEMO adapters**; optional `search` for public prices (LIVE, with source + date). |
+| Bookings (clinic, service, venue) | Any business with a phone number | **LIVE via `call`** (+ OmniDimension Google Calendar / Cal.com option if time). |
+| Email | SMTP/Gmail | **LIVE** |
+| Reminders | Chinku scheduler | **LIVE** |
+| Shops / dealers | Any number | **LIVE via `call`** (existing dealer-quote recipe) |
+
+**Ranking (deterministic code, explained in words):**
+- Priority comes from the request + memory: lowest final price · fastest arrival / arrive-by time · earliest slot ·
+  preferred brand · best value (price per 100 g / per unit) · rating if known.
+- Request words override saved preferences for this request only ("I'm in a hurry today" → fastest wins).
+- Compare **final payable** (fees, delivery, taxes included); unknown fees shown as "unknown", never 0.
+- Exact matches and similar alternatives shown in separate groups. Constraints that fail (arrives after 8) are
+  excluded with the reason.
+- Output: `Recommendation {winner, why: [reasons], runner_up, what_would_change_the_winner}` + full table.
+
+**Approve, pay and track:**
+- Every booking/order needs approval showing provider, item, final amount.
+- Optional **spending rule** in Settings (e.g. "auto-approve rides under ₹150") — shown as a rule, applied in code,
+  logged. Default OFF.
+- **Payments are DEMO only** (wallet balance + receipt shown, labelled DEMO). Never real money, never store card/UPI
+  details. Real path = provider's own checkout via deep link.
+- Track with order ID / booking reference / ticket in the task timeline; reminders and follow-ups attach to it.
+
+**Preferences in memory:** Home and usual destinations, food preferences (veg, spice), budgets, preferred brands and
+products, preferred providers, language, call voice.
+
+**Honesty rule:** every DEMO offer/booking/payment shows a "Demo data" chip, and HONEST_NOTE lists every adapter's
+status. The pitch says: *"Bookings are live wherever a phone call or an API is available; ride/food/grocery platforms
+are shown through demo adapters — they plug in when the provider gives API access."*
+
 ---
 
 ## 7. No-instruction attachments → smart suggestions
@@ -218,7 +278,15 @@ text #14161A / #5F6672 · cards white, border #E8E4DC, radius 20px, soft shadow 
 Status chips always in words: Ready · Waiting for you · Sent · Booked · Promised · Resolved · Failed · Simulated (dashed).
 Show **Sent / Booked / Resolved only when confirmed.**
 
-**First launch:** language choice (Telugu / English / Hindi) with a visible **Skip**. Voice choice only at the first call.
+**First launch:** language choice (Telugu / English / Hindi) with a visible **Skip**. Voice choice (preview voices,
+mapped to real OmniDimension voices if switchable per call; otherwise "preview only") shown at the first call, and in
+Settings. Choices remembered.
+
+**Priority-wise ordering:** the home screen sorts by urgency — ride leaving soon → order/email awaiting approval →
+appointment today → overdue promise/callback → recent work.
+
+**Comparison card (J9):** "Recommended · Rapido Auto · ₹92 · pickup 4 min" + "Why: cheapest final fare, arrives by
+7:40 PM" + "Checked: Uber Auto ₹110 · Ola Auto ₹105" + [Book] [See all]. Demo-data chip where applicable.
 
 **Home — exactly these, top to bottom:**
 1. Big input card: **"What do you need?"** / *Type or speak in your language* — big **mic** (hold to talk),
@@ -293,12 +361,14 @@ Fallback: recorded replay of the full run, labelled as a recording.
 | Sun 5:00 AM | `search` + `map`; J2 (clinic call, Mummy call, reminders) |
 | Sun 7:00 AM | J3 (auto-detect, official email search, send/call, promise, follow-up); J5 transfer verified |
 | Sun 8:30 AM | J6 language bridge; J7 scam check |
+| Sun 9:30 AM | J9 adapter layer + ranking engine (tests) + demo adapters for rides, food, grocery; comparison card |
 | Sun 10:00 AM | UI complete (home, working view, cards, map, Listen); screenshots fixed |
 | Sun 11:00 AM | Eval scripts run; restart test |
 | Sun 12:00 PM | README, HONEST_NOTE, submission text, demo rehearsed + fallback recorded; pushed + deployed |
 | Sun 2:00 PM | Code freeze |
 
-**Cut order if late:** J8 → J7 → J6 → map polish (list only) → Listen button.
+**Cut order if late:** J8 → J9 grocery → J7 → J6 → J9 food → map polish (list only) → Listen button.
+(Keep J9 rides — "cheapest auto home vs home before 8" shows priority ranking in 10 seconds.)
 **Never cut:** J1, J3, approval gate, evidence quotes, eval, honest note.
 
 ---
@@ -310,7 +380,9 @@ Fallback: recorded replay of the full run, labelled as a recording.
 - **Reused:** OpenAI (models, vision, speech, TTS, web search if used), OmniDimension (calls, transfer), SMTP/Gmail,
   AWS (EC2, DynamoDB, scheduler), OpenStreetMap/Leaflet, Twilio WhatsApp sandbox (optional).
 - **Simulated:** businesses and support agents played by consenting people; shortened follow-up timers in the demo;
-  mock documents where noted; any replayed run.
+  mock documents where noted; any replayed run; **ride/food/grocery provider adapters (Ola, Uber, Rapido, Swiggy,
+  Zomato, Blinkit, Zepto, BigBasket, Amazon) use demo data**; **payments/wallet are demo only**.
+- **Live connections:** phone-call bookings and quotes (OmniDimension), email (SMTP), reminders, web search (if verified).
 - **Limits:** no keypad/IVR navigation (OmniDimension has no DTMF option); one concurrent call on our plan; cannot act
   inside other apps or log into accounts; WhatsApp sandbox unreliable for Indian numbers.
 
@@ -326,7 +398,9 @@ searches the web, **makes real phone calls** with an AI voice agent, emails anyo
 on promises** until the task is done. It books a doctor and calls your mother to tell her; it spots a broken product in
 a photo, finds the company's official support email, sends the complaint, and checks back when they promised to
 respond; it waits on a support line and connects you when a human answers; it calls a shop in Kannada and tells you
-the answer in Telugu. Every result carries proof — exact quotes, sources, ticket numbers — and nothing is sent or
+the answer in Telugu. It brings ride, food, shopping and booking services into one request and recommends the option
+that fits your priority — cheapest, fastest, earliest — and explains why (booking by phone is live; app providers
+plug in through adapters, shown with demo data today). Every result carries proof — exact quotes, sources, ticket numbers — and nothing is sent or
 called without your one-tap approval.
 
 **What exact problem are you solving?** People know what they want, but still have to turn it into a search, a phone
@@ -343,4 +417,4 @@ it's done."*
 ## 16. Final report format (at each checkpoint and at the end)
 
 Run commands · journeys verified (with observed evidence) · test counts · eval numbers · remaining gaps ·
-demo script status · next 3 actions. Observed results only.  
+demo script status · next 3 actions. Observed results only.

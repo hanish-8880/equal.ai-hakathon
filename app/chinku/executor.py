@@ -200,10 +200,12 @@ def handle(user: str, text: str, attachments: list[dict[str, Any]], send: Send, 
         send(p.clarifying_question or "Sorry, I didn't get that — could you say it again in one line?")
         return
     lines = [step_line(i, s) for i, s in enumerate(p.steps, start=1) if s.tool != "reply"]
-    msg = p.understood + ("\n" + "\n".join(lines) if len(lines) > 1 else "")
+    # a plain answer needs no readback; actions always get one (what Chinku understood + the steps)
+    msg = (p.understood + ("\n" + "\n".join(lines) if len(lines) > 1 else "")) if lines else ""
     if p.cannot_do:
-        msg += "\n" + "\n".join(f"⛔ {c.what}: {c.why}" + (f" → {c.best_alternative}" if c.best_alternative else "") for c in p.cannot_do)
-    send(msg)
+        msg += ("\n" if msg else "") + "\n".join(f"⛔ {c.what}: {c.why}" + (f" → {c.best_alternative}" if c.best_alternative else "") for c in p.cannot_do)
+    if msg:
+        send(msg)
     if attachments:
         store().put("contacts", f"iatt:{user}", {"kind": "iatt", "attachments": attachments, "ts": time.time()})
     run(t, send, card)
