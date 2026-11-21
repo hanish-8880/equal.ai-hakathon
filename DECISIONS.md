@@ -288,3 +288,11 @@ Gate in code: confidence < 0.8 / missing / ambiguous job → ask (no state chang
 (haa / avunu / yes / pampu / అవును); else act, reply starts with the readback. Corrections update only that field.
 Latency: understand on gpt-5.5 default 14.6 s vs reasoning_effort=low 3.7 s with the same actions/readback → low for understand only.
 End-to-end on the synthetic note: 2 actions in order (source_part 0.92, conditional ask 0.62) → gate = ask → readback + "Did I get that right?".
+
+## [Sat 21:00] Chinku App UI v2 (smooth, mobile-first)
+Chose: single-file vanilla app (no build step): live status line (Online / Listening… / Understanding… / Thinking…), optimistic bubbles
+(text, file, "🎙️ Voice note · 0:07") replaced by the server echo / "Chinku heard" bubble, typing indicator, slide-in animations,
+hold-to-talk with live waveform (AnalyserNode), timer, slide-left-to-cancel, haptics, 90 s cap, welcome screen with tappable examples,
+context quick replies (Yes / No / Change / Jobs), jobs bottom sheet with per-job timeline, read-aloud toggle (speechSynthesis en-IN,
+remembered per device), dark mode, safe areas, reduced-motion support, add-to-home-screen metas. Polling 0.8 s while waiting, 2.5 s idle.
+JS syntax-checked with node --check; real-phone check pending (Hanish).
