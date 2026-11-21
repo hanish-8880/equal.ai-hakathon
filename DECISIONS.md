@@ -296,3 +296,15 @@ hold-to-talk with live waveform (AnalyserNode), timer, slide-left-to-cancel, hap
 context quick replies (Yes / No / Change / Jobs), jobs bottom sheet with per-job timeline, read-aloud toggle (speechSynthesis en-IN,
 remembered per device), dark mode, safe areas, reduced-motion support, add-to-home-screen metas. Polling 0.8 s while waiting, 2.5 s idle.
 JS syntax-checked with node --check; real-phone check pending (Hanish).
+
+## [Sat 20:10] Chinku App v3 — colourful theme (docs/ui-theme.png) + language onboarding
+Chose: lavender #EEEAFB background, violet hero, bento colours by meaning (visit mango, quote sky, approval pink, bill mint, decision coral),
+ink #15131F text on every pastel (contrast), white 70% status pills that always say the word, Plus Jakarta Sans + Noto Telugu/Devanagari,
+26px cards / 28px buttons / pill chips, soft shadow, CSS/SVG pipe/valve/wrench/bill shapes (no photos/copied art), staggered fade-up,
+press scale .98, flash on value change, reduced-motion respected. Screens: Today (hero = most important real item, week strip with
+visit dots + day filter, bento), Jobs (filter + timeline), Calls (real calls, fields with status + evidence quotes, transcript),
+Bills, Chat (ink/white bubbles, violet waveform + highlights). Floating ink nav with white mic circle → chat.
+Language onboarding on first run (English / Telugu / Hindi / Telugu+English) → stored per plumber; used for readbacks and replies
+(calls stay English). Light theme only (reference is light; Hanish's PC is in dark mode and the old dark variant hid the theme).
+Render-first (no blank page while the profile loads). Verified by screenshots with true mobile emulation (CDP, 390×844 @2x) + desktop 1280×800.
+Real-data rule: all cards come from the job/call store; empty states otherwise; nothing simulated is shown (Calls marks "Live call").
