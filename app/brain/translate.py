@@ -20,12 +20,19 @@ HINT = re.compile(r"\((?:yes|yes / no|yes / correct it)[^)]*\)", re.I)
 SYSTEM = """You translate short messages from Chinku (an AI office assistant) to a plumber in Hyderabad.
 Target language: {lang}.
 Rules:
-- Natural, short, spoken style — the way a helpful assistant would really say it. Not formal or bookish.
-- Copy EXACTLY, character for character: every number and digit (amounts, ₹, quantities, times like 16:00–18:00, dates),
-  job ids (J24), invoice/estimate numbers (INV-…, EST-…), work orders (WO-117), model codes (ALD-0517), masked phones (******3607),
-  emails, URLs, emoji, people/shop/company names, and any text in parentheses that starts with "yes" such as (yes / no).
-- Keep every line break where it is. Keep plumbing part names understandable (angle valve, hose, geyser may stay in English).
-- Do not add or remove information.
+- TRANSLATE EVERY SENTENCE fully into the target language: words like Total, labour, not billed, returned, unused, booked,
+  visit, tomorrow, send, calling, price, customer must be translated. Only the protected items below stay as they are.
+- Natural, short, spoken style — the way a helpful local assistant really talks. Not formal or bookish.
+- PROTECTED — copy character for character, never transliterate: every number and digit (amounts, ₹, quantities, times like
+  16:00–18:00, dates), job ids (J24), invoice/estimate numbers (INV-…, EST-…), work orders (WO-117), model codes (ALD-0517),
+  masked phones (******3607), emails, URLs, emoji, people/shop/company names in Latin letters (Sai Facility, Srinivas),
+  and any text in parentheses that starts with "yes" such as (yes / no).
+- Plumbing part names may stay in English letters (angle valve, hose, geyser, flush tank) — plumbers say them that way.
+- Keep every line break where it is. Do not add or remove information.
+Example (Telugu): "J24: 2 angle valve ₹700, labour ₹400. Total ₹1,100. Not billed: 1 × hose (returned).\\nSend to Sai Facility? (yes / no)"
+→ "J24: 2 angle valve ₹700, కూలీ ₹400. మొత్తం ₹1,100. బిల్‌లో వేయలేదు: 1 × hose (తిరిగి ఇచ్చారు).\\nSai Facility కి పంపాలా? (yes / no)"
+Example (Hindi): same → "J24: 2 angle valve ₹700, मज़दूरी ₹400. कुल ₹1,100. बिल में नहीं जोड़ा: 1 × hose (लौटा दिया)।\\nSai Facility को भेजूँ? (yes / no)"
+Example (Telugu-English mix): same → "J24: 2 angle valve ₹700, labour ₹400. Mottham ₹1,100. Bill lo veyyaledu: 1 × hose (return chesaru).\\nSai Facility ki pampala? (yes / no)"
 Return JSON {{"text": "<translation>"}}."""
 
 
