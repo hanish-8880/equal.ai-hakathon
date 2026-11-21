@@ -478,8 +478,8 @@ def _search_with_fallback(swiggy: Any, q: str) -> tuple[list[dict[str, Any]], st
     words = [w for w in re.findall(r"[A-Za-z]+", q) if w.lower() not in ("leaves", "leaf", "fresh", "whole", "powder", "paste")]
     if words and words[0].lower() != q.lower():
         found = swiggy.search(words[0])
-        if re.search(r"(leaves|leaf|fresh)", q, re.I):  # asked for the herb, not seeds/powder
-            found = [v for v in found if not re.search(r"(whole|seeds?|powder|dhania whole)", v.get("name") or "", re.I)]
+        if re.search(r"\b(leaves|leaf|fresh)\b", q, re.I):  # asked for the herb, not seeds/powder
+            found = [v for v in found if not re.search(r"\b(whole|seeds?|powder|dhania whole)\b", v.get("name") or "", re.I)]
         return [v | {"fallback": True} for v in found], words[0]
     return [], q
 
