@@ -20,7 +20,9 @@ import boto3
 from app.store.dynamo import aws_env
 
 aws_env()
-REGION = os.environ.get("AWS_REGION", "ap-south-1")
+from app.config import settings
+
+REGION = settings().aws_region  # workshop: us-west-2 only
 NAME = "chinku"
 REPO = "https://github.com/hanish-8880/equal.ai-hakathon.git"
 STATE = Path("data/aws_state.json")
@@ -68,6 +70,33 @@ def host(ip: str) -> str:
     return ip.replace(".", "-") + ".sslip.io"
 
 
+ROLE = "chinku-ec2"
+
+
+def instance_role() -> str | None:
+    """Instance profile with DynamoDB access so the server never needs (expiring) keys. None if IAM is blocked."""
+    iam = boto3.client("iam")
+    try:
+        try:
+            iam.get_role(RoleName=ROLE)
+        except iam.exceptions.NoSuchEntityException:
+            iam.create_role(RoleName=ROLE, AssumeRolePolicyDocument=json.dumps({"Version": "2012-10-17", "Statement": [
+                {"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"}, "Action": "sts:AssumeRole"}]}))
+            iam.put_role_policy(RoleName=ROLE, PolicyName="chinku-dynamo", PolicyDocument=json.dumps({
+                "Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": "dynamodb:*",
+                "Resource": f"arn:aws:dynamodb:{REGION}:*:table/chinku_*"}]}))
+        try:
+            iam.get_instance_profile(InstanceProfileName=ROLE)
+        except iam.exceptions.NoSuchEntityException:
+            iam.create_instance_profile(InstanceProfileName=ROLE)
+            iam.add_role_to_instance_profile(InstanceProfileName=ROLE, RoleName=ROLE)
+            time.sleep(12)  # IAM propagation
+        return ROLE
+    except Exception as e:  # noqa: BLE001
+        print("instance role NOT possible:", str(e)[:200])
+        return None
+
+
 def create() -> None:
     c, st = ec2(), load()
     if "instance_id" in st:
@@ -92,16 +121,28 @@ def create() -> None:
             {"IpProtocol": "tcp", "FromPort": p, "ToPort": p, "IpRanges": [{"CidrIp": "0.0.0.0/0"}]} for p in (22, 80, 443)])
     ami = boto3.client("ssm", region_name=REGION).get_parameter(
         Name="/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id")["Parameter"]["Value"]
-    inst = c.run_instances(ImageId=ami, InstanceType="t3.small", MinCount=1, MaxCount=1, KeyName=NAME,
-                           SecurityGroupIds=[sg], UserData=USER_DATA,
-                           BlockDeviceMappings=[{"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 16, "VolumeType": "gp3"}}],
-                           TagSpecifications=[{"ResourceType": "instance", "Tags": [{"Key": "Name", "Value": NAME}]}])
+    role = instance_role()
+    extra = {"IamInstanceProfile": {"Name": role}} if role else {}
+    try:
+        inst = c.run_instances(ImageId=ami, InstanceType="t3.small", MinCount=1, MaxCount=1, KeyName=NAME, **extra,
+                                   SecurityGroupIds=[sg], UserData=USER_DATA,
+                               BlockDeviceMappings=[{"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 16, "VolumeType": "gp3"}}],
+                               TagSpecifications=[{"ResourceType": "instance", "Tags": [{"Key": "Name", "Value": NAME}]}])
+    except Exception as e:  # noqa: BLE001 — iam:PassRole blocked → launch without role, file store on server
+        if not role:
+            raise
+        print("PassRole blocked, launching without role:", str(e)[:200])
+        role = None
+        inst = c.run_instances(ImageId=ami, InstanceType="t3.small", MinCount=1, MaxCount=1, KeyName=NAME,
+                               SecurityGroupIds=[sg], UserData=USER_DATA,
+                               BlockDeviceMappings=[{"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 16, "VolumeType": "gp3"}}],
+                               TagSpecifications=[{"ResourceType": "instance", "Tags": [{"Key": "Name", "Value": NAME}]}])
     iid = inst["Instances"][0]["InstanceId"]
     print("instance", iid, "starting…")
     c.get_waiter("instance_running").wait(InstanceIds=[iid])
     alloc = c.allocate_address(Domain="vpc")
     c.associate_address(InstanceId=iid, AllocationId=alloc["AllocationId"])
-    st = {"instance_id": iid, "sg": sg, "allocation_id": alloc["AllocationId"], "ip": alloc["PublicIp"],
+    st = {"role": role, "store": "dynamo" if role else "file", "instance_id": iid, "sg": sg, "allocation_id": alloc["AllocationId"], "ip": alloc["PublicIp"],
           "host": host(alloc["PublicIp"])}
     save(st)
     print(json.dumps(st, indent=2))
@@ -119,6 +160,8 @@ def push() -> None:
     env = Path(".env").read_text(encoding="utf-8")
     import re
     env = re.sub(r"^PUBLIC_BASE_URL=.*$", f"PUBLIC_BASE_URL={url}", env, flags=re.M)
+    env = re.sub(r"^AWS_(ACCESS_KEY_ID|SECRET_ACCESS_KEY|SESSION_TOKEN)=.*\n?", "", env, flags=re.M)  # never ship temp keys
+    env = re.sub(r"^STORE_BACKEND=.*$", f"STORE_BACKEND={'dynamo' if st.get('role') else ''}", env, flags=re.M)
     tmp = Path("data/.env.remote")
     tmp.write_text(env, encoding="utf-8")
     subprocess.check_call(["scp", "-i", str(KEY_FILE), "-o", "StrictHostKeyChecking=accept-new", str(tmp),

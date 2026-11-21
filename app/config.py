@@ -23,11 +23,12 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ""
     twilio_whatsapp_from: str = "whatsapp:+14155238886"
 
-    aws_region: str = "ap-south-1"
+    aws_region: str = "us-west-2"
     ddb_table_prefix: str = "chinku_"
     store_backend: str = ""  # "dynamo" or "" (local JSON)
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
+    aws_session_token: str = ""  # workshop accounts: temporary credentials
     scheduler_role_arn: str = ""
 
     public_base_url: str = ""

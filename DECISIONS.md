@@ -146,3 +146,11 @@ Chose: new generic step `compute` (sum of a list field; compare with stated tota
 Chose: spec inputs with `media:` are filled deterministically from the perceived file (router never copies documents). PDFs are remembered 60 min (user may call later).
 Contacts now store email too ("contact suresh suresh@x.com").
 Bug fixed: a message during an email gate re-planned the task and left it "running" → started tasks are never re-planned.
+
+## [Sat 15:40] Hosting: AWS Workshop Studio account → EC2 us-west-2 with stable HTTPS
+Observed: Equal's AWS account is a Workshop Studio account: only us-west-2 / us-east-1; credentials are temporary (with AWS_SESSION_TOKEN) and expire.
+Chose: one t3.small EC2 in us-west-2 + Elastic IP; HTTPS via Caddy + Let's Encrypt on <ip>.sslip.io (no domain needed) → one stable URL for Twilio + both Omni agents.
+Chose: DynamoDB on the server ONLY via an instance role (chinku-ec2, dynamodb:* on chinku_* tables). If iam:CreateRole/PassRole is blocked →
+  server keeps the local JSON file store. The server NEVER receives the temporary keys (stripped from the copied .env), so nothing breaks when they expire.
+Gave up: Mumbai region (not allowed); EventBridge for now.
+Would change if: role creation blocked AND judges want DynamoDB → short-lived demo only.

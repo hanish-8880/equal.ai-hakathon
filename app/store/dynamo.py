@@ -73,6 +73,8 @@ def aws_env() -> None:
     s = settings()
     if s.aws_access_key_id and not os.environ.get("AWS_ACCESS_KEY_ID"):
         os.environ["AWS_ACCESS_KEY_ID"], os.environ["AWS_SECRET_ACCESS_KEY"] = s.aws_access_key_id, s.aws_secret_access_key
+        if s.aws_session_token:
+            os.environ["AWS_SESSION_TOKEN"] = s.aws_session_token
     os.environ.setdefault("AWS_DEFAULT_REGION", s.aws_region)
 
 
