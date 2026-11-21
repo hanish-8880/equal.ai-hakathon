@@ -70,3 +70,10 @@ Root cause suspect: agent ASR = deepgram nova-3 language "en" (English-only); cl
 Chose: PUT {"transcriber":{"provider":"soniox",...}} → asr_service Soniox [en,te,hi] (VERIFIED in agent config). Flat asr_* keys are ignored by PUT.
 Also: reply prompt must not invent evidence when no data; router fixes item typos ("cents"→cement) and names unnamed dealers.
 Would change if: next live call still captures no user speech → check phone audio / Omni test call from dashboard.
+
+## [Sat 13:48] CHECKPOINT 1 MET (late, ~13:45) — first successful live call t_6a73d6cc
+Observed: after Soniox ASR switch, user speech captured. Dealer said "It's 714", "7 days", transport "No", "Full advance", confirmed repeat-back.
+Extracted all 4 fields confirmed; deterministic total 50×714 = 35700; WhatsApp reply delivered.
+Weakness: price evidence_quote was the assistant's repeat-back, not the dealer's words.
+Chose: extractor prompt now requires the other person's own words as evidence (shortest line).
+Also seen: agent switched to English because the callee answered in English (rule 2 working).
