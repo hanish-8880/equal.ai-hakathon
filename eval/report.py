@@ -83,6 +83,16 @@ def main() -> None:
               f"(back in {ps['back_after_s']} s). Pending approval after restart: **{'yes — same task' if ps['same_task'] else 'NO'}** "
               f"(`{ps['task_id']}`). The test then answered \"no\", so nothing was sent.", ""]
 
+    rg = load("regression.json")
+    if rg:
+        L += ["## 5. Live feature regression (every feature, real services)", "",
+              f"Run {rg['run_at']} on the live server (`python -m scripts.regression`): real planner, OpenAI, web search, Kiwi.com, Swiggy, "
+              "OpenStreetMap and DynamoDB under a test identity. Anything that would leave the app was answered \"no\" at the approval step "
+              "(one email went to the owner's own inbox).", "",
+              f"**{rg['passed']}/{rg['total']} passed**", "", "| Feature | Result | Observed |", "|---|---|---|"]
+        L += [f"| {r['case']} | {'✅' if r['ok'] else '❌'} | {r['note'][:150]} |" for r in rg["results"]]
+        L.append("")
+
     L += ["## Not measured yet", "", "- Real handwritten pages (only font pages so far).",
           "- Voice-note accuracy on real recordings (Telugu / English / mixed).",
           "- Official-domain rate of complaint contacts over 10 brands (only spot checks so far: Bajaj ✅).", ""]

@@ -38,7 +38,8 @@ OpenStreetMap + Leaflet, Twilio WhatsApp sandbox (optional, not in the demo).
 **Simulated:** eval pages (handwriting fonts), the visiting card and the to-do page, businesses and support agents in the
 demo (played by consenting people), shortened follow-up timers (labelled "Demo: shortened"), ride fares/ETAs (demo data),
 any replayed run.
-**Limits:** no keypad/IVR menus (OmniDimension has no DTMF); one concurrent call on our plan; cannot log into other apps or
+**Live regression:** 17/18 features passed on real services (eval/results.md §5); the miss was Swiggy rate-limiting our account (HTTP 429) after many test runs — Chinku now caches lookups and backs off.
+**Limits:** Swiggy may rate-limit (429) under heavy use; no keypad/IVR menus (OmniDimension has no DTMF); one concurrent call on our plan; cannot log into other apps or
 pay; ride/food platforms without an API are demo data; map pins can be approximate; WhatsApp sandbox only reaches joined
 numbers.
 **Removed:** the earlier "Chinku for Plumbers" code (Sun 00:30) — still in git history.

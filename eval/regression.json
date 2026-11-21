@@ -1,0 +1,115 @@
+{
+ "run_at": "2026-11-22T01:30+05:30",
+ "passed": 17,
+ "total": 18,
+ "results": [
+  {
+   "case": "J1 photo → exact transcript → email (sent to own inbox) → reminder",
+   "ok": true,
+   "note": "transcript exact · email sent · reminder set",
+   "seconds": 16.2
+  },
+  {
+   "case": "Memory: remember + secret refused",
+   "ok": true,
+   "note": "saved Suresh email · refused OTP",
+   "seconds": 5.6
+  },
+  {
+   "case": "Follow-up uses memory: email the page to Suresh (approval → no)",
+   "ok": true,
+   "note": "drafted to suresh.test@example.com · declined",
+   "seconds": 16.4
+  },
+  {
+   "case": "J7 scam check",
+   "ok": true,
+   "note": "Likely scam · 3 red flags",
+   "seconds": 12.9
+  },
+  {
+   "case": "J3 complaint: official support → email approval (no)",
+   "ok": true,
+   "note": "official consumercare@bajajelectricals.com (https://www.bajajelectricals.com/pages/c) · complaint drafted · declined",
+   "seconds": 15.0
+  },
+  {
+   "case": "Toll-free call: approval card (night rule allows 1800) → no",
+   "ok": true,
+   "note": "call card for 18001025551 · declined",
+   "seconds": 5.4
+  },
+  {
+   "case": "J4 photo → call (visiting card, own number) → no",
+   "ok": true,
+   "note": "read Sri Sai Constructions · 2 & 3 BHK flats · 99896 83607 · declined",
+   "seconds": 11.2
+  },
+  {
+   "case": "J9 flights (Kiwi LIVE)",
+   "ok": true,
+   "note": "15 flights · best ₹7,050 HYD → BLR · Air India Express · 1 stop v",
+   "seconds": 5.5
+  },
+  {
+   "case": "J9 rides (DEMO)",
+   "ok": true,
+   "note": "Rapido Auto · pickup 4 min ₹122",
+   "seconds": 2.5
+  },
+  {
+   "case": "Swiggy Food search (LIVE)",
+   "ok": true,
+   "note": "6 dishes · best Thali [small] ₹220",
+   "seconds": 6.8
+  },
+  {
+   "case": "Swiggy Dineout search → slot check → FREE booking approval (no)",
+   "ok": true,
+   "note": "8 places · Country Cuisine Family Restaurant Tomorrow, Mon 23 Nov, 8:00 PM FREE · declined",
+   "seconds": 11.7
+  },
+  {
+   "case": "Recipe → Instamart cart plan → approval (no)",
+   "ok": false,
+   "note": "AssertionError: no cart approval: ['🍳 Tomato Rasam · 4 people · ~30 min', '⚠️ Swiggy is busy right now (HTTP 429).', 'Finished 1 of 3 steps.']",
+   "seconds": 25.0
+  },
+  {
+   "case": "J11 trip planner",
+   "ok": true,
+   "note": "2 days · 6 hotels · 6 restaurants",
+   "seconds": 75.4
+  },
+  {
+   "case": "J2 doctor: search + map",
+   "ok": true,
+   "note": "6 clinics · map yes (5 pins)",
+   "seconds": 57.8
+  },
+  {
+   "case": "Reminder call to Mummy needs approval (no)",
+   "ok": true,
+   "note": "approval card shown · declined",
+   "seconds": 4.5
+  },
+  {
+   "case": "Compute in code",
+   "ok": true,
+   "note": "35,700",
+   "seconds": 2.9
+  },
+  {
+   "case": "Bare yes with nothing waiting",
+   "ok": true,
+   "note": "handled",
+   "seconds": 0.0
+  },
+  {
+   "case": "Languages: Telugu / Hindi / mix keep numbers exact",
+   "ok": true,
+   "note": "te: సిఫారసు: Veg Thali · ₹180 · 40-45 min. మ | hi: सुझाया गया: वेज थाली · ₹180 · 40-45 min. | te-en: Recommended: Veg Thali · ₹180 · 40-45 mi",
+   "seconds": 0.0
+  }
+ ]
+}
