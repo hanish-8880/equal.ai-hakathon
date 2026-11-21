@@ -28,9 +28,15 @@ def plumber(text: str) -> None:
     assistant.handle(U, text, None, m.reply_to(U))
 
 
+def my_task(spec: str) -> dict:
+    """THIS run's task for this job (never an older run's task)."""
+    return max([t for t in store().scan("tasks", user=U) if t["spec"] == spec and (t.get("inputs") or {}).get("job_id") == state.get("job")],
+               key=lambda t: t["created_at"])
+
+
 def answer_call(spec: str, transcript: str) -> None:
-    tids = {t["task_id"] for t in store().scan("tasks", user=U) if t["spec"] == spec}
-    c = [c for c in store().scan("calls", status="dispatched") if c["task_id"] in tids][-1]
+    tid = my_task(spec)["task_id"]
+    c = max([c for c in store().scan("calls", status="dispatched") if c["task_id"] == tid], key=lambda c: c["created_at"])
     m.deliver(U, f"🧪 SIMULATED call answer ({c['callee'].get('name') or c['callee'].get('role')}): " + transcript.split("user:")[1].split("\n")[0].strip() + " …")
     runner.on_call_result({"call_id": c["omni_call_id"], "transcript": transcript}, lambda u, t: m.deliver(u, t))
 
@@ -70,17 +76,20 @@ def _():
     plumber(f"{jid} customer ki call chesi visit book chey")
     plumber("yes")
     assert dispatched, "booking call not dispatched"
-    answer_call("book_visit", "assistant: Which time suits you, tomorrow 11 to 1 or 4 to 7?\nuser: 4 to 7 tomorrow is fine. Flat 304, third floor, "
-                              "watchman will open the gate.\nassistant: Tomorrow 4 to 7, Flat 304 — correct?\nuser: Yes, correct.")
+    offered = my_task("book_visit")["inputs"]["windows"]  # taken slots are never offered
+    pick = offered[-1]
+    state["offered"] = [w["label"] for w in offered]
+    answer_call("book_visit", f"assistant: Which time suits you: {', '.join(w['label'] for w in offered)}?\nuser: {pick['label']} is fine. "
+                              f"Flat 304, third floor, watchman will open the gate.\nassistant: {pick['label']}, Flat 304 — correct?\nuser: Yes, correct.")
     j = jobs.get(jid)
     assert j.appointment.state == "booked", j.appointment.state
     wa = [e for e in store().events("-") if e["kind"] == "wa_out_customer" and e["ts"] > time.time() - 120]
     # fire the confirmation-call schedule now (simulated time) so the live server never rings the phone for this test
-    t = [t for t in store().scan("tasks", user=U) if t["spec"] == "book_visit"][-1]
-    runner.fire_schedule(t["task_id"], "wait_confirm")
+    runner.fire_schedule(my_task("book_visit")["task_id"], "wait_confirm")
     answer_call("book_visit", "assistant: Is tomorrow 4 to 7 still fine, and who will open?\nuser: Yes fine, watchman will open.\nassistant: Thank you.")
     j = jobs.get(jid)
-    return f"booked {j.appointment.slot.label}; WhatsApp to customer: {'sent' if wa else 'NOT sent'}; confirm call done → next: {j.next_action.what}"
+    return (f"offered {state['offered']} (taken slots excluded) → booked {j.appointment.slot.label}; WhatsApp to customer: "
+            f"{'sent' if wa else 'NOT sent'}; confirm call done → next: {j.next_action.what}")
 
 
 @step("3 · Parts: nearby-shops map card + shop call + price comparison + ₹500 rule")
