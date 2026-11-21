@@ -219,6 +219,21 @@ def test_yes_after_a_question_is_read_with_the_chat(monkeypatch):
     assert seen == ["yes"]
 
 
+def test_ok_while_steps_are_working_says_on_it(monkeypatch):
+    """Observed Sun 04:49: 'ok' typed while support search was running got 'Nothing is waiting…' in the middle."""
+    def slow(u, i, c):
+        executor.handle(ME, "ok", [], send, card)   # the user types "ok" while this step is still working
+        return {"email": "care@usha.com"}
+    monkeypatch.setattr("app.chinku.tools.REGISTRY", {**tools.REGISTRY, "find_support": slow})
+    monkeypatch.setattr("app.chinku.planner.plan", lambda u, text, *a, **k: Plan(understood="complaint", confidence=0.95, steps=[
+        Step(id="s1", tool="find_support", inputs={"query": "usha"}),
+        Step(id="s2", tool="draft_email", inputs={"to": "{s1.email}", "subject": "s", "body": "b"})]))
+    executor.handle(ME, "raise a complaint", [], send, card)
+    assert any(o.startswith("👍 On it") for o in OUT) and not any(o.startswith("Nothing is waiting") for o in OUT), OUT
+    assert any("write the email to the address found above" in o for o in OUT), OUT   # never "{s1.email}" in the readback
+    assert not store().get("contacts", f"ibusy:{ME}")                                   # finished → not busy any more
+
+
 def test_past_conversations_are_kept_and_listed():
     """Proof never disappears: New chat only starts a new view; old conversations stay listed and readable."""
     import app.main as m

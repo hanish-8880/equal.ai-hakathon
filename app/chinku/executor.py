@@ -87,8 +87,9 @@ def step_line(i: int, s: Any) -> str:
     who = ", ".join(str(x.get("name") or x.get("phone")) for x in inp.get("targets") or [] if isinstance(x, dict)) or "them"
     if "{" in who:  # filled in from an earlier step (e.g. the photo) — say so in words
         who = "the number on the photo"
-    words = STEP_WORDS.get(s.tool, s.tool).format(what="photo", query=str(inp.get("query", ""))[:60], who=who,
-                                                  to="you" if str(inp.get("to", "")).lower() in ("me", "myself") else inp.get("to", "?"),
+    to = str(inp.get("to", "?"))
+    to = "you" if to.lower() in ("me", "myself") else "the address found above" if "{" in to else to  # never show {s2.email}
+    words = STEP_WORDS.get(s.tool, s.tool).format(what="photo", query=str(inp.get("query", ""))[:60], who=who, to=to,
                                                   text=str(inp.get("text", ""))[:60])
     if s.tool == "remind" and inp.get("when_iso"):
         try:
@@ -129,6 +130,22 @@ def _preview(tool: str, inputs: dict[str, Any]) -> dict[str, Any]:
 
 def run(t: Task, send: Send, card: Card) -> Task:
     t.status = "running"
+    # busy marker: an "ok" typed while steps are working gets "on it", not "nothing is waiting" (observed Sun 04:49)
+    store().put("contacts", f"ibusy:{t.user}", {"kind": "ibusy", "task_id": t.task_id, "ts": time.time()})
+    try:
+        return _run(t, send, card)
+    finally:
+        b = store().get("contacts", f"ibusy:{t.user}")
+        if b and b.get("task_id") == t.task_id:
+            store().delete("contacts", f"ibusy:{t.user}")
+
+
+def _busy(user: str) -> bool:
+    b = store().get("contacts", f"ibusy:{user}")
+    return bool(b and time.time() - b.get("ts", 0) < 300)  # a crashed run never blocks for more than 5 min
+
+
+def _run(t: Task, send: Send, card: Card) -> Task:
     for s in t.plan.steps:
         st = t.steps.setdefault(s.id, StepState())
         if st.status in ("done", "skipped", "failed"):
@@ -268,7 +285,9 @@ def handle(user: str, text: str, attachments: list[dict[str, Any]], send: Send, 
         pass  # "yes" right after Chinku ASKED something ("Plan it for 8 days?") → plan it WITH the recent chat (intent)
     elif text and not attachments and BARE.fullmatch(text):
         t_old = load(w["task_id"]) if w else None
-        if w and t_old and t_old.steps.get(w["step_id"]) and t_old.steps[w["step_id"]].status == "waiting":
+        if _busy(user):  # "ok" while the steps are still working = "go ahead", not a new request
+            send("👍 On it — still working. The result will show up here.")
+        elif w and t_old and t_old.steps.get(w["step_id"]) and t_old.steps[w["step_id"]].status == "waiting":
             send(f"I didn't do anything. An older question is still open: “{w.get('q') or 'an approval'}” — tap its button on "
                  "that card if you still want it. What do you need now?")
         else:
