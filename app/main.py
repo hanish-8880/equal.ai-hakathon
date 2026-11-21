@@ -353,7 +353,8 @@ def api_home(key: str = "") -> JSONResponse:
                 needs.append({"task_id": t["task_id"], "step_id": sid, "request": t["request"], "preview": st["preview"]})
             elif st.get("status") == "waiting" and (st.get("output") or {}).get("async") and not active:
                 active = {"task_id": t["task_id"], "request": t["request"], "what": "Call in progress"}
-        if t.get("status") in ("done", "partial", "failed") and len(recent) < 8:
+        only_talk = all(s.get("tool") in ("reply", "recall") for s in steps_.values())
+        if t.get("status") in ("done", "partial", "failed") and len(recent) < 8 and not only_talk:
             res = []
             for sid, st in (t.get("steps") or {}).items():
                 tool = (steps_.get(sid) or {}).get("tool", "")

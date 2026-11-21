@@ -324,7 +324,7 @@ async function loadHome() {
     $("needs").querySelectorAll("[data-yes]").forEach(b => b.onclick = () => { show("chat"); sendMsg(b.dataset.yes); });
     $("active").innerHTML = h.active ? `<h2>${L("Active task")}</h2><div class="card"><div class="row"><div class="ico">📞</div><div class="t"><b>${esc(h.active.request)}</b><span>${esc(h.active.what)}</span></div></div></div>` : "";
     $("rems").innerHTML = (h.reminders || []).length ? `<h2>${L("Reminders")}</h2>` + h.reminders.map(r => `<div class="card"><div class="row"><div class="ico">⏰</div><div class="t"><b>${esc(r.text)}</b><span>${esc(r.when)}${r.repeat && r.repeat !== "none" ? " · " + L("repeats") + " " + esc(r.repeat) : ""}</span></div></div></div>`).join("") : "";
-    $("recent").innerHTML = (h.recent || []).length ? h.recent.map(r => `<div class="card fade"><div class="row"><div class="ico">${RICON[(r.results[0] || {}).label] || "✅"}</div><div class="t"><b>${esc(r.understood || r.request)}</b>
+    $("recent").innerHTML = (h.recent || []).length ? h.recent.map(r => `<div class="card fade"><div class="row"><div class="ico">${RICON[(r.results[0] || {}).label] || "✅"}</div><div class="t"><b>${esc(r.request || r.understood)}</b>
         <span>${(r.results || []).map(x => `${esc(L(x.label))}${x.detail ? " · " + esc(x.detail) : ""}`).join("  ·  ")}</span></div>${status(r.status)}</div></div>`).join("")
       : `<div class="empty">${L("Nothing yet — ask for something above.")}</div>`;
   } catch (e) {}
