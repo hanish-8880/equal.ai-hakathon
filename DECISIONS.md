@@ -134,3 +134,15 @@ Chose: report to Hanish BEFORE the wait, short "reminder done" after.
 Chose: DEMO_REMINDER_SECONDS=60 in the live demo (SIMULATED time) — nobody waits until tomorrow. Real mode = slot − 60 min.
 Gave up: AWS EventBridge for now (no AWS creds configured). /internal/fire has no auth yet — only fires already-scheduled steps (low risk); add a token before AWS.
 Bad/unclear time → schedule step fails the task and tells the user (never guesses a time).
+
+## [Sat 15:45] Inbound calling + PDF → total → email (new step type `compute`, approved by Hanish)
+Chose: separate Omni agent `chinku-inbound` (id 286801, Incoming, prompt app/brain/prompts/inbound_agent.md): greets, takes the ORDER, asks only for missing details,
+repeats the task back, ends. It never does the task on the call. Number +919429492201 attached to it via POST /phone_number/attach (VERIFIED active_bot=286801).
+Outbound agent chinku-caller unchanged (dispatch names agent_id + from_number_id).
+Chose: post-call webhook with direction=inbound (or bot_id = inbound agent) → caller's "user:" lines + Omni summary → runner.handle_message as if WhatsApp.
+SECURITY: only the owner's number (USER_WHATSAPP) can give tasks by phone; others are logged and ignored. Confirm gates still apply on WhatsApp.
+Chose: PDFs on WhatsApp → OpenAI file input (gpt-5.5) → DocRead line items exactly as printed (VERIFIED: 7/7 items, stated total 64,965).
+Chose: new generic step `compute` (sum of a list field; compare with stated total; Indian digit grouping) — money is never computed by the LLM.
+Chose: spec inputs with `media:` are filled deterministically from the perceived file (router never copies documents). PDFs are remembered 60 min (user may call later).
+Contacts now store email too ("contact suresh suresh@x.com").
+Bug fixed: a message during an email gate re-planned the task and left it "running" → started tasks are never re-planned.

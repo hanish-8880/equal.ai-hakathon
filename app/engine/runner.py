@@ -90,6 +90,10 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> 
             save_task(pending)
             send("Ok, cancel chesa.")
             return
+        if gate:  # a started task is never re-planned; show what it is waiting for
+            send(steps.email_preview(pending["steps"][gate]) if pending["steps"][gate].get("draft")
+                 else "Mundu 'yes' leda 'no' cheppandi.")
+            return
 
     # a photo sent alone is remembered for ~15 min and used with the next instruction
     if image and not (text or "").strip():

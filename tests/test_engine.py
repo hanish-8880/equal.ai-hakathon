@@ -319,3 +319,70 @@ def test_schedule_bad_datetime_fails_task():
     out = []
     r = steps.run_schedule({"id": "s", "at_from": {"step": "a", "field": "slot_datetime"}, "offset_min": -60}, {}, task, out.append)
     assert r["status"] == "failed" and "Time" in out[0]
+
+
+def test_inr_format():
+    assert steps.inr(64965) == "64,965" and steps.inr(6500000) == "65,00,000" and steps.inr(-1000) == "-1,000"
+    assert steps.inr(385.5) == "385.50" and steps.inr(12) == "12"
+
+
+def test_doc_total_email_flow_compute_in_code(monkeypatch):
+    from app.brain.schemas import EmailDraft
+    doc = {"image_type": "document", "doc_type": "invoice", "title": "SSB", "stated_total": 64965,
+           "line_items": [{"label": "cement", "amount": 19250}, {"label": "steel", "amount": 31500},
+                          {"label": "sand", "amount": 9000}, {"label": "transport", "amount": 2000},
+                          {"label": "loading", "amount": 750}, {"label": "gst", "amount": 3465}, {"label": "disc", "amount": -1000}]}
+    goals, sent, replies = [], [], []
+    monkeypatch.setattr(runner.router, "route", lambda msg, image, catalog, contacts, tid=None: RouteResult(
+        spec="doc_total_email", inputs={"recipient_name": "Suresh", "recipient_email": contacts[0]["email"]})
+        if msg.strip() else RouteResult(spec=None))
+    monkeypatch.setattr(steps.decider, "draft_email", lambda goal, *a, **k: goals.append(goal) or EmailDraft(subject="Total", body=goal))
+    monkeypatch.setattr(steps.email_action, "send", lambda to, s, b: sent.append(to) or to)
+    monkeypatch.setattr(steps.decider, "compose_reply", lambda hint, i, res, rank, lang, tid=None: replies.append(res) or hint[:40])
+    out = []
+    runner.handle_message("me", "contact suresh suresh@example.com", None, out.append)
+    assert "suresh@example.com" in out[-1]
+    runner.handle_message("me", "", doc, out.append)                                   # PDF alone
+    runner.handle_message("me", "total cheppu, suresh ki mail pettu", None, out.append)  # instruction later
+    t = store().scan("tasks")[0]
+    assert t["inputs"]["document"]["stated_total"] == 64965  # filled deterministically, not by the router
+    tot = t["steps"]["total"]["output"]
+    assert tot["total"] == 64965 and tot["matches_stated"] is True and tot["total_str"] == "64,965"
+    assert "₹64,965" in goals[0] and t["status"] == "awaiting_confirm" and sent == []
+    runner.handle_message("me", "yes", None, out.append)
+    assert sent == ["suresh@example.com"] and store().scan("tasks")[0]["status"] == "done"
+
+
+def test_compute_flags_mismatch_and_missing():
+    task = {"task_id": "t", "inputs": {"d": {"line_items": [{"label": "a", "amount": "1,000"}, {"label": "b", "amount": None}],
+                                             "stated_total": 1500}}, "steps": {}}
+    r = steps.run_compute({"id": "c", "list": "inputs.d.line_items", "field": "amount", "check_against": "inputs.d.stated_total"}, {}, task, None)
+    o = r["output"]
+    assert o["total"] == 1000 and o["matches_stated"] is False and o["missing"] == ["b"]
+
+
+def test_inbound_call_only_owner_becomes_task(monkeypatch):
+    import app.main as m
+    monkeypatch.setattr(m.settings(), "user_whatsapp", "whatsapp:+919989683607")
+    got, sent = [], []
+    monkeypatch.setattr(m.runner, "handle_message", lambda user, text, image, send: got.append((user, text)))
+    monkeypatch.setattr(m.whatsapp, "send", lambda to, body, media=None: sent.append(to))
+    base = {"direction": "inbound", "transcript": "assistant: Hello\nuser: PDF total Suresh ki mail pettu\nuser: avunu", "summary": "s"}
+    m.process_omni({**base, "from_number": "+918888888888"})  # stranger
+    assert got == []
+    m.process_omni({**base, "from_number": "+919989683607"})
+    assert got and got[0][0] == "whatsapp:+919989683607" and "Suresh ki mail" in got[0][1] and "Hello" not in got[0][1]
+
+
+def test_message_during_gate_does_not_replan(monkeypatch):
+    from app.brain.lookup import Found
+    from app.brain.schemas import EmailDraft
+    calls = []
+    monkeypatch.setattr(runner.router, "route", lambda *a, **k: calls.append(1) or RouteResult(spec="warranty_email", inputs={
+        "brand": "Prestige", "product_type": "mixer", "problem": "broken"}))
+    monkeypatch.setattr(steps.lookup, "find_email", lambda q, tid=None: Found(email="c@b.com"))
+    monkeypatch.setattr(steps.decider, "draft_email", lambda *a, **k: EmailDraft(subject="S", body="B"))
+    out = []
+    runner.handle_message("u", "mixer broken mail pettu", None, out.append)
+    runner.handle_message("u", "inka emaina?", None, out.append)
+    assert len(calls) == 1 and "Draft mail" in out[-1] and store().scan("tasks")[0]["status"] == "awaiting_confirm"
