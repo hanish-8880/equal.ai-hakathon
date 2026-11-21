@@ -19,3 +19,12 @@ Telugu TTS (gpt-4o-mini-tts) → gpt-4o-transcribe round trip: exact Telugu text
 Chose: BRAIN=gpt-5.5 for extractor/brief/vision/decider; FAST=gpt-5.4-mini for routing only  because the fast model misreads Telugu spoken numbers.
 Gave up: lower latency/cost on extraction.
 Would change if: eval shows fast model matches brain on Telugu numbers.
+
+## [Sat 12:35] Omni agent created via API — chinku-caller (id 286768)
+Observed: Omni key works (GET /agents, GET /phone_number/list → 200). Number +919429492201 = id 8791 (US/voicelink, active on clinic bot 186903).
+POST /agents/create with {name, welcome_message, context_breakdown[{title,body}], call_type, transcriber, model, voice, languages} → 200, id 286768.
+Stored prompt keeps {{...}} literally; agent `dynamic_variables` = [] (Omni did not auto-register them). Injection still UNVERIFIED.
+Chose: create the agent from code (scripts/omni_create_agent.py) instead of dashboard  because the prompt stays versioned in app/brain/prompts/base_agent.md.
+Voice: cartesia c7bbe380… (same as Telugu clinic agent). LLM: gpt-4.1-mini (Omni default; live-turn latency).
+Gave up: dashboard tweaking.
+Would change if: smoke call shows placeholders not filled → fallback per-call agent (CLAUDE.md §4).
