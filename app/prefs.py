@@ -1,4 +1,4 @@
-"""Per-plumber preferences (language chosen on first run)."""
+"""Per-user preferences (language chosen on first run)."""
 from app.config import settings
 from app.store.dynamo import store
 

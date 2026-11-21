@@ -263,7 +263,7 @@ def run_reply(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
                    step.get("rank_label", "score")) if step.get("rank_by") else None
     ctx = tctx(task)
     hint = render(step.get("template_hint", ""), ctx)
-    from app.jobs import prefs
+    from app import prefs
     lang = prefs.language(task["user"])
     text = decider.compose_reply(hint, task["inputs"], results, ranking, lang, task["task_id"])
     to = render(step["to"], ctx) if step.get("to") else None
@@ -389,7 +389,7 @@ def run_make_doc(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any
     deck = decider.write_deck(req, doc, analysis, computed, meta, task["task_id"]).model_dump()
     table = [(it.get("label", ""), inr(float(it["amount"]))) for it in doc.get("line_items", []) if it.get("amount") is not None]
     total = (computed or {}).get("total_str")
-    data = slides.render(deck, table or None, total, footer=f"Prepared by Chinku for {settings().user_name}")
+    data = slides.render(deck, table or None, total, footer=f"Prepared by Instint for {settings().user_name}")
     fname = f"{task['task_id']}_{(deck['title'] or 'report')[:30].replace(' ', '_')}.pptx"
     SEND_FILE(task["user"], data, fname, f"📊 {deck['title']} — PPT ready")
     store().add_event(task["task_id"], "doc_made", {"file": fname, "slides": len(deck.get("slides", [])) + 1 + bool(table)})
@@ -440,9 +440,6 @@ def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) 
         return run_schedule(step, spec, task, send)
     if step["type"] == "compute":
         return run_compute(step, spec, task, send)
-    if step["type"] == "job_op":
-        from app.jobs import ops
-        return ops.run(step, spec, task, send)
     if step["type"] == "fetch_email":
         return run_fetch_email(step, spec, task, send)
     if step["type"] == "make_doc":

@@ -3,7 +3,7 @@ description: "Call one or more people/businesses whose numbers the user gives (o
 route_examples:
   - "ee number ki call chesi shop eppudu open avutundo adugu 98xxxxxxxx"
   - "call Ravi and ask if he can come tomorrow"
-  - "plumber ki call chesi repu ravagalara ani adugu"
+  - "electrician ki call chesi repu ravagalara ani adugu"
 inputs:
   targets:   {source: text_or_contacts, required: true, type: list, item_fields: [label, phone, role], validate_item: {phone: indian_mobile}}
   purpose:   {source: text, required: true}

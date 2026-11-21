@@ -12,7 +12,7 @@ steps:
     type: call
     to: "{inputs.person_phone}"
     callee: {name: "{inputs.person_name}", role: "my mother"}
-    goal: "Ask {inputs.person_name} to send a clear photo of the latest passbook page on WhatsApp to the Chinku WhatsApp number (the same chat where Hanish talks to Chinku). Tell her Chinku will call back and explain it."
+    goal: "Ask {inputs.person_name} to send a clear photo of the latest passbook page on WhatsApp to the Instint WhatsApp number (the same chat where Hanish talks to Instint). Tell her Instint will call back and explain it."
     must_collect: [agreed_to_send_photo]
     language: English
     max_minutes: 2
@@ -22,7 +22,7 @@ steps:
     from: "{inputs.person_phone}"
     kind: image
     timeout_min: 120
-    remind_text: "Amma, please send the passbook photo on WhatsApp 🙏 — Chinku"
+    remind_text: "Amma, please send the passbook photo on WhatsApp 🙏 — Instint"
   - id: explain
     type: call
     to: "{inputs.person_phone}"

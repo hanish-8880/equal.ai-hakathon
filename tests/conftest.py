@@ -27,6 +27,4 @@ def no_real_world(monkeypatch):
     monkeypatch.setattr(whatsapp, "send", _blocked("WhatsApp send"))
     monkeypatch.setattr(email_action, "send", _blocked("SMTP send"))
     monkeypatch.setattr(steps, "NOTIFY", lambda to, text, audio=None: None)
-    from app.jobs import slots
-    monkeypatch.setattr(slots, "sync_inbound_agent", lambda force=False: False)  # never edit the live phone agent
     yield

@@ -1,8 +1,8 @@
-"""Show Chinku's messages in the plumber's language (Telugu / Hindi / Telugu-English mix).
-The LLM translates; CODE guards exactness: every number in the original (₹ amounts, quantities, times, job ids,
-invoice numbers, model codes, masked phones) must appear unchanged in the translation, and the "(yes / no)"
-answer hint must survive. Otherwise retry once with the brain model, then fall back to the English original —
-a wrong amount is worse than English. Translations are cached, so repeated texts cost nothing."""
+"""Show Instint's messages in the user's language (Telugu / Hindi / Telugu-English mix).
+The LLM translates; CODE guards exactness: every number in the original (₹ amounts, times, dates, ticket numbers,
+masked phones) must appear unchanged in the translation, and the "(yes / no)" answer hint must survive.
+Otherwise retry once with the brain model, then fall back to the English original — a wrong number is worse than
+English. Translations are cached, so repeated texts cost nothing."""
 import hashlib
 import re
 from typing import Iterable
@@ -13,28 +13,24 @@ from app.config import settings
 from app.store.dynamo import store
 
 NAMES = {"te": "Telugu (Telugu script)", "hi": "Hindi (Devanagari script)",
-         "te-en": "Telugu-English mix written in ENGLISH LETTERS (how a Hyderabad plumber texts on WhatsApp: Telugu sentences, common English words like job, bill, slot, shop, visit)"}
+         "te-en": "Telugu-English mix written in ENGLISH LETTERS (how people in Hyderabad text on WhatsApp: Telugu sentences, common English words like email, call, ticket, booking, reminder)"}
 SCRIPT = {"te": re.compile(r"[ఀ-౿]"), "hi": re.compile(r"[ऀ-ॿ]")}
 HINT = re.compile(r"\((?:yes|yes / no|yes / correct it)[^)]*\)", re.I)
 
-SYSTEM = """You translate short messages from Chinku (an AI office assistant) to a plumber in Hyderabad.
+SYSTEM = """You translate short messages from Instint (a personal AI assistant) to its user in India.
 Target language: {lang}.
 Rules:
-- TRANSLATE EVERY SENTENCE fully into the target language: words like Total, labour, not billed, returned, unused, booked,
-  visit, tomorrow, send, calling, price, customer must be translated. Only the protected items below stay as they are.
+- TRANSLATE EVERY SENTENCE fully into the target language. Only the protected items below stay as they are.
 - Natural, short, spoken style — the way a helpful local assistant really talks. Not formal or bookish.
-- PROTECTED — copy character for character, never transliterate: every number and digit (amounts, ₹, quantities, times like
-  16:00–18:00, dates), job ids (J24), invoice/estimate numbers (INV-…, EST-…), work orders (WO-117), model codes (ALD-0517),
-  masked phones (******3607), emails, URLs, emoji, people/shop/company names in Latin letters (Sai Facility, Srinivas),
-  and any text in parentheses that starts with "yes" such as (yes / no).
-- Plumbing part names may stay in English letters (angle valve, hose, geyser, flush tank) — plumbers say them that way.
-- Billing words: "against WO-117" means "under work order WO-117" (Telugu: WO-117 మీద, Hindi: WO-117 पर, mix: WO-117 meeda) — never "opposed to".
-  "(returned / unused)" → Telugu (తిరిగి ఇచ్చారు / వాడలేదు), Hindi (लौटा दिया / इस्तेमाल नहीं हुआ), mix (return chesaru / vaadaledu).
+- PROTECTED — copy character for character, never transliterate: every number and digit (amounts, ₹, times, dates),
+  ticket / order / reference numbers, masked phones (******3607), emails, URLs, emoji, names of people, clinics, shops and
+  companies in Latin letters (Suresh, Sri Sai Clinic), and any text in parentheses that starts with "yes" such as (yes / no).
+- Common English words people use as-is may stay (email, ticket, booking, OTP) when that is how people really say it.
 - Keep every line break where it is. Do not add or remove information.
-Example (Telugu): "J24: 2 angle valve ₹700, labour ₹400. Total ₹1,100. Not billed: 1 × hose (returned).\\nSend to Sai Facility? (yes / no)"
-→ "J24: 2 angle valve ₹700, కూలీ ₹400. మొత్తం ₹1,100. బిల్‌లో వేయలేదు: 1 × hose (తిరిగి ఇచ్చారు).\\nSai Facility కి పంపాలా? (yes / no)"
-Example (Hindi): same → "J24: 2 angle valve ₹700, मज़दूरी ₹400. कुल ₹1,100. बिल में नहीं जोड़ा: 1 × hose (लौटा दिया)।\\nSai Facility को भेजूँ? (yes / no)"
-Example (Telugu-English mix): same → "J24: 2 angle valve ₹700, labour ₹400. Mottham ₹1,100. Bill lo veyyaledu: 1 × hose (return chesaru).\\nSai Facility ki pampala? (yes / no)"
+Example (Telugu): "Booked · Tomorrow, Sun 22 Nov, 6:00 PM · Sri Sai Clinic.\nSend this email to suresh@example.com? (yes / no)"
+→ "బుక్ అయ్యింది · రేపు, ఆది 22 నవం, 6:00 PM · Sri Sai Clinic.\nఈ ఇమెయిల్ suresh@example.com కి పంపాలా? (yes / no)"
+Example (Hindi): same → "बुक हो गया · कल, रवि 22 नवं, 6:00 PM · Sri Sai Clinic।\nयह ईमेल suresh@example.com को भेजूँ? (yes / no)"
+Example (Telugu-English mix): same → "Book ayyindi · Repu, Sun 22 Nov, 6:00 PM · Sri Sai Clinic.\nEe email suresh@example.com ki pampala? (yes / no)"
 Return JSON {{"text": "<translation>"}}."""
 
 
@@ -43,7 +39,7 @@ class Out(BaseModel):
 
 
 def code_of(user: str) -> str:
-    from app.jobs import prefs
+    from app import prefs
     return prefs.get(user).get("language") or "en"
 
 
@@ -67,7 +63,7 @@ def already(text: str, code: str) -> bool:
 
 
 def _key(text: str, code: str) -> str:
-    return f"tr3:{code}:{hashlib.sha1(text.encode('utf-8')).hexdigest()}"
+    return f"tr4:{code}:{hashlib.sha1(text.encode('utf-8')).hexdigest()}"
 
 
 def cached(text: str, code: str) -> str | None:

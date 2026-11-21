@@ -2,729 +2,457 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
-<meta name="theme-color" content="#EEEAFB"><meta name="color-scheme" content="light">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Chinku">
-<title>Chinku</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF8F4">
+<title>Instint</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
-  :root {
-    --bg:#EEEAFB; --page:#F7F6FB; --white:#FFFFFF; --ink:#15131F; --ink2:#5E5A6E; --violet:#B9A6F5; --violet-d:#7B61E8;
-    --mango:#FFC266; --sky:#A9CBFA; --pink:#F5B3EE; --mint:#BFEBD3; --coral:#FFB8A3; --hl:rgba(123,97,232,.22);
-    --shadow:0 8px 24px rgba(21,19,31,.06); --rc:26px; --rb:28px; --ease:cubic-bezier(.2,.8,.2,1);
-    font-family:"Plus Jakarta Sans","Noto Sans Telugu","Noto Sans Devanagari",system-ui,sans-serif;
-  }
-  /* pastel cards always use dark ink text (contrast ≥ 4.5:1), also in dark mode */
-  .c-violet,.c-mango,.c-sky,.c-pink,.c-mint,.c-coral { color:#15131F; --ink:#15131F; --ink2:#3E3A4E; }
-  .c-violet { background:var(--violet); } .c-mango { background:var(--mango); } .c-sky { background:var(--sky); }
-  .c-pink { background:var(--pink); } .c-mint { background:var(--mint); } .c-coral { background:var(--coral); }
-  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { height:100%; }
-  body { margin:0; background:var(--bg); color:var(--ink); font-size:15px; line-height:1.45; overscroll-behavior:none; }
-  button { font:inherit; color:inherit; border:0; background:none; cursor:pointer; }
-  .app { max-width:560px; margin:0 auto; min-height:100dvh; position:relative; }
-  .view { display:none; padding:calc(14px + env(safe-area-inset-top)) 18px 120px; }
-  .view.on { display:block; }
-  .fade { animation:fadeUp .45s var(--ease) both; animation-delay:calc(var(--i,0) * 40ms); }
-  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
-  .press { transition:transform .15s var(--ease); } .press:active { transform:scale(.98); }
-  .flash { animation:flash 1.1s ease; } @keyframes flash { 0% { box-shadow:0 0 0 0 rgba(123,97,232,.55); } 100% { box-shadow:0 0 0 16px rgba(123,97,232,0); } }
+:root {
+  --bg:#FAF8F4; --blue-l:#DCEBFF; --blue:#2F6FED; --blue-d:#1F55C4; --ink:#14161A; --ink2:#5F6672; --card:#FFFFFF; --line:#E8E4DC;
+  --green:#1E8E5A; --green-l:#E3F4EA; --amber:#A86A00; --amber-l:#FFF1D6; --red:#C2362B; --red-l:#FDE7E4; --grey-l:#F1EFEA;
+  --r:20px; --shadow:0 1px 2px rgba(20,22,26,.04), 0 6px 20px rgba(20,22,26,.06);
+  --font:"Plus Jakarta Sans","Noto Sans Telugu","Noto Sans Devanagari",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); font-size:16px; line-height:1.45; }
+body { min-height:100dvh; }
+button, input, textarea { font:inherit; color:inherit; }
+button { cursor:pointer; }
+a { color:var(--blue); }
+.wrap { max-width:720px; margin:0 auto; padding:0 16px; }
+.hidden { display:none !important; }
+@media (prefers-reduced-motion: no-preference) { .fade { animation:fade .18s ease-out both; } @keyframes fade { from { opacity:0; transform:translateY(4px); } } }
 
-  /* header */
-  .hdr { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-  .av { width:48px; height:48px; border-radius:50%; background:var(--ink); color:#fff; display:grid; place-items:center; font-weight:800; font-size:17px; flex:none; }
-  .hdr .mid { flex:1; text-align:center; } .hdr .mid b { display:block; font-size:17px; font-weight:700; } .hdr .mid span { color:var(--ink2); font-size:13px; }
-  .round { width:48px; height:48px; border-radius:50%; background:var(--white); display:grid; place-items:center; box-shadow:var(--shadow); flex:none; }
-  h1 { font-size:30px; line-height:1.08; font-weight:800; margin:0 0 6px; letter-spacing:-.5px; }
-  h2 { font-size:22px; font-weight:700; margin:22px 2px 12px; letter-spacing:-.3px; }
-  .meta { font-size:13px; color:var(--ink2); }
+/* header */
+header { position:sticky; top:0; z-index:20; background:rgba(250,248,244,.92); backdrop-filter:blur(10px); border-bottom:1px solid transparent; }
+header.scrolled { border-bottom-color:var(--line); }
+header .wrap { display:flex; align-items:center; gap:10px; height:60px; }
+.logo { font-weight:800; font-size:20px; letter-spacing:-.4px; display:flex; align-items:center; gap:8px; }
+.logo i { width:28px; height:28px; border-radius:9px; background:var(--blue); display:grid; place-items:center; color:#fff; font-style:normal; font-size:15px; }
+.sp { flex:1; }
+.iconbtn { min-width:44px; height:44px; border-radius:14px; border:1px solid var(--line); background:var(--card); display:grid; place-items:center; padding:0 10px; font-weight:600; font-size:14px; }
+.iconbtn svg { width:20px; height:20px; }
 
-  /* hero */
-  .hero { border-radius:var(--rc); padding:20px; position:relative; overflow:hidden; min-height:170px; box-shadow:var(--shadow); }
-  .hero .txt { position:relative; z-index:1; max-width:64%; }
-  .hero .kicker { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; opacity:.8; }
-  .hero .sub { font-size:14px; font-weight:500; margin:4px 0 14px; }
-  .hero svg.art { position:absolute; right:-8px; top:50%; transform:translateY(-50%); width:46%; max-width:210px; }
-  .btn { display:inline-flex; align-items:center; gap:8px; background:#15131F; color:#fff; border-radius:var(--rb); padding:11px 18px; font-weight:700; font-size:14px; }
-  .btn.light { background:rgba(255,255,255,.75); color:#15131F; }
+/* home */
+.ask { background:var(--card); border:1px solid var(--line); border-radius:24px; box-shadow:var(--shadow); padding:18px; margin-top:14px; }
+.ask h1 { font-size:26px; line-height:1.15; margin:2px 0 4px; letter-spacing:-.5px; }
+.ask .sub { color:var(--ink2); margin:0 0 14px; font-size:15px; }
+.askrow { display:flex; gap:12px; align-items:center; }
+.bigmic { width:76px; height:76px; border-radius:50%; border:0; background:var(--blue); color:#fff; display:grid; place-items:center; flex:none;
+  box-shadow:0 8px 22px rgba(47,111,237,.35); touch-action:none; user-select:none; -webkit-user-select:none; }
+.bigmic svg { width:32px; height:32px; }
+.bigmic.rec { background:var(--red); box-shadow:0 0 0 10px rgba(194,54,43,.15); }
+.askside { flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; }
+.pill { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 14px; border-radius:14px; border:1px solid var(--line); background:var(--bg); font-weight:600; font-size:15px; }
+.pill svg { width:20px; height:20px; flex:none; color:var(--blue); }
+.composer { display:flex; gap:8px; margin-top:12px; align-items:flex-end; }
+.composer textarea { flex:1; min-height:48px; max-height:140px; resize:none; border:1px solid var(--line); border-radius:16px; padding:12px 14px; background:var(--card); outline:none; }
+.composer textarea:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-l); }
+.send { width:48px; height:48px; border-radius:16px; border:0; background:var(--blue); color:#fff; display:grid; place-items:center; flex:none; }
+.send:disabled { background:#B9C9EE; }
+.send svg { width:20px; height:20px; }
+.files { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.files .f { display:flex; align-items:center; gap:6px; background:var(--blue-l); border-radius:12px; padding:4px 6px 4px 4px; font-size:13px; font-weight:600; }
+.files img { width:36px; height:36px; object-fit:cover; border-radius:8px; }
+.files button { border:0; background:none; width:28px; height:28px; font-size:16px; }
+.chips { display:flex; gap:8px; overflow-x:auto; padding:14px 0 4px; scrollbar-width:none; }
+.chips::-webkit-scrollbar { display:none; }
+.chip { flex:none; min-height:40px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); font-weight:600; font-size:14px; display:flex; align-items:center; gap:6px; }
+h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink2); margin:22px 0 8px; font-weight:700; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); padding:14px 16px; margin-bottom:10px; }
+.card.need { border-color:#BFD5FB; background:linear-gradient(0deg, #F6F9FF, #F6F9FF); }
+.row { display:flex; align-items:center; gap:12px; }
+.row .t { flex:1; min-width:0; }
+.row .t b { display:block; font-size:15px; }
+.row .t span { color:var(--ink2); font-size:14px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ico { width:40px; height:40px; border-radius:12px; background:var(--blue-l); display:grid; place-items:center; flex:none; font-size:18px; }
+.btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.btn { min-height:44px; padding:0 16px; border-radius:14px; border:1px solid var(--line); background:var(--card); font-weight:700; font-size:15px; }
+.btn.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+.btn:disabled { opacity:.5; }
+.status { display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:700; padding:3px 9px; border-radius:999px; background:var(--grey-l); color:var(--ink2); }
+.status.ok { background:var(--green-l); color:var(--green); } .status.wait { background:var(--amber-l); color:var(--amber); }
+.status.bad { background:var(--red-l); color:var(--red); } .status.sim { background:transparent; outline:1.5px dashed var(--ink2); }
+.empty { color:var(--ink2); font-size:14px; padding:6px 2px; }
 
-  /* chips */
-  .chip { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,.7); color:#15131F; font-size:12px; font-weight:600;
-          padding:4px 10px; border-radius:999px; white-space:nowrap; }
-  .chip.dash { background:transparent; outline:1.5px dashed currentColor; }
-  .chip.solid { background:#15131F; color:#fff; }
-  .page-chip { background:var(--white); color:var(--ink); box-shadow:var(--shadow); }
+/* chat */
+#thread { padding-bottom:180px; }
+.msg { display:flex; margin:10px 0; }
+.msg.me { justify-content:flex-end; }
+.bub { max-width:86%; padding:11px 14px; border-radius:20px; white-space:pre-wrap; overflow-wrap:anywhere; font-size:15.5px; }
+.me .bub { background:var(--blue); color:#fff; border-bottom-right-radius:6px; }
+.me .bub img { display:block; max-width:220px; border-radius:14px; margin-bottom:6px; }
+.bot .bub { background:var(--card); border:1px solid var(--line); border-bottom-left-radius:6px; }
+.bot .bub .first { font-weight:700; }
+.bub .meta { display:flex; align-items:center; gap:8px; margin-top:6px; font-size:12px; color:var(--ink2); }
+.me .bub .meta { color:rgba(255,255,255,.8); justify-content:flex-end; }
+.listen { border:0; background:var(--grey-l); border-radius:999px; height:30px; padding:0 10px; font-size:12.5px; font-weight:700; color:var(--ink); }
+.heard { background:var(--card) !important; color:var(--ink) !important; outline:1.5px dashed var(--blue); }
+.heard .lbl { display:block; font-size:12px; font-weight:700; color:var(--blue); margin-bottom:3px; }
+.hl { background:var(--blue-l); border-radius:6px; padding:0 3px; font-weight:700; }
+.hl.low { background:var(--amber-l); }
+.rc { margin-top:10px; border:1px solid var(--line); border-radius:16px; padding:12px; background:var(--bg); white-space:normal; }
+.rc h4 { margin:0 0 6px; font-size:15px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.rc pre { white-space:pre-wrap; font-family:var(--font); margin:0; font-size:14.5px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; max-height:320px; overflow:auto; }
+.rc .kv { display:grid; grid-template-columns:auto 1fr; gap:4px 10px; font-size:14px; } .rc .kv dt { color:var(--ink2); } .rc .kv dd { margin:0; }
+.rc .src { font-size:12.5px; color:var(--ink2); margin-top:6px; overflow-wrap:anywhere; }
+.rc ol { margin:6px 0 0; padding-left:20px; } .rc li { margin:4px 0; }
+.mapbox { height:200px; border-radius:12px; overflow:hidden; border:1px solid var(--line); margin:6px 0; background:var(--grey-l); }
+.pin { background:var(--blue); color:#fff; border-radius:50%; width:26px !important; height:26px !important; display:grid !important; place-items:center; font-weight:800; font-size:13px; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.3); }
+.typing .bub { color:var(--ink2); font-size:14px; display:flex; gap:8px; align-items:center; }
+.dots i { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--ink2); margin-right:3px; animation:blink 1s infinite; }
+.dots i:nth-child(2) { animation-delay:.15s; } .dots i:nth-child(3) { animation-delay:.3s; }
+@keyframes blink { 50% { opacity:.25; } }
+#quick { display:flex; gap:8px; flex-wrap:wrap; }
+.dock { position:fixed; left:0; right:0; bottom:0; z-index:30; background:linear-gradient(180deg, rgba(250,248,244,0), var(--bg) 26%); padding:22px 0 calc(12px + env(safe-area-inset-bottom)); }
+.dock .composer { margin-top:8px; }
+.mic { width:48px; height:48px; border-radius:16px; border:0; background:var(--blue-l); color:var(--blue); display:grid; place-items:center; flex:none; touch-action:none; user-select:none; -webkit-user-select:none; }
+.mic svg, .clip svg { width:22px; height:22px; }
+.mic.rec { background:var(--red); color:#fff; }
+.clip { width:48px; height:48px; border-radius:16px; border:1px solid var(--line); background:var(--card); display:grid; place-items:center; flex:none; color:var(--ink2); }
+.recbar { display:flex; align-items:center; gap:10px; height:48px; padding:0 14px; border-radius:16px; background:var(--red-l); color:var(--red); font-weight:700; flex:1; }
+.recbar canvas { flex:1; height:30px; }
+.toast { position:fixed; left:50%; bottom:110px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 16px; border-radius:14px; font-size:14px; z-index:60; opacity:0; pointer-events:none; transition:opacity .2s; max-width:90vw; }
+.toast.on { opacity:1; }
 
-  /* week strip */
-  .week { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin:16px 0 2px; }
-  .day { border-radius:999px; padding:9px 0 8px; text-align:center; background:var(--white); box-shadow:var(--shadow); position:relative; min-height:62px; }
-  .day small { display:block; font-size:12px; color:var(--ink2); font-weight:600; } .day b { font-size:16px; font-weight:700; }
-  .day.today { background:#15131F; color:#fff; } .day.today small { color:rgba(255,255,255,.75); }
-  .day.sel:not(.today) { outline:2px solid #15131F; }
-  .day .dot { position:absolute; left:50%; top:6px; width:5px; height:5px; margin-left:-2.5px; border-radius:50%; background:currentColor; }
-
-  /* bento */
-  .bento { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .card { border-radius:var(--rc); padding:16px; box-shadow:var(--shadow); position:relative; overflow:hidden; min-height:150px; display:flex; flex-direction:column; }
-  .card.tall { grid-row:span 2; min-height:312px; } .card.wide { grid-column:span 2; min-height:auto; }
-  .card h3 { font-size:22px; font-weight:700; margin:10px 0 6px; line-height:1.15; letter-spacing:-.3px; }
-  .card p { margin:0 0 3px; font-size:14px; } .card .foot { margin-top:auto; display:flex; align-items:center; gap:10px; padding-top:10px; }
-  .card .ico { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.7); display:grid; place-items:center; font-weight:800; font-size:13px; flex:none; }
-  .card svg.mini { position:absolute; right:-4px; bottom:-4px; width:70px; height:70px; opacity:.55; pointer-events:none; z-index:0; }
-  .card.tall svg.mini { width:96px; height:96px; opacity:.9; }
-  .card > :not(svg) { position:relative; z-index:1; }
-  .card > .chip, .item .top .chip { align-self:flex-start; }
-  .price { font-size:26px; font-weight:800; letter-spacing:-.5px; } .mrp { text-decoration:line-through; color:var(--ink2); font-size:14px; margin-left:6px; }
-  .empty { opacity:.92; } .empty h3 { font-size:18px; }
-
-  /* lists */
-  .list { display:flex; flex-direction:column; gap:12px; }
-  .item { border-radius:var(--rc); padding:16px; box-shadow:var(--shadow); }
-  .item .top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .item h3 { font-size:18px; font-weight:700; margin:8px 0 4px; }
-  .kv { display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:14px; margin-top:6px; } .kv dt { color:var(--ink2); } .kv dd { margin:0; }
-  details { margin-top:10px; } summary { cursor:pointer; font-weight:700; font-size:13px; }
-  .tl { margin:8px 0 0; padding:0; list-style:none; font-size:13px; } .tl li { padding:4px 0 4px 12px; border-left:2px solid rgba(21,19,31,.2); }
-  .quote { font-style:italic; color:var(--ink2); }
-  .seg { display:flex; gap:8px; margin:4px 0 14px; overflow-x:auto; scrollbar-width:none; }
-  .seg button { background:var(--white); border-radius:999px; padding:8px 14px; font-weight:600; font-size:13px; box-shadow:var(--shadow); white-space:nowrap; }
-  .seg button.on { background:#15131F; color:#fff; }
-  .typebar { display:flex; align-items:center; gap:10px; width:100%; margin:16px 0 0; background:var(--white); border-radius:var(--rb);
-             padding:15px 18px; box-shadow:var(--shadow); color:var(--ink2); font-weight:600; text-align:left; }
-  .searchbox { display:none; margin:0 0 12px; } .searchbox.on { display:block; }
-  .searchbox input { width:100%; border:0; outline:0; background:var(--white); border-radius:var(--rb); padding:13px 18px; font:inherit; color:var(--ink); box-shadow:var(--shadow); }
-
-  /* nav */
-  nav { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom)); width:min(92vw,420px); height:72px;
-        background:#15131F; border-radius:999px; display:flex; align-items:center; justify-content:space-around; padding:0 8px; z-index:20;
-        box-shadow:0 12px 30px rgba(21,19,31,.25); }
-  nav button { width:52px; height:52px; border-radius:50%; display:grid; place-items:center; color:#fff; transition:background .2s, color .2s; position:relative; }
-  nav button.on { background:#fff; color:#15131F; }
-  nav button .lbl { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
-  nav .mic { width:62px; height:62px; background:#fff; color:var(--violet-d); box-shadow:0 0 0 5px rgba(185,166,245,.45); }
-  .chat-open nav { display:none; }
-
-  /* chat */
-  #chat { padding:0; }
-  #chat.on { display:flex; flex-direction:column; height:100dvh; }
-  .chathdr { display:flex; align-items:center; gap:10px; padding:calc(12px + env(safe-area-inset-top)) 14px 10px; }
-  .chathdr .who { flex:1; } .chathdr b { display:block; font-size:17px; } #cstatus { font-size:12.5px; color:var(--ink2); display:flex; align-items:center; gap:6px; }
-  #cstatus i { width:7px; height:7px; border-radius:50%; background:#1b9a5f; } #cstatus.busy i { background:var(--violet-d); animation:blink 1s infinite; }
-  @keyframes blink { 50% { opacity:.25; } }
-  .iconbtn { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; background:var(--white); box-shadow:var(--shadow); flex:none; }
-  .iconbtn[aria-pressed="true"] { background:#15131F; color:#fff; }
-  #log { flex:1; overflow-y:auto; padding:8px 14px 10px; display:flex; flex-direction:column; gap:6px; scroll-behavior:smooth; }
-  .row { display:flex; animation:fadeUp .3s var(--ease) both; } .row.me { justify-content:flex-end; }
-  .bub { max-width:84%; padding:10px 14px 8px; border-radius:22px; white-space:pre-wrap; overflow-wrap:anywhere; box-shadow:var(--shadow); font-size:15px; }
-  .me .bub { background:#15131F; color:#fff; border-bottom-right-radius:8px; } .bot .bub { background:var(--white); border-bottom-left-radius:8px; }
-  .bub .t { display:block; text-align:right; font-size:11px; opacity:.6; margin-top:3px; }
-  .pending .t::after { content:" · sending"; }
-  .bub.heard { background:var(--white); color:var(--ink); outline:1.5px dashed var(--violet); box-shadow:none; }
-  .heard .lbl { display:flex; gap:8px; font-size:12px; font-weight:700; color:var(--violet-d); margin-bottom:3px; } .heard .lbl a { color:var(--violet-d); }
-  .hl { background:var(--hl); border-radius:6px; padding:0 3px; cursor:pointer; font-weight:600; }
-  .hl.low { outline:1.5px solid var(--violet-d); }
-  .rb { font-weight:700; }
-  .bub .card { margin-top:8px; min-height:auto; box-shadow:none; padding:12px 14px; border-radius:20px; white-space:normal; overflow-wrap:break-word; }
-  .kv.bill { grid-template-columns:1fr auto; } .kv.bill dd { text-align:right; white-space:nowrap; font-weight:700; }
-  .bub .card h3 { font-size:17px; margin:6px 0 4px; }
-  .offer { padding:8px 0; border-top:1px solid rgba(21,19,31,.12); } .offer:first-of-type { border-top:0; }
-  .offer a { color:#15131F; font-weight:700; }
-  .bub img { max-width:100%; border-radius:16px; display:block; margin-top:6px; } .bub audio { width:100%; height:36px; margin-top:6px; }
-  .file { display:inline-flex; gap:6px; margin-top:6px; padding:8px 12px; border-radius:16px; background:var(--page); color:var(--violet-d); font-weight:700; text-decoration:none; }
-  .typing .bub { display:flex; align-items:center; gap:8px; color:var(--ink2); font-size:13.5px; }
-  .dots { display:inline-flex; gap:3px; } .dots i { width:6px; height:6px; border-radius:50%; background:var(--violet-d); animation:bounce 1.2s infinite; }
-  .dots i:nth-child(2) { animation-delay:.15s; } .dots i:nth-child(3) { animation-delay:.3s; }
-  @keyframes bounce { 0%,60%,100% { transform:translateY(0); opacity:.5; } 30% { transform:translateY(-4px); opacity:1; } }
-  #quick { display:flex; gap:8px; padding:0 14px 8px; overflow-x:auto; scrollbar-width:none; } #quick:empty { display:none; }
-  #quick button { flex:none; background:var(--white); border-radius:999px; padding:8px 16px; font-weight:700; font-size:13.5px; box-shadow:var(--shadow); }
-  #quick button.primary { background:#15131F; color:#fff; }
-  .composer { position:relative; display:flex; align-items:flex-end; gap:8px; padding:8px 12px calc(10px + env(safe-area-inset-bottom)); }
-  .field { flex:1; display:flex; align-items:flex-end; background:var(--white); border-radius:var(--rb); padding:4px 6px 4px 4px; min-width:0; box-shadow:var(--shadow); }
-  #text { flex:1; border:0; outline:0; background:transparent; resize:none; padding:10px 6px; max-height:120px; min-height:22px; font:inherit; color:var(--ink); }
-  .attach { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; color:var(--ink2); cursor:pointer; }
-  #fname { font-size:12px; color:var(--violet-d); padding:0 4px 11px; max-width:28vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .fab { width:54px; height:54px; border-radius:50%; display:grid; place-items:center; flex:none; background:#15131F; color:#fff; touch-action:none; user-select:none; -webkit-user-select:none; }
-  #cmic { background:#fff; color:var(--violet-d); box-shadow:0 0 0 4px rgba(185,166,245,.5), var(--shadow); }
-  #csend { display:none; } .has-text #csend { display:grid; } .has-text #cmic { display:none; }
-  #rec { position:absolute; inset:0; display:none; align-items:center; gap:10px; padding:8px 12px calc(10px + env(safe-area-inset-bottom)); background:var(--bg); }
-  #rec.on { display:flex; } #rec .live { width:10px; height:10px; border-radius:50%; background:var(--violet-d); animation:blink 1s infinite; }
-  #rec .time { font-weight:800; min-width:44px; font-variant-numeric:tabular-nums; } #wave { flex:1; height:38px; min-width:0; }
-  #rec .cancel { font-size:12.5px; color:var(--ink2); white-space:nowrap; } #rec.cancelling .cancel { color:#c0392b; font-weight:800; }
-  #rec .fab { background:var(--violet-d); color:#fff; animation:ring 1.4s infinite; }
-  @keyframes ring { 0% { box-shadow:0 0 0 0 rgba(123,97,232,.5); } 100% { box-shadow:0 0 0 18px rgba(123,97,232,0); } }
-
-  /* onboarding + sheets */
-  #onboard { position:fixed; inset:0; background:var(--bg); z-index:40; display:none; overflow:auto; }
-  #onboard.on { display:block; } #onboard .in { max-width:480px; margin:0 auto; padding:calc(28px + env(safe-area-inset-top)) 22px 30px; }
-  .langs { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:18px 0 22px; }
-  .lang { border-radius:var(--rc); padding:18px 16px; text-align:left; min-height:110px; box-shadow:var(--shadow); display:flex; flex-direction:column; justify-content:space-between; }
-  .lang b { font-size:22px; font-weight:800; } .lang span { font-size:13px; font-weight:600; opacity:.8; }
-  .lang.on { outline:3px solid #15131F; }
-  #scrim { position:fixed; inset:0; background:rgba(21,19,31,.35); opacity:0; pointer-events:none; transition:opacity .25s; z-index:30; }
-  #sheet { position:fixed; left:50%; bottom:0; width:min(100%,560px); transform:translate(-50%,104%); background:var(--page); border-radius:28px 28px 0 0;
-           z-index:31; transition:transform .3s var(--ease); max-height:86dvh; overflow:auto; padding:10px 18px calc(18px + env(safe-area-inset-bottom)); }
-  .sheet-open #scrim { opacity:1; pointer-events:auto; } .sheet-open #sheet { transform:translate(-50%,0); }
-  #sheet .grab { width:42px; height:5px; border-radius:3px; background:rgba(21,19,31,.2); margin:0 auto 12px; }
-  .toast { position:fixed; left:50%; bottom:110px; transform:translateX(-50%); background:#15131F; color:#fff; padding:9px 16px; border-radius:999px; font-size:13px;
-           font-weight:600; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; }
-  .toast.on { opacity:.95; }
-  .srname { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
-  @media (min-width:900px) { .app { max-width:980px; } .bento { grid-template-columns:repeat(4,1fr); } .card.tall { grid-row:span 2; }
-    #chat.on { max-width:760px; margin:0 auto; } }
-  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation:none !important; transition:none !important; } #log { scroll-behavior:auto; } }
+/* sheets */
+.sheet { position:fixed; inset:0; z-index:50; background:rgba(20,22,26,.35); display:none; align-items:flex-end; justify-content:center; }
+.sheet.on { display:flex; }
+.sheet .in { background:var(--bg); width:100%; max-width:560px; border-radius:24px 24px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom)); max-height:88dvh; overflow:auto; }
+.langs { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+.lang { min-height:76px; border-radius:18px; border:1.5px solid var(--line); background:var(--card); text-align:left; padding:12px 14px; }
+.lang b { display:block; font-size:19px; } .lang span { color:var(--ink2); font-size:13px; }
+.lang.on { border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-l); }
+.memrow { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+.memrow .t { flex:1; min-width:0; } .memrow .t b { display:block; font-size:14px; } .memrow .t span { font-size:14px; color:var(--ink2); overflow-wrap:anywhere; }
+@media (min-width: 900px) { .ask h1 { font-size:32px; } #thread .bub { max-width:72%; } }
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <linearGradient id="gPipe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD18A"/><stop offset="1" stop-color="#F29A2E"/></linearGradient>
-    <linearGradient id="gSteel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7B7F8C"/><stop offset="1" stop-color="#3B3F4A"/></linearGradient>
-    <linearGradient id="gClay" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E7DDD8"/><stop offset="1" stop-color="#A99B95"/></linearGradient>
-    <linearGradient id="gRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF27A"/><stop offset="1" stop-color="#E0C200"/></linearGradient>
-    <linearGradient id="gViolet" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D9CCFF"/><stop offset="1" stop-color="#7B61E8"/></linearGradient>
-    <symbol id="art-pipes" viewBox="0 0 220 200">
-      <ellipse cx="120" cy="186" rx="80" ry="10" fill="rgba(21,19,31,.12)"/>
-      <path d="M60 40h70a40 40 0 0 1 40 40v60" fill="none" stroke="url(#gPipe)" stroke-width="34" stroke-linecap="round"/>
-      <ellipse cx="60" cy="40" rx="14" ry="17" fill="#C8731B"/><ellipse cx="60" cy="40" rx="8" ry="10" fill="#7A3E05"/>
-      <rect x="20" y="96" width="78" height="44" rx="22" fill="url(#gSteel)"/><ellipse cx="98" cy="118" rx="12" ry="22" fill="#2A2D35"/>
-      <rect x="118" y="118" width="70" height="56" rx="20" fill="url(#gClay)"/>
-      <circle cx="44" cy="166" r="20" fill="none" stroke="url(#gRing)" stroke-width="10"/>
-    </symbol>
-    <symbol id="art-valve" viewBox="0 0 120 120">
-      <rect x="18" y="62" width="84" height="30" rx="15" fill="url(#gSteel)"/>
-      <rect x="52" y="34" width="16" height="32" rx="6" fill="#4A4E59"/>
-      <circle cx="60" cy="30" r="22" fill="none" stroke="url(#gViolet)" stroke-width="10"/><circle cx="60" cy="30" r="6" fill="#4A4E59"/>
-    </symbol>
-    <symbol id="art-wrench" viewBox="0 0 120 120">
-      <path d="M30 95 80 45" stroke="url(#gSteel)" stroke-width="18" stroke-linecap="round"/>
-      <path d="M78 22a22 22 0 1 0 22 22l-14 4-12-12z" fill="url(#gSteel)"/>
-    </symbol>
-    <symbol id="art-bill" viewBox="0 0 120 120">
-      <rect x="28" y="18" width="64" height="84" rx="12" fill="#fff"/><rect x="40" y="36" width="40" height="7" rx="3.5" fill="#A6DFC1"/>
-      <rect x="40" y="52" width="32" height="7" rx="3.5" fill="#D7EFE2"/><rect x="40" y="68" width="40" height="10" rx="5" fill="#15131F"/>
-    </symbol>
-  </defs>
-</svg>
+<header id="hdr"><div class="wrap">
+  <button class="iconbtn hidden" id="back" aria-label="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+  <div class="logo"><i>I</i>Instint</div>
+  <div class="sp"></div>
+  <button class="iconbtn hidden" id="newchat" aria-label="New conversation" data-i18n-aria>＋</button>
+  <button class="iconbtn" id="settings" aria-label="Settings: language and memory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+</div></header>
 
-<div class="app" id="app">
-  <!-- TODAY -->
-  <section class="view" id="today" aria-label="Today">
-    <div class="hdr fade">
-      <button class="av" id="avatar" aria-label="Profile and language">··</button>
-      <div class="mid"><b id="hello">Hello</b><span id="todaydate"></span></div>
-      <button class="round press" id="searchbtn" aria-label="Search jobs"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
-    </div>
-    <div class="searchbox" id="searchbox"><input id="search" data-i18n-ph placeholder="Search jobs, sites, customers…" aria-label="Search"></div>
-    <div id="hero"></div>
-    <div class="week fade" style="--i:2" id="week" role="tablist" aria-label="Week"></div>
-    <button class="typebar press fade" style="--i:3" id="typebar" aria-label="Type or talk to Chinku">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1-5.2A8 8 0 1 1 21 12Z"/></svg>
-      <span data-i18n>Type or talk to Chinku…</span></button>
-    <button class="typebar press fade" style="--i:3;margin-top:8px" id="nearme" aria-label="Plumbing shops near me">
-      <span aria-hidden="true">📍</span><span data-i18n>Plumbing shops near me</span></button>
-    <h2 class="fade" style="--i:3" data-i18n>Your jobs</h2>
-    <div class="bento" id="bento"></div>
-  </section>
-
-  <!-- JOBS -->
-  <section class="view" id="jobs" aria-label="Jobs">
-    <h1 class="fade" data-i18n>Jobs</h1><p class="meta fade" style="--i:1" data-i18n>Every job, its next step and how we know it.</p>
-    <div class="seg fade" style="--i:2" id="jobfilter"></div>
-    <div class="list" id="joblist"></div>
-  </section>
-
-  <!-- CALLS -->
-  <section class="view" id="calls" aria-label="Calls">
-    <h1 class="fade" data-i18n>Calls</h1><p class="meta fade" style="--i:1" data-i18n>Calls Chinku made for you — with what people actually said.</p>
-    <div class="list" id="calllist"></div>
-  </section>
-
-  <!-- BILLS -->
-  <section class="view" id="bills" aria-label="Bills">
-    <h1 class="fade" data-i18n>Bills</h1><p class="meta fade" style="--i:1" data-i18n>Invoices from finished jobs.</p>
-    <div class="list" id="billlist"></div>
-  </section>
-
-  <!-- CHAT -->
-  <section class="view" id="chat" aria-label="Chat with Chinku">
-    <div class="chathdr">
-      <button class="iconbtn" id="back" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
-      <div class="who"><b>Chinku</b><div id="cstatus"><i></i><span id="cstatustext">Online</span></div></div>
-      <button class="iconbtn" id="newchat" aria-label="New chat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
-      <button class="iconbtn" id="speak" aria-pressed="false" aria-label="Read replies aloud"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>
-    </div>
-    <div id="log" aria-live="polite"></div>
-    <div id="quick"></div>
-    <form class="composer" id="f" autocomplete="off">
-      <div class="field">
-        <label class="attach" aria-label="Attach photo or PDF"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg><input id="file" type="file" accept="image/*,application/pdf" hidden></label>
-        <span id="fname"></span>
-        <textarea id="text" rows="1" data-i18n-ph placeholder="Message Chinku…" aria-label="Message"></textarea>
+<!-- HOME -->
+<main id="home" class="wrap">
+  <section class="ask fade" aria-label="What do you need?">
+    <h1 data-i18n>What do you need?</h1>
+    <p class="sub" data-i18n>Type or speak in your language — or show a photo.</p>
+    <div class="askrow">
+      <button class="bigmic" id="bigmic" aria-label="Hold to talk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
+      <div class="askside">
+        <div class="pill" id="holdhint" aria-hidden="true"><span data-i18n>Hold the blue button and talk</span></div>
+        <label class="pill" style="cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="12" cy="12" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg><span data-i18n>Add photo</span>
+          <input type="file" id="homefile" accept="image/*,application/pdf" multiple hidden></label>
       </div>
-      <button class="fab" id="csend" type="submit" aria-label="Send"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"/></svg></button>
-      <button class="fab" id="cmic" type="button" aria-label="Hold to talk"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
-      <div id="rec" aria-live="assertive"><span class="live"></span><span class="time" id="rectime">0:00</span><canvas id="wave"></canvas>
-        <span class="cancel" id="cancelhint" data-i18n>‹ slide to cancel</span>
-        <span class="fab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></span></div>
+    </div>
+    <div class="files" id="homefiles"></div>
+    <form class="composer" id="homeform" autocomplete="off">
+      <textarea id="hometext" rows="1" placeholder="e.g. Transcribe this and email me a copy" data-i18n-ph aria-label="Type what you need"></textarea>
+      <button class="send" id="homesend" aria-label="Send" disabled><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"/></svg></button>
     </form>
+    <div class="recbar hidden" id="homerec" aria-live="assertive"><span>●</span><span id="homerectime">0:00</span><canvas id="homewave"></canvas><span data-i18n>Release to send</span></div>
   </section>
-</div>
+  <div class="chips" id="examples" aria-label="Examples"></div>
+  <div id="needs"></div>
+  <div id="active"></div>
+  <div id="rems"></div>
+  <h2 data-i18n>Recent work</h2>
+  <div id="recent"><div class="empty" data-i18n>Nothing yet — ask for something above.</div></div>
+  <div style="height:40px"></div>
+</main>
 
-<nav aria-label="Main">
-  <button data-go="today" aria-label="Today"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg><span class="lbl" data-i18n>Today</span></button>
-  <button data-go="jobs" aria-label="Jobs"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/></svg><span class="lbl" data-i18n>Jobs</span></button>
-  <button class="mic" data-go="chat" aria-label="Talk to Chinku"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
-  <button data-go="calls" aria-label="Calls"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1"/></svg><span class="lbl" data-i18n>Calls</span></button>
-  <button data-go="bills" aria-label="Bills"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span class="lbl" data-i18n>Bills</span></button>
-</nav>
-
-<div id="onboard" role="dialog" aria-label="Choose language"><div class="in">
-  <div class="av fade" style="width:64px;height:64px;font-size:24px;background:var(--violet-d)">C</div>
-  <h1 class="fade" style="--i:1;margin-top:18px" data-i18n>Namaste! I'm Chinku.</h1>
-  <p class="meta fade" style="--i:2;font-size:15px" data-i18n>Your office assistant. I call customers and shops, get approvals and make bills — you keep working.</p>
-  <h2 class="fade" style="--i:3" data-i18n>Which language should I reply in?</h2>
-  <div class="langs" id="langs"></div>
-  <p class="meta fade" style="--i:8" data-i18n>You can talk to me in any language. Calls to customers and shops are in English for now. Change this anytime from your avatar.</p>
-  <button class="btn press fade" style="--i:9;width:100%;justify-content:center;padding:15px" id="langgo" disabled data-i18n>Continue</button>
+<!-- WORKING VIEW (chat thread) -->
+<main id="chat" class="wrap hidden" aria-label="Conversation">
+  <div id="thread" aria-live="polite"></div>
+</main>
+<div class="dock hidden" id="dock"><div class="wrap">
+  <div id="quick"></div>
+  <div class="files" id="chatfiles"></div>
+  <form class="composer" id="chatform" autocomplete="off">
+    <label class="clip" aria-label="Add photo or PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>
+      <input type="file" id="chatfile" accept="image/*,application/pdf" multiple hidden></label>
+    <textarea id="chattext" rows="1" placeholder="Message Instint…" data-i18n-ph aria-label="Message"></textarea>
+    <div class="recbar hidden" id="chatrec"><span>●</span><span id="chatrectime">0:00</span><canvas id="chatwave"></canvas></div>
+    <button class="mic" id="chatmic" type="button" aria-label="Hold to talk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
+    <button class="send hidden" id="chatsend" aria-label="Send"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"/></svg></button>
+  </form>
 </div></div>
 
-<div id="scrim"></div>
-<section id="sheet" aria-label="Details"><div class="grab"></div><div id="sheetbody"></div></section>
-<div class="toast" id="toast"></div>
+<!-- language (first launch, with Skip) -->
+<div class="sheet" id="langsheet" role="dialog" aria-label="Choose language"><div class="in">
+  <h1 style="margin:0 0 4px;font-size:24px" data-i18n>Hi! I'm Instint.</h1>
+  <p style="margin:0;color:var(--ink2)" data-i18n>Tell me what you need — I'll search, call, email, remind and follow up. Which language should I use?</p>
+  <div class="langs" id="langs"></div>
+  <div class="btns"><button class="btn primary" id="langok" style="flex:1" data-i18n>Continue</button><button class="btn" id="langskip" data-i18n>Skip</button></div>
+</div></div>
 
+<!-- settings: language + memory -->
+<div class="sheet" id="setsheet" role="dialog" aria-label="Settings"><div class="in">
+  <div class="row"><h1 style="margin:0;font-size:22px;flex:1" data-i18n>Settings</h1><button class="iconbtn" id="setclose" aria-label="Close">✕</button></div>
+  <h2 data-i18n>Language</h2>
+  <div class="langs" id="langs2"></div>
+  <h2 data-i18n>What I remember</h2>
+  <p class="empty" style="margin-top:-4px" data-i18n>Never stored: OTPs, passwords, card or bank numbers, ID numbers.</p>
+  <div id="memlist"></div>
+</div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (() => {
 const key = new URLSearchParams(location.search).get("key") || "";
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const api = (p, opt) => fetch(`${p}${p.includes("?") ? "&" : "?"}key=${encodeURIComponent(key)}`, Object.assign({cache: "no-store"}, opt || {}));
 const ls = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+const api = (p, opt) => fetch(`${p}${p.includes("?") ? "&" : "?"}key=${encodeURIComponent(key)}`, Object.assign({cache: "no-store"}, opt || {}));
+const post = (p, data) => { const fd = new FormData(); fd.append("key", key); for (const [k, v] of Object.entries(data)) fd.append(k, v); return fetch(p, {method: "POST", body: fd}); };
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), 2000); }
 const vib = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
-function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), 1900); }
-const art = (id, cls) => `<svg class="${cls}" aria-hidden="true"><use href="#art-${id}"/></svg>`;
-const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString(LOC(), {hour: "numeric", minute: "2-digit"}); } catch (e) { return iso; } };
-const fmtDay = iso => { try { return new Date(iso).toLocaleDateString(LOC(), {weekday: "short", day: "numeric", month: "short"}); } catch (e) { return iso; } };
-const hhmm = ts => new Date(ts * 1000).toLocaleTimeString(LOC(), {hour: "numeric", minute: "2-digit"});
-const inr = n => n == null ? L("unknown") : "₹" + Number(n).toLocaleString("en-IN");
-const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-const WORD = { open:"Open", booked:"Booked", in_progress:"In progress", awaiting_approval:"Awaiting approval", invoicing:"Invoicing", closed:"Closed",
-  cancelled:"Cancelled", not_booked:"Not booked", proposed:"Proposed", pending:"Pending", approved:"Approved", rejected:"Rejected", question:"Question",
-  draft:"Draft", awaiting_plumber:"Waiting for you", sent:"Sent", delivery_failed:"Delivery failed", paid:"Paid", completed:"Completed", no_answer:"No answer",
-  failed:"Failed", dispatched:"On call", queued:"Queued", retry_scheduled:"Retry scheduled", exact:"Exact model", different_model:"Different model",
-  available_now:"In stock now", tomorrow:"Tomorrow", none:"Not in stock", usually_stocked:"Usually stocked", unknown:"Unknown", confirmed:"Confirmed",
-  tentative:"Tentative", not_mentioned:"Not said", refused:"Refused", conflicting:"Conflicting", met:"Condition met", not_met:"Condition not met", waiting:"Waiting" };
-/* ---------------- language: every visible label in te / hi / te-en (Chinku's messages are translated on the server) ---------------- */
-let LANG = ls.get("chinku_lang") || "en";
-const I18N = {
-  "Today": ["ఈ రోజు", "आज", "Ee roju"], "today": ["ఈ రోజు", "आज", "ee roju"], "Jobs": ["పనులు", "काम", "Jobs"], "Calls": ["కాల్స్", "कॉल", "Calls"], "Bills": ["బిల్లులు", "बिल", "Bills"],
-  "Hello": ["నమస్కారం", "नमस्ते", "Namaskaram"],
-  "Search jobs, sites, customers…": ["పనులు, సైట్లు, కస్టమర్లను వెతకండి…", "काम, साइट, ग्राहक खोजें…", "Jobs, sites, customers vethakandi…"],
-  "Type or talk to Chinku…": ["చింకూకి టైప్ చేయండి లేదా మాట్లాడండి…", "चिंकू से लिखें या बोलें…", "Chinku ki type cheyyandi leda matladandi…"],
-  "Plumbing shops near me": ["నా దగ్గర్లో ప్లంబింగ్ షాపులు", "मेरे पास प्लंबिंग की दुकानें", "Naa daggarlo plumbing shops"],
-  "Your jobs": ["మీ పనులు", "आपके काम", "Mee jobs"],
-  "Every job, its next step and how we know it.": ["ప్రతి పని, తర్వాత ఏం చేయాలి, అది మనకు ఎలా తెలిసింది.", "हर काम, उसका अगला कदम और हमें कैसे पता चला।", "Prathi job, next em cheyyali, adi manaki ela telisindi."],
-  "Calls Chinku made for you — with what people actually said.": ["మీ కోసం చింకూ చేసిన కాల్స్ — వాళ్ళు నిజంగా ఏమన్నారో తో సహా.", "चिंकू ने आपके लिए जो कॉल किए — लोगों ने असल में क्या कहा, उसके साथ।", "Mee kosam Chinku chesina calls — vallu nijanga em annaro tho saha."],
-  "Invoices from finished jobs.": ["పూర్తైన పనుల బిల్లులు, అంచనాలు.", "पूरे हुए कामों के बिल और अनुमान।", "Finish ayina jobs bills, estimates."],
-  "Online": ["ఆన్‌లైన్", "ऑनलाइन", "Online"], "Message Chinku…": ["చింకూకి మెసేజ్ చేయండి…", "चिंकू को संदेश लिखें…", "Chinku ki message cheyyandi…"],
-  "‹ slide to cancel": ["‹ రద్దుకి పక్కకు జరపండి", "‹ रद्द करने के लिए खिसकाएँ", "‹ cancel ki slide cheyyandi"],
-  "Release to cancel": ["వదిలితే రద్దు", "छोड़ें तो रद्द", "Vadilithe cancel"],
-  "Namaste! I'm Chinku.": ["నమస్కారం! నేను చింకూ.", "नमस्ते! मैं चिंकू हूँ।", "Namaskaram! Nenu Chinku."],
-  "Your office assistant. I call customers and shops, get approvals and make bills — you keep working.": ["మీ ఆఫీస్ అసిస్టెంట్‌ని. కస్టమర్లకు, షాపులకు కాల్ చేస్తాను, అనుమతులు తీసుకుంటాను, బిల్లులు చేస్తాను — మీరు మీ పని చూసుకోండి.", "मैं आपका ऑफिस असिस्टेंट हूँ। ग्राहकों और दुकानों को कॉल करता हूँ, मंज़ूरी लेता हूँ और बिल बनाता हूँ — आप अपना काम करते रहिए।", "Mee office assistant ni. Customers ki, shops ki call chestha, approvals theskunta, bills chestha — meeru mee pani chusukondi."],
-  "Which language should I reply in?": ["ఏ భాషలో జవాబివ్వాలి?", "मैं किस भाषा में जवाब दूँ?", "Ye language lo reply ivvali?"],
-  "You can talk to me in any language. Calls to customers and shops are in English for now. Change this anytime from your avatar.": ["మీరు ఏ భాషలోనైనా మాట్లాడవచ్చు. కస్టమర్లకు, షాపులకు కాల్స్ ప్రస్తుతానికి ఇంగ్లీష్‌లోనే. పైన మీ బొమ్మ నొక్కి ఎప్పుడైనా మార్చుకోండి.", "आप किसी भी भाषा में बात कर सकते हैं। ग्राहकों और दुकानों को कॉल अभी अंग्रेज़ी में होते हैं। ऊपर अपने अवतार से इसे कभी भी बदलें।", "Meeru ye language lo aina matladachu. Customers ki, shops ki calls ippatiki English lo ne. Paina mee avatar nokki eppudaina marchukondi."],
-  "Continue": ["కొనసాగించు", "आगे बढ़ें", "Continue"],
-  "Visit now": ["ఇప్పుడు విజిట్", "अभी विज़िट", "Ippudu visit"],
-  "When you finish, tell me what you did — I'll make the bill.": ["పని అయ్యాక ఏం చేశారో చెప్పండి — నేను బిల్ చేస్తాను.", "काम खत्म होने पर बताइए क्या किया — मैं बिल बना दूँगा।", "Pani ayyaka em chesaro cheppandi — nenu bill chestha."],
-  "Finish & invoice": ["పని పూర్తి, బిల్ చేయి", "काम पूरा, बिल बनाओ", "Finish chesi bill"],
-  "Decision needed": ["మీ నిర్ణయం కావాలి", "आपका फ़ैसला चाहिए", "Mee decision kavali"], "Needs your decision": ["మీ నిర్ణయం కావాలి", "आपका फ़ैसला चाहिए", "Mee decision kavali"],
-  "Open job": ["పని చూడండి", "काम खोलें", "Job chudandi"], "Next visit": ["తర్వాతి విజిట్", "अगली विज़िट", "Next visit"], "Details": ["వివరాలు", "विवरण", "Details"],
-  "next step": ["తర్వాత చేయాల్సింది", "अगला कदम", "next step"], "Do it with Chinku": ["చింకూతో చేయండి", "चिंकू के साथ करें", "Chinku tho cheyyandi"],
-  "No jobs yet": ["ఇంకా పనులు లేవు", "अभी कोई काम नहीं", "Inka jobs levu"],
-  "Tap the mic and tell me about a job — any language.": ["మైక్ నొక్కి పని గురించి చెప్పండి — ఏ భాషైనా పర్వాలేదు.", "माइक दबाकर काम के बारे में बताइए — कोई भी भाषा चलेगी।", "Mic nokki job gurinchi cheppandi — ye language aina parledu."],
-  "Talk to Chinku": ["చింకూతో మాట్లాడండి", "चिंकू से बात करें", "Chinku tho matladandi"],
-  "Site contact": ["సైట్‌లో ఎవరు", "साइट पर संपर्क", "Site contact"], "Customer": ["కస్టమర్", "ग्राहक", "Customer"],
-  "Your free time": ["మీ ఖాళీ సమయం", "आपका खाली समय", "Mee free time"], "Visit to book": ["బుక్ చేయాల్సిన విజిట్", "विज़िट बुक करनी है", "Book cheyyalsina visit"],
-  "Visits": ["విజిట్లు", "विज़िट", "Visits"], "No visits": ["విజిట్లు లేవు", "कोई विज़िट नहीं", "Visits levu"],
-  "When a customer confirms a slot, it shows here.": ["కస్టమర్ సమయం ఖరారు చేస్తే ఇక్కడ కనిపిస్తుంది.", "ग्राहक समय पक्का करेगा तो यहाँ दिखेगा।", "Customer slot confirm cheste ikkada kanipisthundi."],
-  "Part": ["పార్ట్", "पार्ट", "Part"], "Pickup": ["పికప్", "पिकअप", "Pickup"], "Parts": ["పార్ట్స్", "पार्ट्स", "Parts"],
-  "No part quotes yet": ["ఇంకా పార్ట్ రేట్లు రాలేదు", "अभी पार्ट के रेट नहीं आए", "Inka part rates raledu"],
-  "Send a part photo and I'll ring your shops.": ["పార్ట్ ఫోటో పంపండి, మీ షాపులకు కాల్ చేస్తాను.", "पार्ट की फ़ोटो भेजिए, मैं आपकी दुकानों को कॉल करूँगा।", "Part photo pampandi, mee shops ki call chestha."],
-  "Approver": ["అనుమతి ఇచ్చేవారు", "मंज़ूरी देने वाले", "Approver"], "Approvals": ["అనుమతులు", "मंज़ूरियाँ", "Approvals"],
-  "No approvals waiting": ["ఆగిన అనుమతులు లేవు", "कोई मंज़ूरी बाकी नहीं", "Pending approvals levu"],
-  "Extra work? Tell me and I'll ask the supervisor.": ["అదనపు పని ఉందా? చెప్పండి, సూపర్‌వైజర్‌ని అడుగుతాను.", "अतिरिक्त काम? बताइए, मैं सुपरवाइज़र से पूछूँगा।", "Extra pani unda? Cheppandi, supervisor ni adugutha."],
-  "No bills yet": ["ఇంకా బిల్లులు లేవు", "अभी कोई बिल नहीं", "Inka bills levu"],
-  "Finish a job with a voice note — I'll make the invoice.": ["వాయిస్ నోట్‌తో పని ముగించండి — నేను బిల్ చేస్తాను.", "वॉइस नोट से काम पूरा करें — मैं बिल बना दूँगा।", "Voice note tho job finish cheyyandi — nenu bill chestha."],
-  "Site": ["సైట్", "साइट", "Site"], "Bill to": ["బిల్ ఎవరికి", "बिल किसे", "Bill evariki"], "Work order": ["వర్క్ ఆర్డర్", "वर्क ऑर्डर", "Work order"], "WO": ["WO", "WO", "WO"],
-  "Simulated": ["టెస్ట్ (సిమ్యులేటెడ్)", "टेस्ट (नकली)", "Simulated"], "Sample": ["నమూనా", "नमूना", "Sample"], "Visit": ["విజిట్", "विज़िट", "Visit"], "Job": ["పని", "काम", "Job"],
-  "Next": ["తర్వాత", "आगे", "Next"], "Blocked": ["ఆగింది", "रुका है", "Aagindi"], "Timeline": ["జరిగినవి", "क्या-क्या हुआ", "Timeline"],
-  "All": ["అన్నీ", "सभी", "Anni"], "No match": ["ఏమీ దొరకలేదు", "कुछ नहीं मिला", "Emi dorakaledu"], "No jobs here yet": ["ఇక్కడ ఇంకా పనులు లేవు", "यहाँ अभी कोई काम नहीं", "Ikkada inka jobs levu"],
-  "Tap the mic and describe a job.": ["మైక్ నొక్కి పని చెప్పండి.", "माइक दबाकर काम बताइए।", "Mic nokki job cheppandi."],
-  "Retry": ["మళ్ళీ", "दोबारा", "Retry"], "Live call": ["లైవ్ కాల్", "लाइव कॉल", "Live call"], "Call": ["కాల్", "कॉल", "Call"], "Transcript": ["ఏం మాట్లాడారు", "बातचीत", "Transcript"],
-  "No calls yet": ["ఇంకా కాల్స్ లేవు", "अभी कोई कॉल नहीं", "Inka calls levu"],
-  "When I ring a customer or a shop, the call and what they said appear here.": ["కస్టమర్‌కి లేదా షాపుకి కాల్ చేసినప్పుడు, వాళ్ళు ఏమన్నారో ఇక్కడ కనిపిస్తుంది.", "जब मैं ग्राहक या दुकान को कॉल करूँगा, उन्होंने क्या कहा वो यहाँ दिखेगा।", "Customer ki leda shop ki call chesinappudu, vallu em annaro ikkada kanipisthundi."],
-  "Invoice": ["బిల్", "बिल", "Invoice"], "Estimate": ["అంచనా", "अनुमान", "Estimate"], "Draft": ["డ్రాఫ్ట్", "ड्राफ़्ट", "Draft"], "Labour": ["కూలీ", "मज़दूरी", "Labour"],
-  "Download PDF": ["PDF డౌన్‌లోడ్", "PDF डाउनलोड करें", "PDF download"], "Download": ["డౌన్‌లోడ్", "डाउनलोड", "Download"], "Open PDF": ["PDF చూడండి", "PDF खोलें", "PDF open"],
-  "When a job is finished, send me a closing voice note — I'll read back the total and make the invoice.": ["పని అయ్యాక ఒక వాయిస్ నోట్ పంపండి — మొత్తం చదివి వినిపించి బిల్ చేస్తాను.", "काम पूरा होने पर वॉइस नोट भेजिए — मैं कुल रकम पढ़कर बिल बना दूँगा।", "Job ayyaka voice note pampandi — total cheppi bill chestha."],
-  "Chinku heard": ["చింకూ విన్నది", "चिंकू ने सुना", "Chinku vinnadi"], "Play": ["వినండి", "सुनें", "Play"], "tap to correct": ["సరిచేయడానికి నొక్కండి", "ठीक करने के लिए दबाएँ", "correct cheyyadaniki nokkandi"],
-  "Hold the mic and talk": ["మైక్ నొక్కి పట్టి మాట్లాడండి", "माइक दबाकर बोलिए", "Mic nokki patti matladandi"], "Hold the mic and speak": ["మైక్ నొక్కి పట్టి మాట్లాడండి", "माइक दबाकर बोलिए", "Mic nokki patti matladandi"],
-  "Telugu, English or both. I'll show you what I heard before I act.": ["తెలుగు, ఇంగ్లీష్ లేదా రెండూ. ఏదైనా చేసే ముందు నేను విన్నది చూపిస్తాను.", "तेलुगु, अंग्रेज़ी या दोनों। कुछ करने से पहले जो सुना वो दिखाऊँगा।", "Telugu, English leda rendu. Edaina chese mundu nenu vinnadi chupistha."],
-  "Yes": ["అవును", "हाँ", "Avunu"], "No": ["వద్దు", "नहीं", "Vaddu"], "Change": ["మార్చు", "बदलें", "Marchu"],
-  "Thinking…": ["ఆలోచిస్తున్నా…", "सोच रहा हूँ…", "Alochistunna…"], "Listening…": ["వింటున్నా…", "सुन रहा हूँ…", "Vintunna…"], "Reading the file…": ["ఫైల్ చదువుతున్నా…", "फ़ाइल पढ़ रहा हूँ…", "File chaduvutunna…"],
-  "Understanding…": ["అర్థం చేసుకుంటున్నా…", "समझ रहा हूँ…", "Ardham chesukuntunna…"], "Reconnecting…": ["మళ్ళీ కలుపుతున్నా…", "फिर से जोड़ रहा हूँ…", "Malli connect chestunna…"],
-  "Voice note": ["వాయిస్ నోట్", "वॉइस नोट", "Voice note"], "Saved": ["సేవ్ అయ్యింది", "सेव हो गया", "Save ayyindi"], "Couldn't save — try again": ["సేవ్ కాలేదు — మళ్ళీ ప్రయత్నించండి", "सेव नहीं हुआ — फिर कोशिश करें", "Save kaledu — malli try cheyyandi"],
-  "Getting your location…": ["మీ లొకేషన్ తీసుకుంటున్నా…", "आपकी लोकेशन ले रहा हूँ…", "Mee location theskuntunna…"],
-  "Location is off — type an area": ["లొకేషన్ ఆఫ్‌లో ఉంది — ఏరియా పేరు టైప్ చేయండి", "लोकेशन बंद है — इलाके का नाम लिखें", "Location off lo undi — area peru type cheyyandi"],
-  "Replies read aloud": ["జవాబులు చదివి వినిపిస్తాను", "जवाब पढ़कर सुनाऊँगा", "Replies chadivi vinipistha"], "Read-aloud off": ["చదివి వినిపించడం ఆపాను", "पढ़कर सुनाना बंद", "Read-aloud off"],
-  "Recording cancelled": ["రికార్డింగ్ రద్దు చేశాను", "रिकॉर्डिंग रद्द की", "Recording cancel chesa"], "No connection — try again": ["నెట్ లేదు — మళ్ళీ ప్రయత్నించండి", "नेटवर्क नहीं — फिर कोशिश करें", "Net ledu — malli try cheyyandi"],
-  "Couldn't send": ["పంపలేకపోయాను", "भेज नहीं पाया", "Pampaleka poyanu"], "Allow the microphone to talk": ["మాట్లాడటానికి మైక్‌కి అనుమతి ఇవ్వండి", "बोलने के लिए माइक की अनुमति दें", "Matladataniki mic ki permission ivvandi"],
-  "Start a new chat? Jobs and history stay saved.": ["కొత్త చాట్ మొదలుపెట్టాలా? పనులు, పాత వివరాలు సేవ్‌లోనే ఉంటాయి.", "नई चैट शुरू करें? काम और पुरानी जानकारी सेव रहेगी।", "Kotha chat start cheyyala? Jobs, history save lone untayi."],
-  "Shop quotes": ["షాపు రేట్లు", "दुकान के रेट", "Shop rates"], "Hold offered": ["పక్కన పెడతామన్నారు", "रोककर रखने को कहा", "Hold chestamannaru"],
-  "delivery": ["డెలివరీ", "डिलीवरी", "delivery"], "total": ["మొత్తం", "कुल", "total"], "from": ["నుంచి", "से", "nunchi"],
-  "What they said": ["వాళ్ళు ఏమన్నారు", "उन्होंने क्या कहा", "Vallu em annaru"], "No answers yet.": ["ఇంకా జవాబులు రాలేదు.", "अभी कोई जवाब नहीं।", "Inka answers raledu."],
-  "Nearby shops · OpenStreetMap": ["దగ్గర్లో షాపులు · OpenStreetMap", "पास की दुकानें · OpenStreetMap", "Daggarlo shops · OpenStreetMap"],
-  "no phone listed": ["ఫోన్ నంబర్ లేదు", "फ़ोन नंबर नहीं दिया", "phone number ledu"], "Map": ["మ్యాప్", "नक्शा", "Map"], "Demo rates": ["డెమో రేట్లు", "डेमो रेट", "Demo rates"], "Free": ["ఖాళీ", "खाली", "Free"],
-  "Open": ["ఓపెన్", "खुले", "Open"], "Booked": ["బుక్ అయ్యింది", "बुक हुआ", "Book ayyindi"], "In progress": ["జరుగుతోంది", "चल रहा है", "Jarugutondi"],
-  "Awaiting approval": ["అనుమతి కోసం", "मंज़ूरी का इंतज़ार", "Approval kosam"], "Invoicing": ["బిల్ అవుతోంది", "बिल बन रहा है", "Bill avutondi"], "Closed": ["ముగిసింది", "बंद", "Closed"],
-  "Cancelled": ["రద్దు", "रद्द", "Cancel"], "Not booked": ["బుక్ కాలేదు", "बुक नहीं", "Book kaledu"], "Proposed": ["సూచించాం", "सुझाया", "Propose chesam"], "Pending": ["పెండింగ్", "बाकी", "Pending"],
-  "Approved": ["అనుమతి వచ్చింది", "मंज़ूर", "Approve ayyindi"], "Rejected": ["వద్దన్నారు", "नामंज़ूर", "Reject chesaru"], "Question": ["ప్రశ్న అడిగారు", "सवाल पूछा", "Question adigaru"],
-  "Waiting for you": ["మీ కోసం ఆగింది", "आपका इंतज़ार", "Mee kosam waiting"], "Sent": ["పంపాను", "भेज दिया", "Pampa"], "Delivery failed": ["పంపడం కుదరలేదు", "भेजना विफल", "Delivery fail"],
-  "Paid": ["డబ్బు వచ్చింది", "भुगतान हुआ", "Paid"], "Completed": ["పూర్తైంది", "पूरा हुआ", "Complete"], "No answer": ["ఎత్తలేదు", "उठाया नहीं", "Ethaledu"], "Failed": ["కుదరలేదు", "विफल", "Fail"],
-  "On call": ["కాల్‌లో", "कॉल पर", "Call lo"], "Queued": ["వరుసలో", "कतार में", "Line lo"], "Retry scheduled": ["మళ్ళీ చేస్తాను", "दोबारा कोशिश होगी", "Retry untundi"],
-  "Exact model": ["అదే మోడల్", "वही मॉडल", "Exact model"], "Different model": ["వేరే మోడల్", "अलग मॉडल", "Vere model"], "In stock now": ["ఇప్పుడు ఉంది", "अभी स्टॉक में", "Ippudu undi"],
-  "Tomorrow": ["రేపు", "कल", "Repu"], "Not in stock": ["స్టాక్ లేదు", "स्टॉक में नहीं", "Stock ledu"], "Usually stocked": ["సాధారణంగా ఉంటుంది", "आमतौर पर रहता है", "Usually untundi"],
-  "Unknown": ["తెలియదు", "पता नहीं", "Teliyadu"], "unknown": ["తెలియదు", "पता नहीं", "teliyadu"], "Confirmed": ["ఖరారు", "पक्का", "Confirm"], "Tentative": ["ఇంకా ఖరారు కాలేదు", "अभी पक्का नहीं", "Inka confirm kaledu"],
-  "Not said": ["చెప్పలేదు", "नहीं बताया", "Cheppaledu"], "Refused": ["కుదరదన్నారు", "मना किया", "Kudaradannaru"], "Conflicting": ["రెండు రకాలుగా చెప్పారు", "अलग-अलग बताया", "Rendu rakaluga chepparu"],
-  "Condition met": ["మీ షరతు నెరవేరింది", "शर्त पूरी हुई", "Condition met"], "Condition not met": ["మీ షరతు నెరవేరలేదు", "शर्त पूरी नहीं हुई", "Condition met kaledu"], "Waiting": ["ఎదురుచూస్తున్నా", "इंतज़ार", "Waiting"],
+
+/* ---------- language ---------- */
+let LANG = ls.get("instint_lang") || "en";
+const I = {
+  "What do you need?": ["మీకు ఏం కావాలి?", "आपको क्या चाहिए?", "Meeku em kavali?"],
+  "Type or speak in your language — or show a photo.": ["మీ భాషలో టైప్ చేయండి లేదా మాట్లాడండి — లేదా ఫోటో చూపించండి.", "अपनी भाषा में लिखें या बोलें — या फ़ोटो दिखाएँ।", "Mee language lo type cheyyandi leda matladandi — leda photo chupinchandi."],
+  "Hold the blue button and talk": ["నీలి బటన్ నొక్కి పట్టి మాట్లాడండి", "नीला बटन दबाकर बोलिए", "Blue button nokki patti matladandi"],
+  "Add photo": ["ఫోటో జోడించండి", "फ़ोटो जोड़ें", "Photo add cheyyandi"],
+  "e.g. Transcribe this and email me a copy": ["ఉదా: ఇది టైప్ చేసి నాకు ఇమెయిల్ చేయి", "जैसे: इसे टाइप करके मुझे ईमेल करो", "eg: Idi type chesi naaku email cheyyi"],
+  "Release to send": ["వదిలితే పంపుతాను", "छोड़ें तो भेजूँ", "Vadilithe pamputha"],
+  "Recent work": ["ఇటీవలి పనులు", "हाल का काम", "Recent work"], "Needs you": ["మీ నిర్ణయం కావాలి", "आपका फ़ैसला चाहिए", "Mee decision kavali"],
+  "Active task": ["జరుగుతున్న పని", "चल रहा काम", "Active task"], "Reminders": ["రిమైండర్లు", "रिमाइंडर", "Reminders"],
+  "Nothing yet — ask for something above.": ["ఇంకా ఏమీ లేదు — పైన అడగండి.", "अभी कुछ नहीं — ऊपर पूछिए।", "Inka emi ledu — paina adagandi."],
+  "Message Instint…": ["Instint కి మెసేజ్…", "Instint को संदेश…", "Instint ki message…"],
+  "Hi! I'm Instint.": ["నమస్కారం! నేను Instint.", "नमस्ते! मैं Instint हूँ।", "Namaskaram! Nenu Instint."],
+  "Tell me what you need — I'll search, call, email, remind and follow up. Which language should I use?": ["మీకు ఏం కావాలో చెప్పండి — వెతుకుతాను, కాల్ చేస్తాను, ఇమెయిల్ పంపుతాను, గుర్తు చేస్తాను, పూర్తయ్యే వరకు చూస్తాను. ఏ భాష వాడాలి?", "बताइए क्या चाहिए — मैं खोजूँगा, कॉल करूँगा, ईमेल भेजूँगा, याद दिलाऊँगा और पूरा होने तक पीछा करूँगा। कौन सी भाषा?", "Em kavalo cheppandi — vethukutha, call chestha, email pamputha, remind chestha, follow up chestha. Ye language?"],
+  "Continue": ["కొనసాగించు", "आगे बढ़ें", "Continue"], "Skip": ["దాటవేయి", "छोड़ें", "Skip"], "Settings": ["సెట్టింగ్స్", "सेटिंग्स", "Settings"],
+  "Language": ["భాష", "भाषा", "Language"], "What I remember": ["నాకు గుర్తున్నవి", "मुझे क्या याद है", "Naaku gurthunnavi"],
+  "Never stored: OTPs, passwords, card or bank numbers, ID numbers.": ["ఎప్పుడూ దాచను: OTP, పాస్‌వర్డ్, కార్డ్/బ్యాంక్ నంబర్లు, ID నంబర్లు.", "कभी नहीं रखता: OTP, पासवर्ड, कार्ड/बैंक नंबर, ID नंबर।", "Eppudu store cheyanu: OTP, password, card/bank numbers, ID numbers."],
+  "Nothing remembered yet. Say “remember …”.": ["ఇంకా ఏమీ గుర్తు లేదు. “గుర్తుంచుకో …” అనండి.", "अभी कुछ याद नहीं। “याद रखो …” कहिए।", "Inka emi gurthu ledu. “remember …” anandi."],
+  "Forget": ["మర్చిపో", "भूल जाओ", "Marchipo"], "Send": ["పంపు", "भेजो", "Pampu"], "Not now": ["ఇప్పుడు కాదు", "अभी नहीं", "Ippudu kadu"],
+  "Edit": ["మార్చు", "बदलें", "Edit"], "Call": ["కాల్ చేయి", "कॉल करो", "Call cheyyi"], "Copy text": ["టెక్స్ట్ కాపీ", "टेक्स्ट कॉपी", "Text copy"],
+  "Email this": ["ఇది ఇమెయిల్ చేయి", "इसे ईमेल करो", "Idi email cheyyi"], "Copied": ["కాపీ అయ్యింది", "कॉपी हो गया", "Copy ayyindi"],
+  "Listen": ["వినండి", "सुनें", "Listen"], "Instint heard": ["Instint విన్నది", "Instint ने सुना", "Instint vinnadi"],
+  "Transcript": ["ట్రాన్స్క్రిప్ట్", "ट्रांसक्रिप्ट", "Transcript"], "Email": ["ఇమెయిల్", "ईमेल", "Email"], "To": ["ఎవరికి", "किसे", "Evariki"],
+  "Subject": ["విషయం", "विषय", "Subject"], "Attachment": ["జతచేసినది", "अटैचमेंट", "Attachment"], "Reminder": ["రిమైండర్", "रिमाइंडर", "Reminder"],
+  "Sources": ["మూలాలు", "स्रोत", "Sources"], "checked": ["చూసిన తేదీ", "जाँचा", "checked"], "Which one?": ["ఏది?", "कौन सा?", "Edi?"],
+  "Ready": ["సిద్ధం", "तैयार", "Ready"], "Waiting for you": ["మీ కోసం ఆగింది", "आपका इंतज़ार", "Mee kosam waiting"], "Sent": ["పంపాను", "भेज दिया", "Pampa"],
+  "Booked": ["బుక్ అయ్యింది", "बुक हुआ", "Book ayyindi"], "Promised": ["మాట ఇచ్చారు", "वादा किया", "Promise chesaru"], "Resolved": ["పరిష్కారమైంది", "हल हो गया", "Resolved"],
+  "Failed": ["కుదరలేదు", "विफल", "Fail"], "Done": ["పూర్తైంది", "हो गया", "Done"], "Partly done": ["కొంత పూర్తైంది", "आंशिक", "Konta ayyindi"],
+  "Set": ["సెట్ అయ్యింది", "सेट", "Set"], "repeats": ["మళ్ళీ", "दोहराए", "repeats"], "Not sure": ["ఖచ్చితంగా తెలియదు", "पक्का नहीं", "Kachitanga teliyadu"],
+  "Who and what": ["ఎవరికి, ఏమిటి", "किसे और क्या", "Evariki, emiti"], "Questions": ["ప్రశ్నలు", "सवाल", "Questions"],
+  "Thinking…": ["ఆలోచిస్తున్నా…", "सोच रहा हूँ…", "Alochistunna…"], "Listening…": ["వింటున్నా…", "सुन रहा हूँ…", "Vintunna…"],
+  "Reading your photo…": ["మీ ఫోటో చదువుతున్నా…", "आपकी फ़ोटो पढ़ रहा हूँ…", "Mee photo chaduvutunna…"],
+  "Allow the microphone to talk": ["మాట్లాడటానికి మైక్ అనుమతి ఇవ్వండి", "बोलने के लिए माइक की अनुमति दें", "Mic permission ivvandi"],
+  "Hold the button and speak": ["బటన్ నొక్కి పట్టి మాట్లాడండి", "बटन दबाकर बोलिए", "Button nokki patti matladandi"],
+  "No connection — try again": ["నెట్ లేదు — మళ్ళీ ప్రయత్నించండి", "नेटवर्क नहीं — फिर कोशिश करें", "Net ledu — malli try cheyyandi"],
+  "Saved": ["సేవ్ అయ్యింది", "सेव हो गया", "Save ayyindi"], "Start a new conversation? Your tasks stay saved.": ["కొత్త సంభాషణ మొదలుపెట్టాలా? మీ పనులు సేవ్‌లోనే ఉంటాయి.", "नई बातचीत शुरू करें? आपके काम सेव रहेंगे।", "Kotha conversation start cheyyala? Mee tasks save lone untayi."],
+  "Email this photo": ["ఈ ఫోటో ఇమెయిల్ చేయి", "यह फ़ोटो ईमेल करो", "Ee photo email cheyyi"], "Book a doctor": ["డాక్టర్ అపాయింట్‌మెంట్", "डॉक्टर बुक करो", "Doctor book cheyyi"],
+  "Complain & follow up": ["ఫిర్యాదు & ఫాలో అప్", "शिकायत और फ़ॉलो अप", "Complaint & follow up"], "Call from a photo": ["ఫోటో నుంచి కాల్", "फ़ोटो से कॉल", "Photo nunchi call"],
+  "Is this a scam?": ["ఇది మోసమా?", "क्या यह धोखा है?", "Idi scam aa?"], "Yes": ["అవును", "हाँ", "Avunu"], "No": ["వద్దు", "नहीं", "Vaddu"],
 };
-const L = s => { const i = {te: 0, hi: 1, "te-en": 2}[LANG]; const r = i === undefined ? null : I18N[s]; return r ? r[i] : s; };
+const L = s => { const i = {te: 0, hi: 1, "te-en": 2}[LANG]; const r = i === undefined ? null : I[s]; return r ? r[i] : s; };
 const LOC = () => ({te: "te-IN", hi: "hi-IN"}[LANG] || "en-IN");
 function applyStatic() {
   document.documentElement.lang = {te: "te", hi: "hi"}[LANG] || "en";
   document.querySelectorAll("[data-i18n]").forEach(el => { el.dataset.en = el.dataset.en || el.textContent; el.textContent = L(el.dataset.en); });
   document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.dataset.enph = el.dataset.enph || el.placeholder; el.placeholder = L(el.dataset.enph); });
 }
-function setLang(code) { LANG = code || "en"; ls.set("chinku_lang", LANG); applyStatic(); }
-const chip = (k, extra) => `<span class="chip ${extra || ""}">${esc(L(WORD[k] || k))}</span>`;
+function setLang(c) { LANG = c || "en"; ls.set("instint_lang", LANG); applyStatic(); renderExamples(); }
+const LANGS = [["en", "English", "English"], ["te", "తెలుగు", "Telugu"], ["hi", "हिन्दी", "Hindi"], ["te-en", "Mixed", "Telugu + English"]];
+let pick = null;
+function langCards(el, onPick) { el.innerHTML = LANGS.map(([c, n, s]) => `<button class="lang ${c === pick ? "on" : ""}" data-l="${c}" aria-pressed="${c === pick}"><b>${esc(n)}</b><span>${esc(s)}</span></button>`).join("");
+  el.querySelectorAll(".lang").forEach(b => b.onclick = () => { pick = b.dataset.l; langCards(el, onPick); onPick && onPick(pick); }); }
+async function saveLang(c) { try { const r = await post("/api/me", {language: c}); if (!r.ok) throw 0; setLang(c); toast(L("Saved")); } catch (e) { toast(L("No connection — try again")); } }
+$("langok").onclick = async () => { if (pick) await saveLang(pick); $("langsheet").classList.remove("on"); ls.set("instint_onboarded", "1"); };
+$("langskip").onclick = () => { $("langsheet").classList.remove("on"); ls.set("instint_onboarded", "1"); };
 
-/* ---------------- data ---------------- */
-let me = {}, jobs = [], calls = [], selDay = new Date();
-async function loadAll() {
-  try { const [a, b] = await Promise.all([api("/api/jobs"), api("/api/calls")]);
-    if (a.status === 403) { toast("Wrong or missing key in the link"); return; }
-    const nj = await a.json(), nc = b.ok ? await b.json() : [];
-    const changed = JSON.stringify(nj) !== JSON.stringify(jobs) || JSON.stringify(nc) !== JSON.stringify(calls);
-    jobs = nj; calls = nc; if (changed) renderAll(true);
+/* ---------- settings + memory ---------- */
+async function openSettings() {
+  pick = LANG; langCards($("langs2"), c => saveLang(c)); $("setsheet").classList.add("on");
+  try { const m = await (await api("/api/memory")).json();
+    $("memlist").innerHTML = m.length ? m.map(r => `<div class="memrow"><div class="t"><b>${esc(r.key)}</b><span>${esc(typeof r.value === "string" ? r.value : JSON.stringify(r.value))}</span></div><button class="btn" data-k="${esc(r.key)}">${L("Forget")}</button></div>`).join("")
+      : `<p class="empty">${L("Nothing remembered yet. Say “remember …”.")}</p>`;
+    $("memlist").querySelectorAll("[data-k]").forEach(b => b.onclick = async () => { await post("/api/memory/forget", {item: b.dataset.k}); openSettings(); });
   } catch (e) {}
 }
-const openJobs = () => jobs.filter(j => !["closed", "cancelled"].includes(j.status));
-function slots() { const out = []; for (const j of jobs) { const s = j.full && j.full.appointment && j.full.appointment.slot; if (s && s.start) out.push({job: j, slot: s}); } return out; }
+$("settings").onclick = openSettings; $("setclose").onclick = () => $("setsheet").classList.remove("on");
+document.querySelectorAll(".sheet").forEach(s => s.addEventListener("click", e => { if (e.target === s && s.id !== "langsheet") s.classList.remove("on"); }));
 
-/* ---------------- TODAY ---------------- */
-function heroData() {
-  const nowT = new Date();
-  const live = slots().find(x => new Date(x.slot.start) <= nowT && nowT <= new Date(new Date(x.slot.end).getTime() + 3 * 3600e3)
-                              && !(x.job.full.invoice && ["sent", "paid"].includes(x.job.full.invoice.state)));
-  if (live) return {k: L("Visit now"), t: `${live.job.site || live.job.issue}`, s: `${live.job.issue || ""} · ${fmtTime(live.slot.start)}–${fmtTime(live.slot.end)}. ${L("When you finish, tell me what you did — I'll make the bill.")}`,
-                    b: L("Finish & invoice"), go: () => { go("chat"); $("text").placeholder = "e.g. Fitted 2 angle valves at 350 each, hose 300, labour 400…"; }};
-  const blocked = openJobs().find(j => j.next_action && j.next_action.owner === "plumber" && j.next_action.blocked_by);
-  if (blocked) return {k: L("Decision needed"), t: `${blocked.job_id} · ${blocked.site || blocked.issue || ""}`, s: blocked.next_action.what, b: L("Open job"), go: () => openJob(blocked.job_id)};
-  const now = new Date(); const next = slots().filter(x => new Date(x.slot.end || x.slot.start) >= now).sort((a, b) => new Date(a.slot.start) - new Date(b.slot.start))[0];
-  if (next) return {k: L("Next visit"), t: `${next.job.site || next.job.issue} · ${fmtTime(next.slot.start)}`, s: `${fmtDay(next.slot.start)} · ${next.job.issue || ""}`, b: L("Details"), go: () => openJob(next.job.job_id)};
-  const j = openJobs()[0];
-  if (j && j.next_action) return {k: `${j.job_id} · ${L("next step")}`, t: j.next_action.what, s: `${j.issue || ""}${j.site ? " · " + j.site : ""}`, b: L("Do it with Chinku"), go: () => go("chat")};
-  return {k: L("Today"), t: L("No jobs yet"), s: L("Tap the mic and tell me about a job — any language."), b: L("Talk to Chinku"), go: () => go("chat")};
+/* ---------- views ---------- */
+function show(v) {
+  const chat = v === "chat";
+  $("home").classList.toggle("hidden", chat); $("chat").classList.toggle("hidden", !chat); $("dock").classList.toggle("hidden", !chat);
+  $("back").classList.toggle("hidden", !chat); $("newchat").classList.toggle("hidden", !chat);
+  if (location.hash !== "#" + v) history.replaceState(null, "", location.pathname + location.search + "#" + v);
+  if (chat) { setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 30); pollChat(); } else { loadHome(); window.scrollTo(0, 0); }
 }
-function renderToday() {
-  const now = new Date();
-  $("hello").textContent = `${L("Hello")}, ${me.name || ""}`;
-  $("todaydate").textContent = L("Today") + " " + now.toLocaleDateString(LOC(), {day: "numeric", month: "short"});
-  $("avatar").textContent = me.initials || "C";
-  const h = heroData();
-  $("hero").innerHTML = `<div class="hero c-violet fade" style="--i:1"><div class="txt"><div class="kicker">${esc(h.k)}</div><h1>${esc(h.t)}</h1>
-    <div class="sub">${esc(h.s)}</div><button class="btn press" id="herobtn">${esc(h.b)} →</button></div>${art("pipes", "art")}</div>`;
-  $("herobtn").onclick = h.go;
-  // week strip
-  const start = new Date(now); start.setDate(now.getDate() - now.getDay());
-  const have = slots().map(x => new Date(x.slot.start));
-  $("week").innerHTML = [...Array(7)].map((_, i) => { const d = new Date(start); d.setDate(start.getDate() + i);
-    const cls = ["day", "press", sameDay(d, now) ? "today" : "", sameDay(d, selDay) ? "sel" : ""].join(" ");
-    const dot = have.some(x => sameDay(x, d)) ? `<span class="dot" aria-label="has visits"></span>` : "";
-    return `<button class="${cls}" role="tab" aria-selected="${sameDay(d, selDay)}" data-d="${d.toISOString()}">${dot}<small>${d.toLocaleDateString(LOC(), {weekday: "short"})}</small><b>${d.getDate()}</b></button>`; }).join("");
-  $("week").querySelectorAll(".day").forEach(b => b.onclick = () => { selDay = new Date(b.dataset.d); renderToday(); });
-  // bento
-  const dayLabel = sameDay(selDay, now) ? L("today") : selDay.toLocaleDateString(LOC(), {weekday: "long"});
-  const visit = slots().filter(x => sameDay(new Date(x.slot.start), selDay)).sort((a, b) => new Date(a.slot.start) - new Date(b.slot.start))[0];
-  const toBook = openJobs().find(j => j.appointment === "not_booked" && (j.plumber_windows || []).length);
-  let mango;
-  if (visit) { const sc = visit.job.full.roles.site_contact || {};
-    mango = `<div class="card tall c-mango press fade" style="--i:4" data-job="${esc(visit.job.job_id)}">${chip(visit.job.appointment)}
-      <h3>${esc(visit.job.issue || L("Visit"))}</h3><p>${esc(fmtDay(visit.slot.start))}</p><p><b>${esc(fmtTime(visit.slot.start))}–${esc(fmtTime(visit.slot.end))}</b></p><p>${esc(visit.job.site || "")}</p>
-      <div class="foot"><span class="ico">${esc((sc.name || "C")[0])}</span><span><span class="meta">${L("Site contact")}</span><br><b>${esc(sc.name || sc.phone || "—")}</b></span></div>${art("wrench", "mini")}</div>`; }
-  else if (toBook && sameDay(selDay, now)) { const sc = toBook.site_contact || {};
-    mango = `<div class="card tall c-mango press fade" style="--i:4" data-job="${esc(toBook.job_id)}">${chip("not_booked")}
-      <h3>${esc(toBook.issue || L("Visit to book"))}</h3><p>${esc(toBook.site || "")}</p><p class="meta">${L("Your free time")}</p><p><b>${esc((toBook.plumber_windows || []).join(", "))}</b></p>
-      <div class="foot"><span class="ico">${esc((sc.name || "C")[0])}</span><span><span class="meta">${L("Customer")}</span><br><b>${esc(sc.name || sc.phone || "—")}</b></span></div>${art("wrench", "mini")}</div>`; }
-  else mango = `<div class="card tall c-mango empty fade" style="--i:4">${chip("Visits")}<h3>${L("No visits")} · ${esc(dayLabel)}</h3><p>${L("When a customer confirms a slot, it shows here.")}</p>${art("wrench", "mini")}</div>`;
-  const offers = jobs.flatMap(j => ((j.full && j.full.shop_offers) || []).filter(o => !o.superseded_by).map(o => ({o, j})));
-  const best = offers.filter(x => x.o.unit_price != null).sort((a, b) => (a.o.matches_requested === "exact" ? 0 : 1) - (b.o.matches_requested === "exact" ? 0 : 1) || a.o.unit_price - b.o.unit_price)[0];
-  const sky = best ? `<div class="card c-sky press fade" style="--i:5" data-job="${esc(best.j.job_id)}">${chip(best.o.matches_requested)}
-      <h3>${esc(best.o.exact_model_quoted || L("Part"))}</h3><p>${esc(best.o.shop)}</p><p><span class="price">${esc(inr(best.o.unit_price))}</span>${best.o.mrp ? `<span class="mrp">${esc(inr(best.o.mrp))}</span>` : ""}</p>
-      <div class="foot">${chip(best.o.stock)}${best.o.earliest_pickup ? `<span class="meta">${L("Pickup")} ${esc(best.o.earliest_pickup)}</span>` : ""}</div>${art("valve", "mini")}</div>`
-    : `<div class="card c-sky empty fade" style="--i:5">${chip("Parts")}<h3>${L("No part quotes yet")}</h3><p>${L("Send a part photo and I'll ring your shops.")}</p>${art("valve", "mini")}</div>`;
-  const appr = jobs.flatMap(j => ((j.full && j.full.extra_work) || []).map(a => ({a, j}))).find(x => x.a.response === "pending") ||
-               jobs.flatMap(j => ((j.full && j.full.extra_work) || []).map(a => ({a, j})))[0];
-  const pink = appr ? `<div class="card c-pink press fade" style="--i:6" data-job="${esc(appr.j.job_id)}">${chip(appr.a.response)}<h3>${esc(inr(appr.a.amount))}</h3><p>${esc(appr.a.scope)}</p>
-      <div class="foot"><span class="meta">${L("Approver")}</span><b>${esc((appr.a.sent_to && appr.a.sent_to.name) || "—")}</b></div></div>`
-    : `<div class="card c-pink empty fade" style="--i:6">${chip("Approvals")}<h3>${L("No approvals waiting")}</h3><p>${L("Extra work? Tell me and I'll ask the supervisor.")}</p></div>`;
-  const bill = jobs.map(j => ({j, inv: j.full && j.full.invoice})).filter(x => x.inv && x.inv.state && x.inv.state !== "none")[0];
-  const mint = bill ? `<div class="card c-mint press fade" style="--i:7" data-job="${esc(bill.j.job_id)}">${chip(bill.inv.state)}<h3>${esc(inr(bill.inv.total))}</h3><p>${esc(bill.j.job_id)} · ${esc(bill.inv.number || L("Draft"))}</p>${art("bill", "mini")}</div>`
-    : `<div class="card c-mint empty fade" style="--i:7">${chip("Bills")}<h3>${L("No bills yet")}</h3><p>${L("Finish a job with a voice note — I'll make the invoice.")}</p>${art("bill", "mini")}</div>`;
-  const blocked = openJobs().filter(j => j.next_action && j.next_action.blocked_by);
-  const coral = blocked.length ? `<div class="card wide c-coral press fade" style="--i:8" data-job="${esc(blocked[0].job_id)}">${chip("Needs your decision")}
-      <h3>${esc(blocked[0].job_id)} · ${esc(blocked[0].next_action.what)}</h3><p>${esc(blocked[0].next_action.blocked_by)}</p></div>` : "";
-  $("bento").innerHTML = mango + sky + pink + mint + coral;
-  $("bento").querySelectorAll("[data-job]").forEach(c => c.onclick = () => openJob(c.dataset.job));
-}
+$("back").onclick = () => show("home");
+window.addEventListener("scroll", () => $("hdr").classList.toggle("scrolled", window.scrollY > 4), {passive: true});
 
-/* ---------------- JOBS ---------------- */
-let jobFilter = "open", jobQuery = "";
-const jobColor = j => j.next_action && j.next_action.blocked_by ? "c-coral" : j.status === "awaiting_approval" ? "c-pink" : ["invoicing", "closed"].includes(j.status) ? "c-mint" : "c-mango";
-function jobItem(j, i) {
-  const sc = j.site_contact || {};
-  const rows = [["Site", j.site], ["Customer", [sc.name, sc.phone].filter(Boolean).join(" · ")], ["Your free time", (j.plumber_windows || []).join(", ")],
-                ["Bill to", j.billing_to], ["Work order", j.work_order]].filter(([, v]) => v).map(([k, v]) => `<dt>${esc(L(k))}</dt><dd>${esc(v)}</dd>`).join("");
-  const tl = (j.timeline || []).slice().reverse().map(e => `<li><b>${esc(hhmm(e.ts))}</b> · ${esc(e.summary)} ${e.simulated ? chip("Simulated", "dash") : ""}</li>`).join("");
-  return `<article class="item ${jobColor(j)} press fade" style="--i:${i}" data-job="${esc(j.job_id)}"><div class="top"><span class="chip solid">${esc(j.job_id)}</span>${chip(j.status)}${chip(j.appointment)}${j.sample ? chip("Sample", "dash") : ""}</div>
-    ${j.slot ? `<p style="margin:6px 0 0"><b>${L("Visit")}:</b> ${esc(j.slot)}</p>` : ""}
-    <h3>${esc(j.issue || L("Job"))}</h3><dl class="kv">${rows}</dl>
-    ${j.next_action ? `<p style="margin:10px 0 0"><b>${L("Next")}:</b> ${esc(j.next_action.what)}${j.next_action.blocked_by ? " " + chip(L("Blocked") + ": " + j.next_action.blocked_by) : ""}</p>` : ""}
-    ${tl ? `<details><summary>${L("Timeline")} (${(j.timeline || []).length})</summary><ul class="tl">${tl}</ul></details>` : ""}</article>`;
+/* ---------- home ---------- */
+const EXAMPLES = [["📷", "Email this photo", "Transcribe this photo and email me a copy"], ["🩺", "Book a doctor", "Book a dermatologist for Mummy tomorrow evening near Kukatpally and tell her"],
+  ["🛠️", "Complain & follow up", "My mixer is broken — raise a complaint with the company and follow up"], ["📞", "Call from a photo", "Call the number on this photo and ask "],
+  ["🛡️", "Is this a scam?", "Is this message a scam?"]];
+function renderExamples() { $("examples").innerHTML = EXAMPLES.map(([e, l, t], i) => `<button class="chip" data-i="${i}"><span aria-hidden="true">${e}</span>${esc(L(l))}</button>`).join("");
+  $("examples").querySelectorAll(".chip").forEach(b => b.onclick = () => { const t = EXAMPLES[+b.dataset.i][2]; $("hometext").value = t; $("hometext").focus(); syncHome();
+    if (/photo|this message/i.test(t) && !homeFiles.length) $("homefile").click(); }); }
+const status = (k) => { const m = {done: ["ok", "Done"], partial: ["wait", "Partly done"], failed: ["bad", "Failed"], waiting: ["wait", "Waiting for you"], sent: ["ok", "Sent"]}[k] || ["", k];
+  return `<span class="status ${m[0]}">${esc(L(m[1]))}</span>`; };
+const RICON = {Transcript: "📝", Email: "✉️", Reminder: "⏰", Research: "🔎", Map: "🗺️", Call: "📞", Memory: "🧠", "Photo read": "📷", Answer: "💬", Details: "📋"};
+async function loadHome() {
+  try { const h = await (await api("/api/home")).json();
+    $("needs").innerHTML = (h.needs_you || []).length ? `<h2>${L("Needs you")}</h2>` + h.needs_you.map(n => needCard(n)).join("") : "";
+    $("needs").querySelectorAll("[data-yes]").forEach(b => b.onclick = () => { show("chat"); sendMsg(b.dataset.yes); });
+    $("active").innerHTML = h.active ? `<h2>${L("Active task")}</h2><div class="card"><div class="row"><div class="ico">📞</div><div class="t"><b>${esc(h.active.request)}</b><span>${esc(h.active.what)}</span></div></div></div>` : "";
+    $("rems").innerHTML = (h.reminders || []).length ? `<h2>${L("Reminders")}</h2>` + h.reminders.map(r => `<div class="card"><div class="row"><div class="ico">⏰</div><div class="t"><b>${esc(r.text)}</b><span>${esc(r.when)}${r.repeat && r.repeat !== "none" ? " · " + L("repeats") + " " + esc(r.repeat) : ""}</span></div></div></div>`).join("") : "";
+    $("recent").innerHTML = (h.recent || []).length ? h.recent.map(r => `<div class="card fade"><div class="row"><div class="ico">${RICON[(r.results[0] || {}).label] || "✅"}</div><div class="t"><b>${esc(r.understood || r.request)}</b>
+        <span>${(r.results || []).map(x => `${esc(L(x.label))}${x.detail ? " · " + esc(x.detail) : ""}`).join("  ·  ")}</span></div>${status(r.status)}</div></div>`).join("")
+      : `<div class="empty">${L("Nothing yet — ask for something above.")}</div>`;
+  } catch (e) {}
 }
-function renderJobs() {
-  const filters = [["open", "Open"], ["all", "All"], ["closed", "Closed"]];
-  $("jobfilter").innerHTML = filters.map(([k, l]) => `<button class="${k === jobFilter ? "on" : ""}" data-f="${k}">${L(l)}</button>`).join("");
-  $("jobfilter").querySelectorAll("button").forEach(b => b.onclick = () => { jobFilter = b.dataset.f; renderJobs(); });
-  let list = jobFilter === "open" ? openJobs() : jobFilter === "closed" ? jobs.filter(j => ["closed", "cancelled"].includes(j.status)) : jobs;
-  if (jobQuery) list = list.filter(j => JSON.stringify(j).toLowerCase().includes(jobQuery));
-  $("joblist").innerHTML = list.length ? list.map(jobItem).join("") : `<div class="item c-mango fade"><h3>${L(jobQuery ? "No match" : "No jobs here yet")}</h3><p>${L("Tap the mic and describe a job.")}</p></div>`;
-  $("joblist").querySelectorAll("details").forEach(d => d.onclick = e => e.stopPropagation());
+function needCard(n) { const p = n.preview || {};
+  const what = p.type === "email" ? `${L("Email")} · ${L("To")} ${esc(p.to)}` : p.type === "call_plan" ? `${L("Call")} · ${esc((p.targets || []).map(t => t.name || t.phone).join(", "))}` : esc(n.request);
+  return `<div class="card need fade"><div class="row"><div class="ico">${p.type === "email" ? "✉️" : "📞"}</div><div class="t"><b>${what}</b><span>${esc(p.subject || p.purpose || n.request)}</span></div></div>
+    <div class="btns"><button class="btn primary" data-yes="yes">${p.type === "call_plan" ? L("Call") : L("Send")}</button><button class="btn" data-yes="no">${L("Not now")}</button></div></div>`; }
+
+/* ---------- composing (home + chat) ---------- */
+let homeFiles = [], chatFiles = [];
+function fileChips(el, arr, redraw) { el.innerHTML = arr.map((f, i) => `<span class="f">${f.type.startsWith("image") ? `<img src="${URL.createObjectURL(f)}" alt="">` : "📄"}${esc(f.name.slice(0, 18))}<button type="button" data-i="${i}" aria-label="Remove">✕</button></span>`).join("");
+  el.querySelectorAll("button").forEach(b => b.onclick = () => { arr.splice(+b.dataset.i, 1); redraw(); }); }
+const syncHome = () => { fileChips($("homefiles"), homeFiles, syncHome); $("homesend").disabled = !($("hometext").value.trim() || homeFiles.length); };
+const syncChat = () => { fileChips($("chatfiles"), chatFiles, syncChat); const has = !!($("chattext").value.trim() || chatFiles.length);
+  $("chatsend").classList.toggle("hidden", !has); $("chatmic").classList.toggle("hidden", has); };
+$("homefile").onchange = e => { homeFiles.push(...e.target.files); e.target.value = ""; syncHome(); };
+$("chatfile").onchange = e => { chatFiles.push(...e.target.files); e.target.value = ""; syncChat(); };
+for (const [t, sync, form] of [["hometext", syncHome, "homeform"], ["chattext", syncChat, "chatform"]]) {
+  $(t).addEventListener("input", () => { $(t).style.height = "auto"; $(t).style.height = Math.min($(t).scrollHeight, 140) + "px"; sync(); });
+  $(t).addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $(form).requestSubmit(); } });
+}
+$("homeform").onsubmit = e => { e.preventDefault(); const t = $("hometext").value, f = homeFiles.slice(); if (!t.trim() && !f.length) return;
+  $("hometext").value = ""; homeFiles = []; syncHome(); show("chat"); sendMsg(t, f); };
+$("chatform").onsubmit = e => { e.preventDefault(); const t = $("chattext").value, f = chatFiles.slice(); if (!t.trim() && !f.length) return;
+  $("chattext").value = ""; $("chattext").style.height = "auto"; chatFiles = []; syncChat(); sendMsg(t, f); };
+
+let waiting = false, typingEl = null;
+function showTyping(label) { if (!typingEl) { typingEl = document.createElement("div"); typingEl.className = "msg bot typing"; typingEl.innerHTML = `<div class="bub"><span class="dots"><i></i><i></i><i></i></span><span class="tt"></span></div>`; }
+  typingEl.querySelector(".tt").textContent = L(label); $("thread").appendChild(typingEl); window.scrollTo(0, document.body.scrollHeight); }
+const hideTyping = () => { if (typingEl && typingEl.parentNode) typingEl.remove(); };
+async function sendMsg(text, files, voice) {
+  text = (text || "").trim(); files = files || []; if (!text && !files.length && !voice) return; $("quick").innerHTML = "";
+  waiting = true; showTyping(voice ? "Listening…" : files.length ? "Reading your photo…" : "Thinking…"); schedChat(700);
+  const fd = new FormData(); fd.append("key", key);
+  if (voice) fd.append("file", voice, voice.name); else { fd.append("text", text); files.forEach(f => fd.append("file", f, f.name)); }
+  try { const r = await fetch(voice ? "/api/voice" : "/api/chat", {method: "POST", body: fd}); if (!r.ok) { const j = await r.json().catch(() => ({})); waiting = false; hideTyping(); toast(j.error || L("No connection — try again")); } }
+  catch (e) { waiting = false; hideTyping(); toast(L("No connection — try again")); }
 }
 
-/* ---------------- CALLS ---------------- */
-const callColor = c => ["dealer_quotes", "source_part"].includes(c.spec) ? "c-sky" : ["appointment", "book_visit"].includes(c.spec) ? "c-mango" : c.spec === "request_approval" ? "c-pink" : "c-violet";
-function renderCalls() {
-  $("calllist").innerHTML = calls.length ? calls.map((c, i) => {
-    const money = n => /price|charge|amount|total|fee|cost|rate/.test(n);
-    const val = x => x.value == null || x.value === "" ? "—" : (money(x.name) && !isNaN(Number(x.value)) ? inr(x.value) : (Array.isArray(x.value) ? x.value.join(", ") : x.value));
-    const f = Object.values(c.fields || {}).map(x => `<dt>${esc(x.name.replace(/_/g, " "))}</dt><dd>${esc(val(x))} ${chip(x.status)}${x.evidence_quote ? `<br><span class="quote">“${esc(x.evidence_quote)}”</span>` : ""}</dd>`).join("");
-    return `<article class="item ${callColor(c)} fade" style="--i:${Math.min(i, 8)}"><div class="top">${chip(c.status)}${c.attempt ? chip(L("Retry") + " " + c.attempt) : ""}${chip("Live call")}
-      <span class="meta" style="margin-left:auto">${c.ts ? esc(hhmm(c.ts)) : ""}</span></div>
-      <h3>${esc((c.callee && (c.callee.name || c.callee.role)) || L("Call"))}</h3><p class="meta">${esc(c.to)} · ${esc((c.spec || "").replace(/_/g, " "))}</p>
-      ${f ? `<dl class="kv">${f}</dl>` : ""}${c.transcript ? `<details><summary>${L("Transcript")}</summary><p style="white-space:pre-wrap;font-size:13px">${esc(c.transcript)}</p></details>` : ""}</article>`; }).join("")
-    : `<div class="item c-sky fade"><h3>${L("No calls yet")}</h3><p>${L("When I ring a customer or a shop, the call and what they said appear here.")}</p></div>`;
+/* ---------- thread rendering ---------- */
+let since = 0, ctimer = null, first = true, mapN = 0;
+const hhmm = ts => new Date(ts * 1000).toLocaleTimeString(LOC(), {hour: "numeric", minute: "2-digit"});
+function heardHtml(m) { let h = esc(m.text);
+  const marks = [...(m.spans || []).map(s => [String(s.raw), ""]), ...(m.low || []).map(x => [String(x), "low"])].filter(([r]) => r && r.trim()).sort((a, b) => b[0].length - a[0].length);
+  const seen = new Set(); for (const [raw, cls] of marks) { const e = esc(raw); if (seen.has(e) || !h.includes(e)) continue; seen.add(e); h = h.split(e).join(`<span class="hl ${cls}" data-raw="${esc(raw)}">${e}</span>`); }
+  return `<span class="lbl">🎙️ ${L("Instint heard")}${m.media_url ? ` · <a href="${esc(m.media_url)}" target="_blank" rel="noopener">▶</a>` : ""}</span>${h}`; }
+function card(c) {
+  if (!c) return "";
+  if (c.type === "transcript") return `<div class="rc"><h4>📝 ${L("Transcript")} ${c.title ? "· " + esc(c.title) : ""} ${c.unclear ? `<span class="status wait">${c.unclear} [unclear]</span>` : ""}</h4><pre>${esc(c.text)}</pre>
+      <div class="btns"><button class="btn" data-copy="${esc(c.text)}">${L("Copy text")}</button><button class="btn" data-say="Email this transcript to me">${L("Email this")}</button></div></div>`;
+  if (c.type === "email") return `<div class="rc"><h4>✉️ ${L("Email")} ${c.state === "sent" ? `<span class="status ok">${L("Sent")}</span>` : `<span class="status wait">${L("Waiting for you")}</span>`}</h4>
+      <dl class="kv"><dt>${L("To")}</dt><dd><b>${esc(c.to)}</b></dd><dt>${L("Subject")}</dt><dd>${esc(c.subject)}</dd>${c.attachment ? `<dt>${L("Attachment")}</dt><dd>📎 ${esc(c.attachment)}</dd>` : ""}</dl>
+      <pre style="margin-top:8px">${esc(c.body)}</pre>${c.state !== "sent" ? `<div class="btns"><button class="btn primary" data-say="yes">${L("Send")}</button><button class="btn" data-edit="1">${L("Edit")}</button><button class="btn" data-say="no">${L("Not now")}</button></div>` : ""}</div>`;
+  if (c.type === "call_plan") return `<div class="rc"><h4>📞 ${L("Who and what")} <span class="status wait">${L("Waiting for you")}</span></h4>
+      <dl class="kv">${(c.targets || []).map(t => `<dt>${esc(t.name || "")}</dt><dd>${esc(t.phone || "")}</dd>`).join("")}</dl><p style="margin:8px 0 0">${esc(c.purpose || "")}</p>
+      ${(c.questions || []).length ? `<ol>${c.questions.map(q => `<li>${esc(typeof q === "string" ? q : q.question)}</li>`).join("")}</ol>` : ""}
+      <div class="btns"><button class="btn primary" data-say="yes">${L("Call")}</button><button class="btn" data-say="no">${L("Not now")}</button></div></div>`;
+  if (c.type === "reminder") return `<div class="rc"><h4>⏰ ${L("Reminder")} <span class="status ok">${L("Set")}</span></h4><b>${esc(c.when)}</b>${c.repeat && c.repeat !== "none" ? " · " + L("repeats") + " " + esc(c.repeat) : ""}<div>${esc(c.text)}</div></div>`;
+  if (c.type === "research") return `<div class="rc"><h4>🔎 ${esc(c.query || "")} ${c.unsure ? `<span class="status wait">${L("Not sure")}</span>` : ""}</h4><div>${esc(c.answer)}</div>
+      ${(c.items || []).length ? `<ol>${c.items.map(i => `<li><b>${esc(i.name)}</b>${i.address ? " · " + esc(i.address) : ""}${i.phone ? " · ☎ " + esc(i.phone) : ""}${i.email ? " · " + esc(i.email) : ""}</li>`).join("")}</ol>` : ""}
+      <div class="src">${L("Sources")}: ${(c.sources || []).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\//, "").slice(0, 50))}</a>`).join(" · ") || "—"} · ${L("checked")} ${esc(c.checked || "")}</div></div>`;
+  if (c.type === "map") { const id = "map" + (++mapN); setTimeout(() => drawMap(id, c.rows || []), 50);
+    return `<div class="rc"><h4>🗺️ ${L("Which one?")}</h4><div class="mapbox" id="${id}"></div><ol>${(c.rows || []).map(r => `<li><button class="btn" style="min-height:36px;margin:2px 0" data-say="${esc("Choose " + r.name)}">${r.n}. ${esc(r.name)}</button>${r.address ? `<div class="src">${esc(r.address)}</div>` : ""}</li>`).join("")}</ol></div>`; }
+  if (c.type === "suggest") return `<div class="rc"><div class="btns" style="margin-top:0">${(c.actions || []).map(a => `<button class="btn" data-say="${esc(a.instruction)}">${esc(a.label)}</button>`).join("")}</div></div>`;
+  if (c.type === "memory") return `<div class="rc"><h4>🧠 ${(c.saved || []).map(s => esc(s.key) + " = " + esc(typeof s.value === "string" ? s.value : JSON.stringify(s.value))).join(" · ")}</h4></div>`;
+  return "";
 }
-
-/* ---------------- BILLS ---------------- */
-function renderBills() {
-  const bills = jobs.flatMap(j => [{j, inv: j.full && j.full.invoice, kind: "Invoice"}, {j, inv: j.full && j.full.estimate, kind: "Estimate"}])
-    .filter(x => x.inv && x.inv.state && x.inv.state !== "none");
-  $("billlist").innerHTML = bills.length ? bills.map(({j, inv, kind}, i) => `<article class="item ${kind === "Invoice" ? "c-mint" : "c-sky"} fade" style="--i:${i}"><div class="top">${chip(kind)}${chip(inv.state)}<span class="chip solid">${esc(j.job_id)}</span></div>
-      <h3>${esc(inr(inv.total))}</h3><p class="meta">${esc(inv.number || L("Draft"))} · ${esc(inv.date || "")}</p>
-      <dl class="kv">${(inv.lines || []).map(l => `<dt>${esc(l.item)}</dt><dd>${esc(l.qty)} × ${esc(inr(l.unit_rate))} = <b>${esc(inr(l.amount))}</b></dd>`).join("")}${inv.labour ? `<dt>${L("Labour")}</dt><dd>${esc(inr(inv.labour))}</dd>` : ""}</dl>
-      <a class="file" href="/api/jobs/${encodeURIComponent(j.job_id)}/pdf?kind=${kind.toLowerCase()}&key=${encodeURIComponent(key)}" download>⬇️ ${L("Download PDF")}</a></article>`).join("")
-    : `<div class="item c-mint fade"><h3>${L("No bills yet")}</h3><p>${L("When a job is finished, send me a closing voice note — I'll read back the total and make the invoice.")}</p></div>`;
-}
-function openJob(id) { const j = jobs.find(x => x.job_id === id); if (!j) return; $("sheetbody").innerHTML = jobItem(j, 0); document.body.classList.add("sheet-open"); }
-const closeSheet = () => document.body.classList.remove("sheet-open");
-$("scrim").onclick = closeSheet;
-let sy = null; $("sheet").addEventListener("touchstart", e => sy = e.touches[0].clientY, {passive: true});
-$("sheet").addEventListener("touchend", e => { if (sy !== null && e.changedTouches[0].clientY - sy > 70 && $("sheet").scrollTop <= 0) closeSheet(); sy = null; });
-
-function renderAll(flash) {
-  renderToday(); renderJobs(); renderCalls(); renderBills();
-  if (flash) document.querySelectorAll(".view.on .card:not(.empty)").forEach(c => { c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); });
-}
-
-/* ---------------- navigation ---------------- */
-function go(v) {
-  document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === v));
-  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.go === v && v !== "chat"));
-  document.body.classList.toggle("chat-open", v === "chat");
-  if (location.hash !== "#" + v) history.replaceState(null, "", "#" + v + location.search.replace(/^\?/, "?"));
-  if (v === "chat") { setTimeout(() => { $("log").scrollTop = $("log").scrollHeight; }, 30); pollChat(); }
-  window.scrollTo(0, 0);
-}
-document.querySelectorAll("nav button").forEach(b => b.onclick = () => go(b.dataset.go));
-$("back").onclick = () => go("today");
-$("typebar").onclick = () => { go("chat"); setTimeout(() => $("text").focus(), 60); };
-$("nearme").onclick = () => {
-  go("chat");
-  if (!navigator.geolocation) { $("text").value = "shops near "; $("text").focus(); return; }
-  toast(L("Getting your location…"));
-  navigator.geolocation.getCurrentPosition(
-    p => sendMsg(`nearby shops @${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`),
-    () => { toast(L("Location is off — type an area")); $("text").value = "shops near "; $("text").focus(); },
-    {enableHighAccuracy: true, timeout: 12000, maximumAge: 60000});
-};
-$("searchbtn").onclick = () => { const sb = $("searchbox"); sb.classList.toggle("on"); if (sb.classList.contains("on")) $("search").focus(); };
-$("search").oninput = e => { jobQuery = e.target.value.trim().toLowerCase(); if (jobQuery) { go("jobs"); } renderJobs(); };
-
-/* ---------------- language onboarding ---------------- */
-const LANG_CARDS = [["en", "English", "Replies in English", "c-sky"], ["te", "తెలుగు", "Telugu", "c-mango"], ["hi", "हिन्दी", "Hindi", "c-pink"], ["te-en", "Mixed", "Telugu + English", "c-mint"]];
-let pickLang = null;
-function showOnboard() {
-  $("langs").innerHTML = LANG_CARDS.map(([c, n, s, col], i) => `<button class="lang ${col} press fade ${c === pickLang ? "on" : ""}" style="--i:${4 + i}" data-l="${c}" aria-pressed="${c === pickLang}"><b>${esc(n)}</b><span>${esc(s)}</span></button>`).join("");
-  $("langs").querySelectorAll(".lang").forEach(b => b.onclick = () => { pickLang = b.dataset.l; $("langgo").disabled = false; showOnboard(); });
-  $("onboard").classList.add("on");
-}
-$("langgo").onclick = async () => { if (!pickLang) return; const fd = new FormData(); fd.append("key", key); fd.append("language", pickLang);
-  try { const r = await fetch("/api/me", {method: "POST", body: fd}); if (!r.ok) throw 0; me.language = pickLang; setLang(pickLang); renderAll(false); $("onboard").classList.remove("on"); toast(L("Saved")); }
-  catch (e) { toast(L("Couldn't save — try again")); } };
-$("avatar").onclick = () => { pickLang = me.language; showOnboard(); };
-
-/* ---------------- CHAT ---------------- */
-let since = 0, ctimer = null, firstChat = true, waiting = false, typingEl = null;
-function setCStatus(t, busy) { $("cstatustext").textContent = L(t); $("cstatus").classList.toggle("busy", !!busy); }
-function showTyping(label) { if (!typingEl) { typingEl = document.createElement("div"); typingEl.className = "row bot typing"; typingEl.innerHTML = `<div class="bub"><span class="dots"><i></i><i></i><i></i></span><span class="tt"></span></div>`; }
-  typingEl.querySelector(".tt").textContent = L(label); $("log").appendChild(typingEl); $("log").scrollTop = $("log").scrollHeight; }
-function hideTyping() { if (typingEl && typingEl.parentNode) typingEl.remove(); }
-function startWaiting(s) { waiting = true; setCStatus(s, true); showTyping(s); schedChat(700); }
-function stopWaiting() { waiting = false; setCStatus("Online", false); hideTyping(); }
-function offersCard(c) {
-  const rows = (c.rows || []).map(r => `<div class="offer"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><b>${esc(r.shop)}</b>${chip(r.match)}${chip(r.stock)}${r.hold === "offered" ? chip("Hold offered") : ""}</div>
-    <div style="margin:4px 0">${esc(r.model || "model ?")} · <span class="price" style="font-size:19px">${esc(inr(r.unit_price))}</span>/pc${r.mrp ? `<span class="mrp">${esc(inr(r.mrp))}</span>` : ""}</div>
-    <div class="meta">${r.price_note ? esc(r.price_note) + " · " : ""}GST ${esc(L(WORD[r.tax] || r.tax))} · ${L("delivery")} ${esc(inr(r.delivery))} · ${L("total")} ${esc(inr(r.total))}</div>
-    ${r.pickup_address ? `<div class="meta">📍 ${esc(r.pickup_address)}${r.earliest_pickup ? " · " + L("from") + " " + esc(r.earliest_pickup) : ""}</div>` : ""}
-    ${r.evidence && Object.keys(r.evidence).length ? `<details><summary>${L("What they said")}</summary>${Object.entries(r.evidence).map(([k, q]) => `<div class="meta"><b>${esc(k.replace(/_/g, " "))}:</b> <span class="quote">“${esc(q)}”</span></div>`).join("")}</details>` : ""}</div>`).join("");
-  const dep = c.dependency ? `<p style="margin:8px 0 0">${chip(c.dependency === "met" ? "met" : "not_met")}</p>` : "";
-  return `<div class="card c-sky"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip("Shop quotes")}</div>
-    <h3>${esc(c.qty)} × ${esc((c.part && (c.part.description + " " + (c.part.model || ""))) || "part")}</h3>${rows || `<p>${L("No answers yet.")}</p>`}${dep}</div>`;
-}
-function shopsCard(c) {
-  return `<div class="card c-violet"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip("Nearby shops · OpenStreetMap")}</div>
-    ${(c.rows || []).map(r => `<div class="offer"><b>${esc(r.name)}</b> <span class="meta">${esc(r.kind)} · ${esc(r.distance_km)} km</span>
-      <div class="meta">${r.address ? "📍 " + esc(r.address) + " · " : ""}${r.phone ? "☎ " + esc(r.phone) + " · " : L("no phone listed") + " · "}<a href="${esc(r.map_url)}" target="_blank" rel="noopener">🗺️ ${L("Map")}</a></div></div>`).join("")}</div>`;
-}
-function billCard(c) {
-  const col = c.type === "invoice" ? "c-mint" : "c-sky";
-  const lines = (c.lines || []).map(l => `<dt>${esc(l.qty)} × ${esc(l.item)}<br><span class="meta">${esc(l.source || "")}</span></dt><dd>${esc(inr(l.amount))}</dd>`).join("");
-  return `<div class="card ${col}"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip(c.type === "invoice" ? "Invoice" : "Estimate")}${chip(c.state)}${c.demo_rates ? chip("Demo rates", "dash") : ""}</div>
-    <h3>${esc(inr(c.total))}</h3><dl class="kv bill">${lines}${c.labour ? `<dt>${L("Labour")}</dt><dd>${esc(inr(c.labour))}</dd>` : ""}</dl>
-    ${c.number ? `<p class="meta">${esc(c.number)}${c.bill_to ? " · " + esc(c.bill_to) : ""}${c.wo ? " · " + esc(c.wo) : ""}</p>` : ""}
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${c.pdf_url ? `<a class="file" href="${esc(c.pdf_url)}" target="_blank" rel="noopener">📄 ${L("Open PDF")}</a>` : ""}
-    <a class="file" href="/api/jobs/${encodeURIComponent(c.job_id)}/pdf?kind=${esc(c.type)}&key=${encodeURIComponent(key)}" download>⬇️ ${L("Download")}</a></div></div>`;
-}
-function chatCard(c) {
-  if (c && (c.type === "invoice" || c.type === "estimate")) return billCard(c);
-  if (c && c.type === "offers") return offersCard(c);
-  if (c && c.type === "shops") return shopsCard(c);
-  if (!c || c.type !== "job") return "";
-  const sc = c.site_contact || {};
-  const rows = [["Site", c.site], ["Customer", [sc.name, sc.phone].filter(Boolean).join(" · ")], ["Free", (c.plumber_windows || []).join(", ")], ["Bill to", c.billing_to], ["WO", c.work_order]]
-    .filter(([, v]) => v).map(([k, v]) => `<dt>${esc(L(k))}</dt><dd>${esc(v)}</dd>`).join("");
-  return `<div class="card ${jobColor(c)}"><div class="top" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip solid">${esc(c.job_id)}</span>${chip(c.status)}${chip(c.appointment)}</div>
-    <h3>${esc(c.issue || L("Job"))}</h3><dl class="kv">${rows}</dl>${c.next_action ? `<p style="margin:8px 0 0"><b>${L("Next")}:</b> ${esc(c.next_action.what)}</p>` : ""}</div>`;
-}
-function media(url) { if (!url) return ""; const u = esc(url), low = url.toLowerCase();
-  if (/\.(png|jpe?g|webp|gif)$/.test(low)) return `<img src="${u}" alt="" loading="lazy">`;
-  if (/\.(mp3|ogg|webm|m4a|wav)$/.test(low)) return `<audio controls preload="none" src="${u}"></audio>`;
-  return `<a class="file" href="${u}" target="_blank" rel="noopener">${low.endsWith(".pptx") ? "📊" : "📄"} ${esc(url.split("/").pop())}</a>`; }
-function heardHtml(m) { let html = esc(m.text);
-  const marks = [...(m.spans || []).map(s => [String(s.raw), "", s.kind]), ...(m.low || []).map(x => [String(x), "low", "unsure"])].filter(([r]) => r && r.trim()).sort((a, b) => b[0].length - a[0].length);
-  const seen = new Set(); for (const [raw, cls, kind] of marks) { const e = esc(raw); if (seen.has(e) || !html.includes(e)) continue; seen.add(e);
-    html = html.split(e).join(`<span class="hl ${cls}" data-raw="${esc(raw)}" title="${esc(kind)} — ${L("tap to correct")}">${e}</span>`); }
-  return `<span class="lbl">🎙️ ${L("Chinku heard")} ${m.media_url ? `<a href="${esc(m.media_url)}" target="_blank" rel="noopener">▶ ${L("Play")}</a>` : ""}</span>${html}`; }
-function row(m) { const r = document.createElement("div"); const mine = m.dir === "in" || m.dir === "heard"; r.className = "row " + (mine ? "me" : "bot");
-  let body;
-  if (m.dir === "heard") body = `<div class="bub heard">${heardHtml(m)}<span class="t">${hhmm(m.ts)}</span></div>`;
-  else { let t = esc(m.text || ""); if (m.dir === "out" && (m.text || "").includes("\n")) { const [a, ...b] = m.text.split("\n"); t = `<span class="rb">${esc(a)}</span>\n${esc(b.join("\n"))}`; }
-    body = `<div class="bub">${t}${media(m.media_url)}${chatCard(m.card)}<span class="t">${hhmm(m.ts)}</span></div>`; }
-  r.innerHTML = body; r.querySelectorAll(".hl").forEach(h => h.onclick = () => { $("text").value = `kaadu, ${h.dataset.raw} → `; $("text").focus(); syncBtns(); }); return r; }
-const optimistic = [];
-function addOpt(text, label, voice) { const r = row({dir: "in", text: label || text, ts: Date.now() / 1000}); r.classList.add("pending"); hideWelcome(); $("log").appendChild(r);
-  if (typingEl && typingEl.parentNode) $("log").appendChild(typingEl); $("log").scrollTop = $("log").scrollHeight; optimistic.push({text, r, voice: !!voice}); }
-function consumeOpt(m) { const i = optimistic.findIndex(o => (m.dir === "heard" && o.voice) || (m.dir === "in" && !o.voice && (o.text || "").trim() === (m.text || "").trim()));
-  if (i < 0) return false; const o = optimistic.splice(i, 1)[0]; o.r.replaceWith(row(m)); return true; }
-function showWelcome() { if ($("log").children.length) return; const w = document.createElement("div"); w.id = "welcome"; w.className = "fade"; w.style.margin = "auto 0";
-  w.innerHTML = `<div class="item c-violet" style="text-align:center"><h3 style="font-size:22px">${L("Hold the mic and talk")}</h3><p>${L("Telugu, English or both. I'll show you what I heard before I act.")}</p></div>`;
-  $("log").appendChild(w); }
-const hideWelcome = () => { const w = $("welcome"); if (w) w.remove(); };
-function setQuick(t) { const q = $("quick"); q.innerHTML = ""; t = (t || "").trim();
-  if (/\(yes[^)]*\)\s*$/i.test(t) || (/\?\s*$/.test(t) && /(shall i|should i|go ahead|did i get that right|call|send|book)/i.test(t)))
-    [["Yes", 1], ["No"], ["Change"]].forEach(([l, p]) => { const b = document.createElement("button"); b.textContent = L(l); if (p) b.className = "primary";
-      b.onclick = () => l === "Change" ? $("text").focus() : sendMsg(l.toLowerCase()); q.appendChild(b); }); }
-let speaking = ls.get("chinku_speak") === "1"; $("speak").setAttribute("aria-pressed", speaking);
-$("speak").onclick = () => { speaking = !speaking; ls.set("chinku_speak", speaking ? "1" : "0"); $("speak").setAttribute("aria-pressed", speaking); toast(L(speaking ? "Replies read aloud" : "Read-aloud off")); };
-function speak(t) { if (!speaking || !t || !("speechSynthesis" in window)) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.split("\n")[0].slice(0, 240));
-  u.lang = LOC(); speechSynthesis.speak(u); } catch (e) {} }
+function drawMap(id, rows) { const el = $(id); if (!el || !window.L) return; const pts = rows.filter(r => r.lat != null);
+  if (!pts.length) { el.remove(); return; }
+  const m = window.L.map(el, {zoomControl: false, attributionControl: true}); window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 19, attribution: "© OpenStreetMap"}).addTo(m);
+  const b = []; pts.forEach(r => { const ll = [r.lat, r.lon]; b.push(ll); window.L.marker(ll, {icon: window.L.divIcon({className: "pin", html: String(r.n), iconSize: [26, 26]})}).addTo(m).bindPopup(esc(r.name)); });
+  b.length > 1 ? m.fitBounds(b, {padding: [24, 24]}) : m.setView(b[0], 15); }
+function row(m) { const d = document.createElement("div"); const mine = m.dir === "in" || m.dir === "heard"; d.className = "msg fade " + (mine ? "me" : "bot");
+  let inner;
+  if (m.dir === "heard") inner = `<div class="bub heard">${heardHtml(m)}</div>`;
+  else if (mine) inner = `<div class="bub">${m.media_url ? `<img src="${esc(m.media_url)}" alt="">` : ""}${esc(m.text || (m.card && m.card.type === "sent_media" ? "📎" : ""))}<div class="meta">${hhmm(m.ts)}</div></div>`;
+  else { const t = m.text || ""; const [a, ...b] = t.split("\n");
+    inner = `<div class="bub">${t.includes("\n") ? `<span class="first">${esc(a)}</span>\n${esc(b.join("\n"))}` : esc(t)}${card(m.card)}
+      <div class="meta">${hhmm(m.ts)}${t.trim() ? `<button class="listen" data-listen="${esc(t)}" aria-label="${L("Listen")}">🔊 ${L("Listen")}</button>` : ""}</div></div>`; }
+  d.innerHTML = inner;
+  d.querySelectorAll("[data-say]").forEach(b => b.onclick = () => sendMsg(b.dataset.say));
+  d.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast(L("Copied")); } catch (e) {} });
+  d.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => { $("chattext").value = "Change the email: "; $("chattext").focus(); syncChat(); });
+  d.querySelectorAll("[data-listen]").forEach(b => b.onclick = () => listen(b.dataset.listen, b));
+  d.querySelectorAll(".hl").forEach(h => h.onclick = () => { $("chattext").value = `Not ${h.dataset.raw}, `; $("chattext").focus(); syncChat(); });
+  return d; }
+let audio = null;
+async function listen(text, btn) { try { btn.disabled = true; const r = await post("/api/tts", {text}); const j = await r.json(); if (audio) audio.pause(); audio = new Audio(j.url); await audio.play(); }
+  catch (e) { toast(L("No connection — try again")); } finally { btn.disabled = false; } }
+function setQuick(m) { const q = $("quick"); q.innerHTML = ""; const t = (m && m.text) || "";
+  if (/\(yes[^)]*\)\s*$/i.test(t) && !(m.card && ["email", "call_plan"].includes(m.card.type))) [["Yes", "yes", 1], ["No", "no"]].forEach(([l, v, p]) => { const b = document.createElement("button");
+    b.className = "btn" + (p ? " primary" : ""); b.textContent = L(l); b.onclick = () => sendMsg(v); q.appendChild(b); }); }
 function schedChat(ms) { clearTimeout(ctimer); ctimer = setTimeout(pollChat, ms); }
 async function pollChat() {
-  try { const r = await api(`/api/chat/messages?since=${since}`); if (r.ok) { const rows = await r.json(); const log = $("log");
-      const stick = log.scrollHeight - log.scrollTop - log.clientHeight < 140 || firstChat; let lastOut = null, heard = false;
-      for (const m of rows) { since = Math.max(since, m.ts); if (!firstChat && consumeOpt(m)) { if (m.dir === "heard") heard = true; continue; }
-        hideWelcome(); log.appendChild(row(m)); if (m.dir === "out") lastOut = m; if (m.dir === "heard") heard = true; }
-      if (heard && waiting) { setCStatus("Understanding…", true); showTyping("Understanding…"); }
-      if (lastOut) { stopWaiting(); setQuick(lastOut.text); if (!firstChat) { speak(lastOut.text); vib(15); loadAll(); } }
-      else if (typingEl && typingEl.parentNode) log.appendChild(typingEl);
-      if (rows.length && stick) log.scrollTop = log.scrollHeight;
-      if (firstChat) { firstChat = false; if (!rows.length) showWelcome(); } } } catch (e) { setCStatus("Reconnecting…", true); }
-  schedChat(waiting ? 800 : (document.body.classList.contains("chat-open") ? 2500 : 6000));
+  try { const r = await api(`/api/chat/messages?since=${since}`); if (r.ok) { const rows = await r.json(); const near = (document.body.scrollHeight - window.scrollY - innerHeight) < 260 || first; let last = null;
+      for (const m of rows) { since = Math.max(since, m.ts); hideTyping(); $("thread").appendChild(row(m)); if (m.dir === "out") last = m; }
+      if (last) { waiting = false; setQuick(last); loadHome(); } else if (waiting) showTyping(L("Thinking…"));
+      if (rows.length && near) setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 30); first = false; } } catch (e) {}
+  schedChat(waiting ? 900 : (!$("chat").classList.contains("hidden") ? 2500 : 7000));
 }
-$("newchat").onclick = async () => { if (!confirm(L("Start a new chat? Jobs and history stay saved."))) return; const fd = new FormData(); fd.append("key", key);
-  try { await fetch("/api/chat/clear", {method: "POST", body: fd}); } catch (e) {} $("log").innerHTML = ""; $("quick").innerHTML = ""; since = Date.now() / 1000; showWelcome(); };
-async function sendMsg(text, file, secs) { text = (text || "").trim(); if (!text && !file) return; $("quick").innerHTML = "";
-  if (file && secs !== undefined) { addOpt("", `🎙️ ${L("Voice note")} · ${fmt(secs)}`, true); startWaiting("Listening…"); }
-  else if (file && !text) { addOpt(`(file: ${file.name})`, `📎 ${file.name}`); startWaiting("Reading the file…"); }
-  else { addOpt(text, file ? `${text}\n📎 ${file.name}` : ""); startWaiting(file ? "Reading the file…" : "Thinking…"); }
-  const fd = new FormData(); fd.append("key", key); fd.append("text", text); if (file) fd.append("file", file, file.name || "voice.webm");
-  try { const r = await fetch(secs !== undefined ? "/api/voice" : "/api/chat", {method: "POST", body: fd}); if (!r.ok) { const j = await r.json().catch(() => ({})); stopWaiting(); toast(j.error || L("Couldn't send")); } }
-  catch (e) { stopWaiting(); toast(L("No connection — try again")); }
-  optimistic.forEach(o => o.r.classList.remove("pending")); }
-const textEl = $("text");
-const syncBtns = () => $("f").classList.toggle("has-text", !!(textEl.value.trim() || $("file").files[0]));
-textEl.addEventListener("input", () => { textEl.style.height = "auto"; textEl.style.height = Math.min(textEl.scrollHeight, 120) + "px"; syncBtns(); });
-textEl.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("f").requestSubmit(); } });
-$("file").onchange = () => { const f = $("file").files[0]; $("fname").textContent = f ? f.name : ""; syncBtns(); };
-$("f").onsubmit = e => { e.preventDefault(); const t = textEl.value, f = $("file").files[0]; textEl.value = ""; $("file").value = ""; $("fname").textContent = ""; textEl.style.height = "auto"; syncBtns(); sendMsg(t, f); };
-const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-let rec = null, chunks = [], stream = null, actx = null, raf = null, t0 = 0, sx = 0, cancelled = false, tick = null, maxT = null;
-async function startRec(e) { e.preventDefault(); sx = e.clientX; cancelled = false;
-  if (!navigator.mediaDevices || !window.MediaRecorder) { toast("Voice not supported in this browser"); return; }
-  try { stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); } catch (err) { toast(L("Allow the microphone to talk")); return; }
-  const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
-  rec = new MediaRecorder(stream, mime ? {mimeType: mime} : undefined); chunks = []; rec.ondataavailable = ev => ev.data.size && chunks.push(ev.data); rec.onstop = onStop;
-  rec.start(250); t0 = Date.now(); vib(20); $("rec").classList.add("on"); $("rec").classList.remove("cancelling");
-  tick = setInterval(() => $("rectime").textContent = fmt((Date.now() - t0) / 1000), 200); maxT = setTimeout(() => stopRec(), 90000); wave(); }
-function wave() { try { actx = new (window.AudioContext || window.webkitAudioContext)(); const an = actx.createAnalyser(); an.fftSize = 256; actx.createMediaStreamSource(stream).connect(an);
-  const cv = $("wave"), g = cv.getContext("2d"), d = new Uint8Array(an.frequencyBinCount), bars = [];
-  const loop = () => { const w = cv.clientWidth, h = cv.clientHeight, r = window.devicePixelRatio || 1; if (cv.width !== w * r) { cv.width = w * r; cv.height = h * r; }
-    an.getByteTimeDomainData(d); let pk = 0; for (const v of d) pk = Math.max(pk, Math.abs(v - 128)); bars.push(Math.min(1, pk / 64)); const n = Math.floor(w / 5); while (bars.length > n) bars.shift();
-    g.clearRect(0, 0, cv.width, cv.height); g.fillStyle = "#7B61E8"; bars.forEach((b, i) => { const bh = Math.max(2, b * h) * r; g.fillRect(i * 5 * r, (h * r - bh) / 2, 3 * r, bh); });
-    raf = requestAnimationFrame(loop); }; loop(); } catch (e) {} }
-function moveRec(e) { if (!rec || rec.state !== "recording") return; cancelled = e.clientX - sx < -80; $("rec").classList.toggle("cancelling", cancelled); $("cancelhint").textContent = L(cancelled ? "Release to cancel" : "‹ slide to cancel"); }
-function stopRec(e) { if (e) e.preventDefault(); if (rec && rec.state === "recording") rec.stop(); }
-function onStop() { clearInterval(tick); clearTimeout(maxT); cancelAnimationFrame(raf); try { actx && actx.close(); } catch (e) {} stream && stream.getTracks().forEach(t => t.stop());
-  $("rec").classList.remove("on"); $("rectime").textContent = "0:00"; $("cancelhint").textContent = L("‹ slide to cancel"); const secs = (Date.now() - t0) / 1000; vib(cancelled ? [10, 40, 10] : 15);
-  if (cancelled) { toast(L("Recording cancelled")); return; } if (secs < 0.7) { toast(L("Hold the mic and speak")); return; }
-  const type = rec.mimeType || "audio/webm"; sendMsg("", new File([new Blob(chunks, {type})], `voice.${type.includes("mp4") ? "m4a" : "webm"}`, {type}), secs); }
-const mic = $("cmic");
-mic.addEventListener("pointerdown", e => { mic.setPointerCapture && mic.setPointerCapture(e.pointerId); startRec(e); });
-mic.addEventListener("pointermove", moveRec); mic.addEventListener("pointerup", stopRec); mic.addEventListener("pointercancel", e => { cancelled = true; stopRec(e); });
-mic.addEventListener("contextmenu", e => e.preventDefault());
+$("newchat").onclick = async () => { if (!confirm(L("Start a new conversation? Your tasks stay saved."))) return; await post("/api/chat/clear", {}); $("thread").innerHTML = ""; $("quick").innerHTML = ""; since = Date.now() / 1000; };
 
-/* ---------------- start ---------------- */
+/* ---------- voice: hold to talk (both mics) ---------- */
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function holdToTalk(btn, bar, timeEl, canvas, onBefore) {
+  let rec = null, chunks = [], stream = null, t0 = 0, tick = null, maxT = null, raf = null, actx = null;
+  async function start(e) { e.preventDefault(); if (!navigator.mediaDevices || !window.MediaRecorder) { toast(L("Allow the microphone to talk")); return; }
+    try { stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); } catch (err) { toast(L("Allow the microphone to talk")); return; }
+    const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
+    rec = new MediaRecorder(stream, mime ? {mimeType: mime} : undefined); chunks = []; rec.ondataavailable = ev => ev.data.size && chunks.push(ev.data); rec.onstop = stop2;
+    rec.start(250); t0 = Date.now(); vib(20); btn.classList.add("rec"); bar.classList.remove("hidden");
+    tick = setInterval(() => timeEl.textContent = fmt((Date.now() - t0) / 1000), 200); maxT = setTimeout(end, 90000); wave(); }
+  function wave() { try { actx = new (window.AudioContext || window.webkitAudioContext)(); const an = actx.createAnalyser(); an.fftSize = 256; actx.createMediaStreamSource(stream).connect(an);
+    const g = canvas.getContext("2d"), d = new Uint8Array(an.frequencyBinCount), bars = [];
+    const loop = () => { const w = canvas.clientWidth, h = canvas.clientHeight, r = devicePixelRatio || 1; if (canvas.width !== w * r) { canvas.width = w * r; canvas.height = h * r; }
+      an.getByteTimeDomainData(d); let pk = 0; for (const v of d) pk = Math.max(pk, Math.abs(v - 128)); bars.push(Math.min(1, pk / 64)); while (bars.length > Math.floor(w / 5)) bars.shift();
+      g.clearRect(0, 0, canvas.width, canvas.height); g.fillStyle = "#C2362B"; bars.forEach((b, i) => { const bh = Math.max(2, b * h) * r; g.fillRect(i * 5 * r, (h * r - bh) / 2, 3 * r, bh); });
+      raf = requestAnimationFrame(loop); }; loop(); } catch (e) {} }
+  function end(e) { if (e) e.preventDefault(); if (rec && rec.state === "recording") rec.stop(); }
+  function stop2() { clearInterval(tick); clearTimeout(maxT); cancelAnimationFrame(raf); try { actx && actx.close(); } catch (e) {} stream && stream.getTracks().forEach(t => t.stop());
+    btn.classList.remove("rec"); bar.classList.add("hidden"); timeEl.textContent = "0:00"; const secs = (Date.now() - t0) / 1000; vib(15);
+    if (secs < 0.7) { toast(L("Hold the button and speak")); return; }
+    const type = rec.mimeType || "audio/webm"; onBefore && onBefore(); sendMsg("", [], new File([new Blob(chunks, {type})], `voice.${type.includes("mp4") ? "m4a" : "webm"}`, {type})); }
+  btn.addEventListener("pointerdown", e => { btn.setPointerCapture && btn.setPointerCapture(e.pointerId); start(e); });
+  btn.addEventListener("pointerup", end); btn.addEventListener("pointercancel", end); btn.addEventListener("contextmenu", e => e.preventDefault());
+}
+holdToTalk($("bigmic"), $("homerec"), $("homerectime"), $("homewave"), () => show("chat"));
+holdToTalk($("chatmic"), $("chatrec"), $("chatrectime"), $("chatwave"));
+
+/* ---------- start ---------- */
 (async () => {
-  const start = (location.hash || "#today").slice(1).split("?")[0];
-  applyStatic(); go(["today", "jobs", "calls", "bills", "chat"].includes(start) ? start : "today");  // render at once, never a blank page
-  renderAll(false);
-  try { const r = await api("/api/me"); if (r.ok) { me = await r.json(); const ql = new URLSearchParams(location.search).get("lang");
-    if (ql || me.language) setLang(ql || me.language); renderAll(false); } else if (r.status === 403) toast("Wrong or missing key in the link"); } catch (e) {}
-  if (!me.language && !new URLSearchParams(location.search).get("shot")) { pickLang = null; showOnboard(); }
-  await loadAll(); pollChat();
-  setInterval(loadAll, 6000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) { loadAll(); schedChat(50); } });
+  applyStatic(); renderExamples(); syncHome(); syncChat();
+  const start = (location.hash || "#home").slice(1); show(start === "chat" ? "chat" : "home");
+  try { const r = await api("/api/me"); if (r.status === 403) { toast("Wrong or missing key in the link"); return; }
+    const me = await r.json(); const ql = new URLSearchParams(location.search).get("lang"); if (ql || me.language) setLang(ql || me.language);
+    if (!me.language && !ls.get("instint_onboarded") && !new URLSearchParams(location.search).get("shot")) { pick = null; langCards($("langs"), null); $("langsheet").classList.add("on"); }
+  } catch (e) {}
+  pollChat(); setInterval(() => { if ($("chat").classList.contains("hidden")) loadHome(); }, 7000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { loadHome(); schedChat(50); } });
 })();
 })();
 </script>

@@ -21,7 +21,8 @@ def read_image(data: bytes, mime: str = "image/jpeg", task_id: str | None = None
 
 def tts(text: str) -> bytes:
     r = oai().audio.speech.create(model=settings().openai_model_tts, voice="alloy", input=text,
-                                  instructions="Speak slowly and warmly, in clear simple Indian English.", response_format="mp3")
+                                  instructions="Speak warmly and clearly at a calm pace, with a natural Indian accent. Read the text in its "
+                                               "own language (Telugu, Hindi or English); say numbers and times exactly.", response_format="mp3")
     return r.read()
 
 

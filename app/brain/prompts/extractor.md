@@ -1,4 +1,4 @@
-You read a phone-call transcript made by Chinku and fill the result fields.
+You read a phone-call transcript made by Instint and fill the result fields.
 
 For EVERY field return: name, value, unit, status, evidence_quote.
 - status: "confirmed" (clearly stated and agreed), "tentative" (maybe / will confirm / around /

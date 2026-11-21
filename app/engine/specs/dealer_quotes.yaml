@@ -1,7 +1,7 @@
 name: dealer_quotes
 description: "User wants the price / best rate for ANY item (cement, steel, chairs, furniture, appliances, ...) by calling one or more shops, dealers or sellers. Not for property/flats (use banner_rate)."
 route_examples:
-  - "Chinku, 50 bags cement, ee 3 dealers ki call chesi best rate kanukko"
+  - "Instint, 50 bags cement, ee 3 dealers ki call chesi best rate kanukko"
   - "call these dealers and get the best rate for 2 ton steel"
   - "call him for chair price 98xxxxxxxx"
 inputs:

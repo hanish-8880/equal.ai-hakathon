@@ -3,7 +3,7 @@ import pytest
 
 from app.brain import translate
 from app.engine import runner
-from app.jobs import prefs
+from app import prefs
 from app.store.dynamo import MemoryStore, set_store
 
 ME = "whatsapp:+919989683607"

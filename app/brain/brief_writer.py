@@ -22,8 +22,6 @@ def write_brief(step: dict[str, Any], inputs: dict[str, Any], callee: dict[str, 
         "shareable": step.get("shareable", []),
     }, ensure_ascii=False)
     system = prompt("brief_writer").replace("{on_behalf_of}", s.user_name)
-    if step.get("call_kind"):  # role-specific question set (CLAUDE.md §8)
-        system += "\n\n" + prompt(f"calls/{step['call_kind']}").replace("{plumber_name}", s.plumber_name)
     brief = json_call(s.openai_model_brain, system,
                       user, CallBrief, task_id, "brief")
     # deterministic guards: must_collect fields exactly as spec; disclosure present

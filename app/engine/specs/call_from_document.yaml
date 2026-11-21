@@ -1,5 +1,5 @@
 name: call_from_document
-description: "User sent a photo or PDF (poster, insurance paper, notice, brochure, letter...) that shows one or more phone numbers, and wants Chinku to call those numbers and ask about something. Use banner_rate instead for property banners asking the final price."
+description: "User sent a photo or PDF (poster, insurance paper, notice, brochure, letter...) that shows one or more phone numbers, and wants Instint to call those numbers and ask about something. Use banner_rate instead for property banners asking the final price."
 route_examples:
   - "ee insurance paper lo number ki call chesi policy details adugu"
   - "call the numbers on this poster and ask about admission fees"

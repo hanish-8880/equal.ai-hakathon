@@ -33,7 +33,7 @@ def active(user: str) -> list[dict[str, Any]]:
 
 
 def plan(user: str, request: str, attachments: list[dict[str, Any]], analysis: dict[str, Any] | None = None) -> Plan:
-    from app.jobs import prefs
+    from app import prefs
     s = settings()
     lang = LANG.get(prefs.get(user).get("language") or "en", "English")
     now = datetime.now(IST)

@@ -27,7 +27,7 @@ steps:
     type: call
     to: "{inputs.person_phone}"
     callee: {name: "{inputs.person_name}", role: "my mother"}
-    goal: "Tell {inputs.person_name} her doctor appointment details from prior_results (date, time, doctor, fee) slowly, twice, and say Chinku will call again one hour before. Ask if the time is OK for her."
+    goal: "Tell {inputs.person_name} her doctor appointment details from prior_results (date, time, doctor, fee) slowly, twice, and say Instint will call again one hour before. Ask if the time is OK for her."
     must_collect: [time_ok]
     language: English
     max_minutes: 2
