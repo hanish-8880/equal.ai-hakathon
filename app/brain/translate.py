@@ -78,6 +78,17 @@ def cached(text: str, code: str) -> str | None:
 
 
 def to_lang(text: str, code: str) -> str:
+    # a message that is mostly in the target script can still carry English lines (e.g. a code-built step list)
+    if text and code in SCRIPT and "\n" in text and already(text, code):
+        lines = text.split("\n")
+        todo = [i for i, ln in enumerate(lines) if any(c.isalpha() for c in ln) and not already(ln, code)]
+        if todo:
+            out = to_lang("\n".join(lines[i] for i in todo), code).split("\n")
+            if len(out) == len(todo):
+                for i, ln in zip(todo, out):
+                    lines[i] = ln
+                return "\n".join(lines)
+        return text
     hit = cached(text, code)
     if hit is not None:
         return hit

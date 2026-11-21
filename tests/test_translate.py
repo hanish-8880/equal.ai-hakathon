@@ -69,3 +69,17 @@ def test_yes_words(w):
 @pytest.mark.parametrize("w", ["no", "vaddu", "వద్దు", "nahi", "नहीं", "mat"])
 def test_no_words(w):
     assert runner.NO.match(w) and not runner.YES.match(w)
+
+
+def test_english_lines_inside_a_telugu_message_are_translated(monkeypatch):
+    monkeypatch.setattr(translate, "cached", lambda text, code: None)
+    seen = []
+
+    def fake(model, system, user, schema, task_id=None, tag="llm", effort=None):
+        seen.append(user)
+        return schema(text="1) పేజీని టైప్ చేస్తాను\n2) మీకు ఇమెయిల్ రాస్తాను")
+    monkeypatch.setattr("app.brain.client.json_call", fake)
+    msg = "పేజీని ట్రాన్స్‌క్రైబ్ చేయి · రేపు 9:00కి రిమైండ్\n1) type out the page exactly\n2) write the email to you"
+    out = translate.to_lang(msg, "te")
+    assert seen == ["1) type out the page exactly\n2) write the email to you"]
+    assert out.splitlines()[0] == msg.splitlines()[0] and "1) పేజీని" in out and "9:00" in out
