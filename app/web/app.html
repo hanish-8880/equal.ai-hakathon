@@ -260,7 +260,7 @@ Object.assign(I, {
   "Paid deals (book in Swiggy)": ["చెల్లింపు డీల్స్ (Swiggy లో బుక్ చేయండి)", "पेड डील (Swiggy में बुक करें)", "Paid deals (Swiggy lo book cheyyandi)"],
   "Book table": ["టేబుల్ బుక్ చేయి", "टेबल बुक करो", "Table book cheyyi"], "Not confirmed": ["ఖరారు కాలేదు", "पक्का नहीं हुआ", "Confirm kaledu"],
   "Booking ID": ["బుకింగ్ ID", "बुकिंग ID", "Booking ID"], "Which day and time? (e.g. tomorrow 8 pm)": ["ఏ రోజు, ఏ సమయం? (ఉదా: రేపు రాత్రి 8)", "कौन सा दिन और समय? (जैसे: कल रात 8)", "Ye roju, ye time? (eg: repu 8 pm)"],
-  "Working on it…": ["చేస్తున్నా…", "कर रहा हूँ…", "Chestunna…"], "How many guests?": ["ఎంత మంది?", "कितने लोग?", "Entha mandi?"], "New chat": ["కొత్త చాట్", "नई चैट", "New chat"],
+  "Already decided": ["ఇప్పటికే నిర్ణయించారు", "पहले ही तय हो चुका", "Already decide chesaru"], "Working on it…": ["చేస్తున్నా…", "कर रहा हूँ…", "Chestunna…"], "How many guests?": ["ఎంత మంది?", "कितने लोग?", "Entha mandi?"], "New chat": ["కొత్త చాట్", "नई चैट", "New chat"],
   "Complain on a toll-free line": ["టోల్-ఫ్రీకి ఫిర్యాదు", "टोल-फ़्री पर शिकायत", "Toll-free ki complaint"], "Order food": ["ఫుడ్ ఆర్డర్", "खाना ऑर्डर", "Food order"],
   "How can I help today?": ["ఈ రోజు ఏం చేయమంటారు?", "आज क्या मदद करूँ?", "Ee roju em cheyyamantaru?"],
   "Chinku asks you before it calls, sends or books.": ["కాల్, పంపడం, బుకింగ్ ముందు Chinku మిమ్మల్ని అడుగుతుంది.", "कॉल, भेजने या बुकिंग से पहले Chinku आपसे पूछता है।", "Call, send, booking mundu Chinku mimmalni adugutundi."],
@@ -478,7 +478,9 @@ function row(m) { const d = document.createElement("div"); const mine = m.dir ==
     inner = `<div class="bub">${t.includes("\n") ? `<span class="first">${esc(a)}</span>\n${esc(b.join("\n"))}` : esc(t)}${card(m.card)}
       <div class="meta">${hhmm(m.ts)}${t.trim() ? `<button class="listen" data-listen="${esc(t)}" aria-label="${L("Listen")}">🔊 ${L("Listen")}</button>` : ""}</div></div>`; }
   d.innerHTML = inner;
-  if (m.card && m.card.task_id) d.querySelectorAll('[data-say="yes"],[data-say="no"]').forEach(b => { b.dataset.dec = b.dataset.say; b.removeAttribute("data-say"); });
+  if (m.card && m.card.decided) { const bs = d.querySelectorAll('[data-say="yes"],[data-say="no"]'); if (bs.length) { const box = bs[0].parentNode;
+      box.innerHTML = `<span class="status">${L("Already decided")}</span>`; } }
+  else if (m.card && m.card.task_id) d.querySelectorAll('[data-say="yes"],[data-say="no"]').forEach(b => { b.dataset.dec = b.dataset.say; b.removeAttribute("data-say"); });
   d.querySelectorAll("[data-say]").forEach(b => b.onclick = () => sendMsg(b.dataset.say));
   d.querySelectorAll("[data-dec]").forEach(b => b.onclick = () => decide(m.card.task_id, m.card.step_id, b.dataset.dec, b.textContent.trim(), d));
   d.querySelectorAll("[data-trip]").forEach(b => b.onclick = () => {

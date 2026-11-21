@@ -342,7 +342,39 @@ def chat_messages(key: str = "", since: float = 0) -> JSONResponse:
     owner = settings().user_whatsapp
     cleared = (store().get("contacts", f"chatclear:{owner}") or {}).get("ts", 0)
     ev = [e for e in store().events(f"chat:{owner}") if e["ts"] > max(since, cleared)]
-    return JSONResponse([{"ts": e["ts"], "dir": {"chat_in": "in", "chat_heard": "heard"}.get(e["kind"], "out"), **e["payload"]} for e in ev])
+    rows = [{"ts": e["ts"], "dir": {"chat_in": "in", "chat_heard": "heard"}.get(e["kind"], "out"), **e["payload"]} for e in ev]
+    _link_old_approvals(owner, rows)
+    return JSONResponse(rows)
+
+
+APPROVAL_CARDS = {"email", "call_plan", "cart_plan", "approve_food", "approve_table"}
+
+
+def _link_old_approvals(owner: str, rows: list[dict[str, Any]]) -> None:
+    """Approval cards saved before buttons carried their own task get matched to their waiting task by content,
+    so every button answers exactly its own request (never 'the newest')."""
+    cards = [r for r in rows if isinstance(r.get("card"), dict) and r["card"].get("type") in APPROVAL_CARDS
+             and r["card"].get("state", "waiting") == "waiting"]
+    if not cards:
+        return
+    waiting, open_ids = [], set()
+    for t in store().scan("contacts", kind="itask"):
+        if t.get("user") == owner and t.get("status") == "waiting":
+            for sid, st in (t.get("steps") or {}).items():
+                if st.get("status") == "waiting" and st.get("preview"):
+                    waiting.append((t["task_id"], sid, st["preview"]))
+                    open_ids.add((t["task_id"], sid))
+    for r in cards:
+        if r["card"].get("task_id"):
+            if (r["card"]["task_id"], r["card"].get("step_id")) not in open_ids:
+                r["card"] = {**r["card"], "decided": True}
+            continue
+        c = r["card"]
+        hit = next(((tid, sid) for tid, sid, pv in waiting if pv == {k: v for k, v in c.items() if k not in ("task_id", "step_id")}), None)
+        if hit:
+            r["card"] = {**c, "task_id": hit[0], "step_id": hit[1]}
+        else:  # already decided or expired → show the card without live buttons
+            r["card"] = {**c, "decided": True}
 
 
 @app.post("/api/chat/clear")

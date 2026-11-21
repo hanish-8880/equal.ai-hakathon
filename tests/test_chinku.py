@@ -170,3 +170,21 @@ def test_bare_yes_with_nothing_waiting_is_not_a_new_request(monkeypatch):
     monkeypatch.setattr("app.chinku.planner.plan", lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not plan")))
     executor.handle(ME, "yes", [], send, card)
     assert OUT[-1].startswith("Nothing is waiting")
+
+
+def test_old_approval_cards_get_their_own_task_or_show_decided(monkeypatch):
+    import app.main as m
+    monkeypatch.setattr(m.settings(), "smtp_user", "me@example.com")
+    monkeypatch.setattr("app.chinku.planner.plan", lambda u, text, *a, **k: Plan(understood="x", confidence=0.95, steps=[
+        Step(id="s1", tool="send_email", inputs={"draft": {"to": "a@b.com", "subject": "s", "body": text}})]))
+    executor.handle(ME, "first", [], send, card)
+    executor.handle(ME, "second", [], send, card)
+    t1 = next(c for _, c in CARDS if c and c.get("body") == "first")
+    old_style = {k: v for k, v in t1.items() if k not in ("task_id", "step_id")}       # a card saved before the fix
+    rows = [{"card": dict(old_style)}, {"card": {**old_style, "body": "gone"}}]
+    m._link_old_approvals(ME, rows)
+    assert rows[0]["card"]["task_id"] == t1["task_id"] and rows[1]["card"].get("decided")
+    executor.approve(ME, t1["task_id"], "s1", False, send, card)
+    rows = [{"card": dict(t1)}]
+    m._link_old_approvals(ME, rows)
+    assert rows[0]["card"].get("decided")                                               # decided → no live buttons
