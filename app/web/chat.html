@@ -145,6 +145,9 @@
   <div class="avatar" aria-hidden="true">C</div>
   <div class="who"><b>Chinku</b><div id="status"><span class="dot"></span><span id="statustext">Online</span></div></div>
   <button id="jobchip" aria-label="Show jobs">No job yet</button>
+  <button class="iconbtn" id="newchat" aria-label="New chat" title="New chat">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+  </button>
   <button class="iconbtn" id="speak" aria-pressed="false" aria-label="Read replies aloud" title="Read replies aloud">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
   </button>
@@ -426,6 +429,14 @@ mic.addEventListener("pointerdown", e => { mic.setPointerCapture && mic.setPoint
 mic.addEventListener("pointermove", moveRec);
 mic.addEventListener("pointerup", stopRec); mic.addEventListener("pointercancel", e => { cancelled = true; stopRec(e); });
 mic.addEventListener("contextmenu", e => e.preventDefault());
+
+/* ---------- new chat ---------- */
+$("newchat").onclick = async () => {
+  if (!confirm("Start a new chat? Your jobs and history stay saved.")) return;
+  const fd = new FormData(); fd.append("key", key);
+  try { await fetch("/api/chat/clear", {method: "POST", body: fd}); } catch (e) {}
+  log.innerHTML = ""; $("quick").innerHTML = ""; since = Date.now() / 1000; showWelcome(); toast("New chat");
+};
 
 /* ---------- start ---------- */
 if (!key) setStatus("Missing key in the link", false);

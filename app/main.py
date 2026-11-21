@@ -317,8 +317,20 @@ def chat_messages(key: str = "", since: float = 0) -> JSONResponse:
     if not _chat_ok(key):
         return JSONResponse({"error": "forbidden"}, status_code=403)
     owner = settings().user_whatsapp
-    ev = [e for e in store().events(f"chat:{owner}") if e["ts"] > since]
+    cleared = (store().get("contacts", f"chatclear:{owner}") or {}).get("ts", 0)
+    ev = [e for e in store().events(f"chat:{owner}") if e["ts"] > max(since, cleared)]
     return JSONResponse([{"ts": e["ts"], "dir": {"chat_in": "in", "chat_heard": "heard"}.get(e["kind"], "out"), **e["payload"]} for e in ev])
+
+
+@app.post("/api/chat/clear")
+async def chat_clear(request: Request) -> JSONResponse:
+    """Start a fresh conversation view. Nothing is deleted: events stay in the store (evidence / dashboard)."""
+    form = await request.form()
+    if not _chat_ok(form.get("key")):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    owner = settings().user_whatsapp
+    store().put("contacts", f"chatclear:{owner}", {"owner": owner, "kind": "chat_clear", "ts": time.time()})
+    return JSONResponse({"ok": True})
 
 
 @app.get("/api/jobs")
