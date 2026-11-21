@@ -21,10 +21,13 @@ OpenStreetMap + Leaflet, Twilio WhatsApp sandbox (optional, not in the demo).
 | J9 flights — Kiwi.com | **LIVE** — real HYD→BLR fares in INR, ranked in code, booking link opens Kiwi; Chinku never pays |
 | J9 groceries — Swiggy Instamart | **LIVE** — real products/prices, recipe → ingredients → packs chosen in code; adds to the user's cart only after approval; checkout/payment/clear-cart blocked in code. Production access is "invite-based" per Swiggy docs — it may be switched off |
 | J9 rides — Ola, Uber, Rapido | **DEMO data** (real road distance, demo fares/ETAs, labelled "Demo data"); real "open in app" links for Uber/Ola |
-| J9 Swiggy Food / Dineout, Zomato | NOT BUILT (Zomato not permitted for third-party apps) |
+| J9 Swiggy Food | **LIVE** — real dishes, filters/ranking in code, added to the real food cart after approval, real bill (item + delivery + taxes = to pay) and closed/out-of-stock warnings. Chinku never places the order or pays |
+| J9 Swiggy Dineout | **LIVE** search + slot check (real FREE/PAID slots); FREE table booking built behind approval — NOT yet booked live (real reservation; user's tap) |
+| Zomato | NOT BUILT (not permitted for third-party apps) |
 | J10 voice-first (tap to talk, silence auto-stop, Talk mode, replies spoken) | Built; checked in a desktop browser; NOT yet tested on a real phone |
 | J11 trip planner (itinerary + rated hotels/restaurants → pick → calls) | **LIVE** search/ranking; the hotel calls NOT yet run (real hotels are only called with consent, never at night) |
 | J5 "Connect me now" live transfer | NOT BUILT — fallback "Talk to them now" one-tap call card |
+| Toll-free / landline calling (complaints) | Built + tested in code (number kinds, night rule exempts 1800 helplines). Live: Bajaj's official number is a landline → correctly not called at 1 AM. Real helpline call NOT yet made; IVR keypad menus are a known limit |
 | J6 language bridge | Kannada + Tamil enabled on the voice agent (settings read back); a Kannada call is NOT yet verified |
 | J8 group ask | NOT BUILT (the call engine can call several people one after another) |
 | Languages (UI + every message in te / hi / te-en) | **LIVE** — translation that changes a number is rejected → English shown |
