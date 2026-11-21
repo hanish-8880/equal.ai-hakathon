@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     demo_reminder_seconds: int = 0  # >0: schedule steps fire after N s (SIMULATED time, for demo)
     user_name: str = "Hanish"
     default_language: str = "English"
-    mode: str = "plumber"  # "plumber" = Chinku for Plumbers (job router); "errands" = v1 specs only
+    mode: str = "instint"  # "instint" = Instint planner (CLAUDE.md FINAL); "plumber" = Chinku for Plumbers; "errands" = v1 specs
     job_id_start: int = 21
     work_hours: str = "10:00-12:00,12:00-14:00,16:00-18:00"  # visit windows customers can book by phone (demo default)
     slot_days: int = 3  # how many days ahead callers can book

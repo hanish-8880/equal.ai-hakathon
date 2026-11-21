@@ -43,6 +43,11 @@ class MemoryStore:
             v = self.data[table].get(key)
             return json.loads(json.dumps(v, default=str)) if v is not None else None
 
+    def delete(self, table: str, key: str) -> None:
+        with self.lock:
+            self.data[table].pop(key, None)
+            self._flush()
+
     def scan(self, table: str, **eq: Any) -> list[dict[str, Any]]:
         with self.lock:
             rows = [json.loads(json.dumps(v, default=str)) for v in self.data[table].values()]
@@ -99,6 +104,9 @@ class DynamoStore:
     def get(self, table: str, key: str) -> dict[str, Any] | None:
         r = self.t[table].get_item(Key={"k": key}, ConsistentRead=True).get("Item")
         return json.loads(r["doc"]) if r else None
+
+    def delete(self, table: str, key: str) -> None:
+        self.t[table].delete_item(Key={"k": key})
 
     def _all(self, table: str, **kw: Any) -> list[dict[str, Any]]:
         out, start = [], None

@@ -83,7 +83,10 @@ job_ops.NOTIFY = notify_customer
 
 def entry(user: str, text: str, image: dict[str, Any] | None, force_confirm: bool = False, heard: Any = None) -> None:
     """One router for every channel (CLAUDE.md v2 §3, §3A)."""
-    if settings().mode == "plumber":
+    if settings().mode == "instint":
+        from app.instint import executor
+        executor.handle(user, text, [], reply_to(user), lambda t, c: deliver(user, t, None, c))
+    elif settings().mode == "plumber":
         assistant.handle(user, text, image, reply_to(user), force_confirm=force_confirm, heard=heard)
     else:
         runner.handle_message(user, text, image, reply_to(user), force_confirm=force_confirm)
@@ -99,6 +102,9 @@ def _scheduler_loop() -> None:
             runner.tick_schedules()
             runner.sweep_stuck_calls()
             runner.fire_due_retries()
+            if settings().mode == "instint":
+                from app.instint import executor
+                executor.tick(lambda u, t: deliver(u, t), lambda u, t, c: deliver(u, t, None, c))
             if time.time() - _slot_sync_at[0] > 300:  # keep the phone agent's free-slot list fresh (no-op if unchanged)
                 _slot_sync_at[0] = time.time()
                 from app.jobs import slots
@@ -208,6 +214,17 @@ def process_whatsapp(msg: dict[str, Any]) -> None:
     process_message(user, msg["body"], media, source="whatsapp_voice" if any(t.startswith("audio") for _, t in media) else "text")
 
 
+def _save_attachment(data: bytes, mtype: str, n: int) -> dict[str, Any]:
+    """Keep the original photo/PDF (Instint transcribes / analyses / attaches it later, CLAUDE.md §5)."""
+    import uuid
+    whatsapp.MEDIA_DIR.mkdir(exist_ok=True)
+    ext = "pdf" if mtype.endswith("pdf") else {"jpeg": "jpg", "jpg": "jpg", "png": "png", "webp": "webp"}.get(mtype.split("/")[-1], "jpg")
+    name = f"att_{uuid.uuid4().hex[:10]}.{ext}"
+    (whatsapp.MEDIA_DIR / name).write_bytes(data)
+    return {"id": f"a{n}", "name": name, "mime": "application/pdf" if ext == "pdf" else (mtype if mtype.startswith("image/") else "image/jpeg"),
+            "url": f"{settings().public_base_url}/media/{name}", "path": str(whatsapp.MEDIA_DIR / name)}
+
+
 def _save_audio(data: bytes, mtype: str) -> str:
     """Keep the original audio (evidence + re-transcription, CLAUDE.md §3A step 1)."""
     import uuid
@@ -222,13 +239,14 @@ def process_message(user: str, text: str, media: list[tuple[bytes, str]], source
     """Shared by WhatsApp, the Chinku App and /api/voice: capture → transcribe → (normalise → understand → act)."""
     from app.brain import understand as U
     from app.brain.normalise import normalise
-    image, heard = None, None
+    image, heard, attachments = None, None, []
+    instint = settings().mode == "instint"
     try:
         for data, mtype in media:
             if mtype.startswith("audio") or mtype.startswith("video/webm"):
                 name = _save_audio(data, mtype)
                 audio_ref = f"{settings().public_base_url}/media/{name}"
-                if settings().mode == "plumber":
+                if settings().mode in ("plumber", "instint"):
                     heard = U.transcribe(data, name, user, source if source != "text" else "voice", audio_ref)
                     if heard is None:
                         deliver(user, "I didn't hear anything, try again.")
@@ -241,6 +259,8 @@ def process_message(user: str, text: str, media: list[tuple[bytes, str]], source
                 spans = [sp.model_dump() for sp in normalise(said).spans if sp.kind in ("number", "money", "model_code", "phone")]
                 store().add_event(f"chat:{user}", "chat_heard", {"text": said, "media_url": audio_ref, "card": None, "spans": spans,
                                                                 "low": (heard.low_confidence_spans if heard else [])})
+            elif instint and (mtype.startswith("image") or mtype.endswith("/pdf")):
+                attachments.append(_save_attachment(data, mtype, len(attachments) + 1))
             elif mtype.startswith("image"):
                 image = perceive.read_image(data, mtype).model_dump()
                 store().add_event("-", "image_read", image)
@@ -248,7 +268,11 @@ def process_message(user: str, text: str, media: list[tuple[bytes, str]], source
                 image = perceive.read_document(data, "document.pdf").model_dump()
                 store().add_event("-", "document_read", {k: image.get(k) for k in ("doc_type", "title", "stated_total")}
                                   | {"items": len(image.get("line_items", []))})
-        entry(user, text, image, heard=heard)
+        if instint:
+            from app.instint import executor
+            executor.handle(user, text, attachments, reply_to(user), lambda t, c: deliver(user, t, None, c))
+        else:
+            entry(user, text, image, heard=heard)
     except Exception as e:  # noqa: BLE001
         store().add_event("-", "error", {"where": "message", "error": str(e)[:500]})
         deliver(user, "Sorry, something went wrong — please try again.")
