@@ -73,5 +73,12 @@ def test_customer_whatsapp_only_if_joined():
     assert NOTES and "Your visit is booked" in NOTES[0][1]
 
 
+def test_half_call_is_only_a_missed_enquiry():
+    """Real case (Sat 16:51): caller said 'book an appointment… the application…' and the call dropped."""
+    r = customer_call.CustomerCallOut(caller_kind="customer", issue=F("application", "tentative"))
+    assert customer_call.handle(CALL, r) is None
+    assert any("Missed enquiry" in t for _, t in OUT)
+
+
 def test_plumber_call_is_not_a_customer_booking():
     assert customer_call.handle(CALL, read(tomorrow_id(), kind="plumber")) is None

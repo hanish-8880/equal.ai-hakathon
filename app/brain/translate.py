@@ -66,13 +66,22 @@ def already(text: str, code: str) -> bool:
     return bool(letters) and sum(1 for c in letters if rx.match(c)) / len(letters) > 0.3
 
 
-def to_lang(text: str, code: str) -> str:
+def _key(text: str, code: str) -> str:
+    return f"tr3:{code}:{hashlib.sha1(text.encode('utf-8')).hexdigest()}"
+
+
+def cached(text: str, code: str) -> str | None:
     if not text or not text.strip() or code not in NAMES or already(text, code):
         return text
-    key = f"tr3:{code}:{hashlib.sha1(text.encode('utf-8')).hexdigest()}"
-    hit = store().get("contacts", key)
-    if hit and hit.get("text"):
-        return hit["text"]
+    hit = store().get("contacts", _key(text, code))
+    return hit["text"] if hit and hit.get("text") else None
+
+
+def to_lang(text: str, code: str) -> str:
+    hit = cached(text, code)
+    if hit is not None:
+        return hit
+    key = _key(text, code)
     from app.brain.client import json_call
     s = settings()
     for model in [m for m in (s.openai_model_fast, s.openai_model_brain) if m]:
@@ -87,6 +96,28 @@ def to_lang(text: str, code: str) -> str:
     return text  # English original rather than a wrong number
 
 
+_pending: set[str] = set()
+
+
 def many(texts: Iterable[str], code: str) -> dict[str, str]:
-    """Translate several short UI strings (job next steps etc.), cached individually."""
-    return {t: to_lang(t, code) for t in {t for t in texts if t}}
+    """Short UI strings (job next steps): cached ones now; the rest are translated in the background
+    (in parallel) and appear on the app's next refresh — the jobs screen never waits on the model."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    out, todo = {}, []
+    for t in {t for t in texts if t}:
+        hit = cached(t, code)
+        out[t] = hit if hit is not None else t
+        if hit is None and _key(t, code) not in _pending:
+            _pending.add(_key(t, code))
+            todo.append(t)
+    if todo:
+        def work():
+            try:
+                with ThreadPoolExecutor(max_workers=6) as ex:
+                    list(ex.map(lambda t: to_lang(t, code), todo))
+            finally:
+                for t in todo:
+                    _pending.discard(_key(t, code))
+        threading.Thread(target=work, daemon=True).start()
+    return out

@@ -58,7 +58,9 @@ def handle(parsed: dict[str, Any], read: CustomerCallOut | None = None) -> Job |
     r = read or read_call(parsed.get("transcript", ""), windows)
     if r.caller_kind == "plumber":
         return None
-    if not (r.issue.value or r.site_address.value or r.chosen_slot_id.value):
+    said = lambda f: f.value and f.status in ("confirmed", "tentative")  # noqa: E731
+    # a job needs the problem AND (an address or an agreed slot) — a half call (hung up early, garbled) is only an enquiry
+    if not (said(r.issue) and (said(r.site_address) or said(r.flat) or said(r.chosen_slot_id))):
         ops.CARD(owner, f"📞 Missed enquiry: {mask_phone(phone)} called but I couldn't get the details "
                         f"({parsed.get('summary') or 'no summary'}). Call them back?", {"type": "note"})
         return None
