@@ -1,4 +1,16 @@
-# HONEST NOTE
+# HONEST NOTE — Instint
+
+| Component | Status |
+|---|---|
+| **Instint planner** — one request → plan of tool steps (gpt-5.5, structured output), conversation memory (recent chat + earlier results), personal memory, approval gate enforced in code for every email/call | BUILT by me — LIVE (Sat 23:55): J1 photo → exact transcript → email (approved) → reminder, 4/4 steps; follow-up "email the important points of that page to Suresh" resolved from memory + previous photo |
+| **Exact transcription** (`transcribe_image`) | BUILT — LIVE on 1 test page (handwriting FONT, not real handwriting — SIMULATED input): 0 word errors, 0 [unclear]. Real handwritten pages + WER eval PENDING |
+| **Memory** (`remember/recall/forget`) | BUILT — refuses OTPs/passwords/PINs, card numbers, bank account numbers, government IDs (code rule, tested) |
+| **Reminders** (one-time / daily / weekly, in app) | BUILT — LIVE (set); firing tested in code (idempotent). Reminder CALLS not built yet |
+| **Email** | REUSED Gmail SMTP. Demo safety: EMAIL_DEMO_OVERRIDE delivers every email to my own inbox (subject says who it would go to) |
+| Search (OpenAI web search), map card, call tool, scam check, follow-up on promises, Connect me (transfer), language bridge | search/map/call tools wired — NOT yet verified live for Instint; promises/follow-up, transfer, language bridge, scam check NOT BUILT |
+| Instint App UI (warm white + blue, home "What do you need?") | NOT BUILT — current app is the Chinku plumber UI talking to the Instint planner |
+
+## Earlier work (still in the repo, selectable with MODE=plumber / MODE=errands)
 
 | Component | Status |
 |---|---|

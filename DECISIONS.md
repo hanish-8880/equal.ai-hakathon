@@ -380,3 +380,11 @@ never rings the phone during the test.
 - Yes/No: Hindi words added (haan, theek hai, bhejo, nahi, हाँ, नहीं…); app quick-reply buttons show the language but send "yes"/"no".
 - NOT translated (honest): phone calls (English — Telugu voice was choppy earlier), customer WhatsApp messages (customer's language unknown), invoice PDF (English for the billing company; the PDF font has no Telugu), job data the plumber/customer said (issue, address) and timeline evidence.
 - Incident: a dropped 22 s customer call created job J33 ("application"). Rule now: job only if problem AND (address or agreed slot); else "Missed enquiry" card. J33 cancelled (kept) with the reason.
+
+## Sat 23:55 — Pivot to Instint (CLAUDE.md FINAL) — checkpoint "Sun 1:00 AM"
+- Observed: planner (gpt-5.5, effort low) turned "Transcribe this, email me a copy, and remind me tomorrow at 9" into transcribe_image → draft_email(exact_copy) → send_email[approval] → remind(Tomorrow, Sun 22 Nov, 9:00 AM). Live: transcript exact vs ground truth (font page), email delivered (IMAP verified), reminder stored.
+- Chose: tools wrap existing code (email, web search, maps, call engine via call_and_ask spec) — no engine rewrite. Approval enforced in CODE for send_email/call even if the plan forgets (test). Transcripts go by email EXACTLY (mode exact_copy), never rewritten.
+- Chose: tasks/memory/reminders live in the existing `contacts` table (itask:/mem:/rem:/ilast:) — no new DynamoDB table needed (EC2 role is limited to chinku_* tables).
+- Fixed on the way: memory secret filter blocked +91 phone numbers (12 digits looked like Aadhaar) → now 4-4-4 format or the word Aadhaar/UID.
+- Times: planner proposes ISO from now_ist; code validates (future, IST) and renders words. Would change: a code date parser for common phrases.
+- MODE=instint is now default; plumber flows stay with MODE=plumber.
