@@ -33,12 +33,50 @@ def home() -> Path:
     return Path(os.environ.get("CHINKU_SECRETS_DIR") or (Path(os.environ.get("USERPROFILE") or Path.home()) / ".chinku"))
 
 
+# ---------------- accounts: several Swiggy logins, one active (each logged in once with its own phone + OTP) ----------------
+NAME_RX = re.compile(r"^[a-z0-9_-]{1,24}$")
+
+
+def _files(name: str) -> tuple[Path, Path]:
+    """Token + client files of one account. 'main' is the first login (kept at the original path)."""
+    if name == "main" and (home() / "swiggy_tokens.json").exists():
+        return home() / "swiggy_tokens.json", home() / "swiggy_client.json"
+    d = home() / "swiggy" / name
+    return d / "tokens.json", (d / "client.json" if (d / "client.json").exists() else home() / "swiggy_client.json")
+
+
+def accounts() -> list[str]:
+    names = ["main"] if (home() / "swiggy_tokens.json").exists() else []
+    base = home() / "swiggy"
+    if base.exists():
+        names += sorted(p.name for p in base.iterdir() if (p / "tokens.json").exists() and NAME_RX.match(p.name) and p.name not in names)
+    return names
+
+
+def active() -> str | None:
+    from app.store.dynamo import store
+    names = accounts()
+    want = (store().get("contacts", "swacct:active") or {}).get("name")
+    return want if want in names else (names[0] if names else None)
+
+
+def set_active(name: str) -> str:
+    from app.store.dynamo import store
+    if name not in accounts():
+        raise SwiggyError(f"No Swiggy account called “{name}” is logged in.")
+    store().put("contacts", "swacct:active", {"kind": "swacct", "name": name, "ts": time.time()})
+    return name
+
+
 def connected() -> bool:
-    return (home() / "swiggy_tokens.json").exists()
+    return active() is not None
 
 
 def _token() -> str:
-    tf, cf = home() / "swiggy_tokens.json", home() / "swiggy_client.json"
+    acct = active()
+    if not acct:
+        raise SwiggyError("Swiggy is not connected yet (log in once with your phone + OTP).")
+    tf, cf = _files(acct)
     if not tf.exists():
         raise SwiggyError("Swiggy is not connected yet (log in once with your phone + OTP).")
     t = json.loads(tf.read_text(encoding="utf-8"))
@@ -58,8 +96,9 @@ def _post(msg: dict[str, Any], tok: str, sid: str | None, server: str = "im") ->
     h = {"Authorization": f"Bearer {tok}", "Accept": "application/json, text/event-stream", "Content-Type": "application/json"}
     if sid:
         h["Mcp-Session-Id"] = sid
-    if time.time() < _cool["until"]:
-        raise SwiggyError(f"Swiggy is limiting requests right now — try again in {max(1, round((_cool['until'] - time.time()) / 60))} min.")
+    cool = _cool.get(active() or "-", 0.0)
+    if time.time() < cool:
+        raise SwiggyError(f"Swiggy is limiting requests right now — try again in {max(1, round((cool - time.time()) / 60))} min.")
     for attempt in range(3):  # Swiggy's gateway returns 429 when we go too fast → short wait, then retry (their guidance)
         r = httpx.post(f"{BASE}/{server}", json=msg, headers=h, timeout=60)
         if r.status_code != 429 or attempt == 2:
@@ -70,7 +109,7 @@ def _post(msg: dict[str, Any], tok: str, sid: str | None, server: str = "im") ->
             wait = 0
         time.sleep(min(8.0, max(2.0 * (attempt + 1), wait)))
     if r.status_code == 429:  # still limited → back off for 2 minutes instead of hammering (cached results keep working)
-        _cool["until"] = time.time() + 120
+        _cool[active() or "-"] = time.time() + 120
         raise SwiggyError("Swiggy is limiting requests right now — try again in 2 min.")
     sid = r.headers.get("mcp-session-id") or sid
     if r.status_code == 401:
@@ -88,7 +127,7 @@ def _post(msg: dict[str, Any], tok: str, sid: str | None, server: str = "im") ->
 
 CACHED = {"search_products", "search_menu", "search_restaurants_dineout", "get_available_slots", "get_addresses"}
 CACHE_S = 20 * 60
-_cool = {"until": 0.0}
+_cool: dict[str, float] = {}  # per account
 
 
 def call(name: str, args: dict[str, Any], server: str = "im") -> dict[str, Any]:
@@ -97,7 +136,7 @@ def call(name: str, args: dict[str, Any], server: str = "im") -> dict[str, Any]:
     key = None
     if name in CACHED:  # read-only lookups: reuse for 20 min (gentle on Swiggy; also survives a short rate limit)
         from app.store.dynamo import store
-        key = f"swcache:{server}:{name}:{json.dumps(args, sort_keys=True)}"[:900]
+        key = f"swcache:{active()}:{server}:{name}:{json.dumps(args, sort_keys=True)}"[:900]
         hit = store().get("contacts", key)
         if hit and time.time() - hit.get("ts", 0) < CACHE_S:
             return hit["data"]
@@ -111,7 +150,7 @@ def call(name: str, args: dict[str, Any], server: str = "im") -> dict[str, Any]:
 def _call_live(name: str, args: dict[str, Any], server: str) -> dict[str, Any]:
     with _lock:  # one session per user per server, calls in sequence (Swiggy's guidance)
         tok = _token()
-        ses = _sessions.setdefault(server, {})
+        ses = _sessions.setdefault(f"{active()}:{server}", {})
         if ses.get("tok") != tok or time.time() - ses.get("at", 0) > 600:
             out, sid = _post({"jsonrpc": "2.0", "id": 1, "method": "initialize",
                               "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "chinku", "version": "0.1"}}},
@@ -136,7 +175,7 @@ def _call_live(name: str, args: dict[str, Any], server: str) -> dict[str, Any]:
 
 
 def address_id(server: str = "im") -> str:
-    ses = _sessions.setdefault(server, {})
+    ses = _sessions.setdefault(f"{active()}:{server}", {})
     if ses.get("addr"):
         return ses["addr"]
     data = call("get_addresses", {}, server)

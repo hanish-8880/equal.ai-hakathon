@@ -11,6 +11,7 @@ import hashlib
 import http.server
 import json
 import os
+import re
 import secrets
 import sys
 import threading
@@ -25,13 +26,17 @@ BASE = "https://mcp.swiggy.com"
 PORT = 8765
 REDIRECT = f"http://localhost:{PORT}/callback"
 HOME = Path(os.environ.get("USERPROFILE") or Path.home()) / ".chinku"
-TOKENS = HOME / "swiggy_tokens.json"
 CLIENT = HOME / "swiggy_client.json"
+# --account <name>: log in a SECOND Swiggy account (its own phone + OTP). Default = the first account ("main").
+ACCOUNT = sys.argv[sys.argv.index("--account") + 1].lower() if "--account" in sys.argv else "main"
+assert re.match(r"^[a-z0-9_-]{1,24}$", ACCOUNT), "account name: letters, digits, - or _ (max 24)"
+TOKENS = HOME / "swiggy_tokens.json" if ACCOUNT == "main" else HOME / "swiggy" / ACCOUNT / "tokens.json"
+FRESH = "--account" in sys.argv  # a named account always logs in fresh (never reuses another account's tokens)
 READ_ONLY = {"get_addresses", "search_restaurants", "search_menu", "get_restaurant_menu", "search_products", "your_go_to_items"}
 
 
 def save(p: Path, data: dict) -> None:
-    HOME.mkdir(parents=True, exist_ok=True)
+    p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(data), encoding="utf-8")
     try:
         os.chmod(p, 0o600)
@@ -77,9 +82,13 @@ def login(client: dict) -> dict:
     url = f"{BASE}/auth/authorize?" + urllib.parse.urlencode({
         "response_type": "code", "client_id": client["client_id"], "redirect_uri": REDIRECT, "scope": "mcp:tools",
         "code_challenge": challenge, "code_challenge_method": "S256", "state": state})
-    print("\n>>> A browser tab is opening on Swiggy's login page. Enter your phone number and the OTP there.")
-    print(">>> If no tab opens, paste this into your browser:\n", url, "\n", flush=True)
-    webbrowser.open(url)
+    print(f"\n>>> Logging in Swiggy account “{ACCOUNT}”. Enter THAT account's phone number and OTP on Swiggy's page.")
+    if ACCOUNT != "main":
+        print(">>> Your browser may still be logged in as your first number — open this link in a PRIVATE / INCOGNITO window:")
+        print(url, "\n", flush=True)
+    else:
+        print(">>> If no tab opens, paste this into your browser:\n", url, "\n", flush=True)
+        webbrowser.open(url)
     t0 = time.time()
     while "code" not in got and "error" not in got and time.time() - t0 < 300:
         time.sleep(0.5)
@@ -99,7 +108,7 @@ def login(client: dict) -> dict:
 
 
 def tokens(client: dict) -> dict:
-    if TOKENS.exists():
+    if TOKENS.exists() and not FRESH:
         t = json.loads(TOKENS.read_text(encoding="utf-8"))
         if time.time() - t["obtained_at"] < t.get("expires_in", 0) - 300:
             return t
@@ -177,6 +186,10 @@ def main() -> None:
     client = register()
     print("client registered:", "yes (id kept private)")
     tok = tokens(client)
+    if FRESH:  # a second account: just log in (no test searches — be gentle with Swiggy)
+        print(f"\nLogged in Swiggy account “{ACCOUNT}”. Tokens saved outside the repo: {TOKENS}")
+        print(f"Next: python -m scripts.swiggy_upload {ACCOUNT}   (puts it on the server; then pick it in Settings)")
+        return
     report = {}
     for server, query, search_tool in (("food", "veg lunch", "search_restaurants"), ("im", "soap", "search_products")):
         m = MCP(server, tok["access_token"])

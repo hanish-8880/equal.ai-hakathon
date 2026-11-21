@@ -152,7 +152,7 @@ def test_search_cache_and_cooldown(monkeypatch):
     import httpx
     monkeypatch.setattr(swiggy.time, "sleep", lambda s: None)
     monkeypatch.setattr(httpx, "post", lambda *a, **k: type("R", (), {"status_code": 429, "headers": {}, "text": ""})())
-    swiggy._cool["until"] = 0
+    swiggy._cool.clear()
     with pytest.raises(swiggy.SwiggyError, match="limiting requests"):
         ORIG_POST({"jsonrpc": "2.0", "id": 1}, "tok", None)
     calls = []
@@ -160,4 +160,22 @@ def test_search_cache_and_cooldown(monkeypatch):
     with pytest.raises(swiggy.SwiggyError, match="try again in"):
         ORIG_POST({"jsonrpc": "2.0", "id": 1}, "tok", None)
     assert calls == []                                                   # cooling down: Swiggy is not called at all
-    swiggy._cool["until"] = 0
+    swiggy._cool.clear()
+
+
+def test_multiple_accounts_switch_and_keep_separate_state(monkeypatch, tmp_path):
+    import json as _j
+    monkeypatch.setenv("CHINKU_SECRETS_DIR", str(tmp_path))
+    monkeypatch.setattr(swiggy, "connected", swiggy.__dict__["connected"])
+    (tmp_path / "swiggy_tokens.json").write_text(_j.dumps({"access_token": "A-main", "expires_in": 999999, "obtained_at": 9e12}))
+    (tmp_path / "swiggy" / "amma").mkdir(parents=True)
+    (tmp_path / "swiggy" / "amma" / "tokens.json").write_text(_j.dumps({"access_token": "A-amma", "expires_in": 999999, "obtained_at": 9e12}))
+    assert swiggy.accounts() == ["main", "amma"] and swiggy.active() == "main" and swiggy._token() == "A-main"
+    swiggy.set_active("amma")
+    assert swiggy.active() == "amma" and swiggy._token() == "A-amma"
+    with pytest.raises(swiggy.SwiggyError, match="No Swiggy account"):
+        swiggy.set_active("stranger")
+    live = []
+    monkeypatch.setattr(swiggy, "_call_live", lambda name, args, server: live.append(swiggy.active()) or {"q": args["query"]})
+    swiggy.call("search_products", {"query": "milk"}); swiggy.set_active("main"); swiggy.call("search_products", {"query": "milk"})
+    assert live == ["amma", "main"]                                     # cache is per account

@@ -445,6 +445,28 @@ async def api_forget(request: Request) -> JSONResponse:
     return JSONResponse({"ok": memory.forget(settings().user_whatsapp, str(form.get("item") or ""))})
 
 
+@app.get("/api/swiggy/accounts")
+def api_swiggy_accounts(key: str = "") -> JSONResponse:
+    if not _ok(key):
+        return _forbidden()
+    from app.chinku.adapters import swiggy
+    return JSONResponse({"accounts": swiggy.accounts(), "active": swiggy.active()})
+
+
+@app.post("/api/swiggy/active")
+async def api_swiggy_active(request: Request) -> JSONResponse:
+    form = await request.form()
+    if not _ok(form.get("key")):
+        return _forbidden()
+    from app.chinku.adapters import swiggy
+    try:
+        name = swiggy.set_active(str(form.get("name") or ""))
+    except swiggy.SwiggyError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    deliver(settings().user_whatsapp, f"🛵 Swiggy account switched to “{name}”. Searches, carts and table bookings now use it.")
+    return JSONResponse({"ok": True, "active": name})
+
+
 @app.get("/api/calls")
 def api_calls(key: str = "") -> JSONResponse:
     if not _ok(key):
