@@ -1,0 +1,32 @@
+name: dealer_quotes
+description: "User wants the best price for a material (cement, steel, sand...) by calling several dealers"
+route_examples:
+  - "Chinku, 50 bags cement, ee 3 dealers ki call chesi best rate kanukko"
+  - "call these dealers and get the best rate for 2 ton steel"
+inputs:
+  item:     {source: text, required: true}
+  quantity: {source: text, required: true, type: number}
+  unit:     {source: text, default: "bag"}
+  dealers:  {source: image_or_text, required: true, type: list, item_fields: [name, phone], validate_item: {phone: indian_mobile}}
+confirm_before: [call]
+steps:
+  - id: ask_dealers
+    type: call
+    for_each: dealers
+    to: "{item.phone}"
+    callee: {name: "{item.name}", role: "{inputs.item} dealer"}
+    goal: "Get the price per {inputs.unit} for {inputs.quantity} {inputs.unit} of {inputs.item}, delivery time, and any extra charges like transport."
+    must_collect: [price_per_unit, delivery_time, transport_charge, payment_terms]
+    language: Telugu-English mix
+    max_minutes: 3
+    retry_on_no_answer: 1
+  - id: report
+    type: reply
+    rank_by: "price_per_unit * quantity + transport_charge"
+    rank_label: total_price
+    template_hint: "Tell the best dealer by total price (lowest), list each dealer's price, delivery and extras, mark tentative items, ask 'confirm cheyyala?'"
+result_schema:
+  price_per_unit:   {type: number, unit: INR}
+  delivery_time:    {type: string}
+  transport_charge: {type: number, unit: INR, default: 0}
+  payment_terms:    {type: string}

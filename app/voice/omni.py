@@ -42,9 +42,14 @@ def parse_webhook(payload: dict[str, Any]) -> dict[str, Any]:
     report = payload.get("call_report") or payload
     transcript = report.get("full_conversation") or report.get("transcript") or payload.get("transcript") or ""
     ctx = payload.get("call_context") or report.get("call_context") or {}
+    if isinstance(transcript, list):  # list of turns -> "role: text" lines
+        transcript = "\n".join(f"{t.get('role') or t.get('speaker')}: {t.get('content') or t.get('text')}" for t in transcript)
     return {
         "call_id": str(call_id) if call_id is not None else None,
+        "chinku_call_id": ctx.get("chinku_call_id"),
         "transcript": transcript,
+        "status": payload.get("call_status") or report.get("call_status") or payload.get("status"),
+        "duration": payload.get("call_duration") or report.get("call_duration_in_seconds"),
         "extracted": report.get("extracted_variables") or {},
         "task_id": ctx.get("task_id"),
         "step_id": ctx.get("step_id"),

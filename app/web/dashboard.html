@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chinku Dashboard</title>
+<style>
+  :root { --bg:#f6f5f2; --card:#fff; --ink:#1d1d1f; --mut:#6b6b70; --line:#e4e2dc; --ok:#1f7a4d; --warn:#a15c00; --bad:#b3261e; --acc:#3b4cca; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui, -apple-system, Segoe UI, sans-serif; }
+  header { padding:16px 20px; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:baseline; }
+  header h1 { margin:0; font-size:20px; } header span { color:var(--mut); }
+  main { padding:16px 20px; display:grid; gap:14px; max-width:1100px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .pill { font-size:12px; padding:2px 8px; border-radius:99px; border:1px solid var(--line); }
+  .done,.completed,.confirmed { color:var(--ok); border-color:var(--ok); }
+  .running,.dispatched,.awaiting_confirm,.tentative { color:var(--warn); border-color:var(--warn); }
+  .failed,.no_answer,.cancelled,.refused,.not_mentioned { color:var(--bad); border-color:var(--bad); }
+  table { border-collapse:collapse; width:100%; margin-top:8px; font-size:13px; }
+  td,th { text-align:left; padding:4px 6px; border-top:1px solid var(--line); vertical-align:top; }
+  q { color:var(--acc); }
+  details { margin-top:8px; } pre { white-space:pre-wrap; font-size:12px; color:var(--mut); max-height:240px; overflow:auto; }
+  .mut { color:var(--mut); }
+</style>
+</head>
+<body>
+<header><h1>Chinku</h1><span>tasks · calls · evidence (auto-refresh 3 s)</span></header>
+<main id="root"><div class="card mut">Loading…</div></main>
+<script>
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function render(d) {
+  if (!d.tasks.length) return '<div class="card mut">No tasks yet. Send a WhatsApp message to Chinku.</div>';
+  return d.tasks.map(t => {
+    const calls = d.calls.filter(c => c.task_id === t.task_id).sort((a,b)=>a.created_at-b.created_at);
+    const callHtml = calls.map(c => {
+      const f = (c.extracted && c.extracted.fields) || [];
+      return `<div class="card" style="margin-top:8px">
+        <div class="row"><b>${esc(c.callee?.name || c.callee?.role)}</b><span class="mut">${esc(c.to_number)}</span>
+          <span class="pill ${esc(c.status)}">${esc(c.status)}</span>${c.attempt?'<span class="pill">retry '+c.attempt+'</span>':''}</div>
+        ${f.length ? `<table><tr><th>field</th><th>value</th><th>status</th><th>evidence</th></tr>${f.map(x =>
+          `<tr><td>${esc(x.name)}</td><td>${esc(x.value)} ${esc(x.unit||"")}</td><td><span class="pill ${esc(x.status)}">${esc(x.status)}</span></td><td>${x.evidence_quote?'<q>'+esc(x.evidence_quote)+'</q>':''}</td></tr>`).join("")}</table>` : ""}
+        ${c.brief ? `<details><summary>Call brief (written by OpenAI)</summary><pre>${esc(c.brief.call_script)}</pre></details>` : ""}
+        ${c.transcript ? `<details><summary>Transcript</summary><pre>${esc(c.transcript)}</pre></details>` : ""}
+        ${c.error ? `<pre>${esc(c.error)}</pre>` : ""}
+      </div>`;
+    }).join("");
+    const reply = Object.values(t.steps || {}).map(s => s.output && s.output.text).filter(Boolean).join("\n");
+    const ev = (d.events[t.task_id] || []).map(e => `${new Date(e.ts*1000).toLocaleTimeString()}  ${e.kind}`).join("\n");
+    return `<div class="card">
+      <div class="row"><b>${esc(t.spec)}</b><span class="pill ${esc(t.status)}">${esc(t.status)}</span>
+        <span class="mut">${esc(t.task_id)} · ${new Date(t.created_at*1000).toLocaleTimeString()}</span></div>
+      <details><summary>Inputs</summary><pre>${esc(JSON.stringify(t.inputs, null, 1))}</pre></details>
+      ${callHtml}
+      ${reply ? `<div class="card" style="margin-top:8px"><b>WhatsApp reply</b><pre style="color:var(--ink)">${esc(reply)}</pre></div>` : ""}
+      <details><summary>Event log (${(d.events[t.task_id]||[]).length})</summary><pre>${esc(ev)}</pre></details>
+    </div>`;
+  }).join("");
+}
+async function tick() {
+  try { const d = await (await fetch("/api/state")).json(); document.getElementById("root").innerHTML = render(d); } catch (e) {}
+}
+tick(); setInterval(tick, 3000);
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+name: banner_rate
+description: "Photo of a property/ad banner; user wants the real final price from the builder"
+route_examples:
+  - "ee banner builder ki call chesi final rate adugu"
+  - "call this builder and ask the final price"
+inputs:
+  phone:        {source: image, required: true, validate: indian_mobile}
+  project_name: {source: image}
+  listed_price: {source: image, type: number}
+  unit_type:    {source: image_or_text, default: "2BHK"}
+confirm_before: [call]
+steps:
+  - id: ask_builder
+    type: call
+    to: "{inputs.phone}"
+    callee: {name: null, role: "builder / sales office of {inputs.project_name}"}
+    goal: "Find the final negotiable price for {inputs.unit_type} at {inputs.project_name}, what is included, and current offers."
+    must_collect: [final_price, negotiable, inclusions, offers, site_visit_slot]
+    language: Telugu-English mix
+    max_minutes: 3
+    retry_on_no_answer: 1
+  - id: report
+    type: reply
+    template_hint: "Compare listed_price vs final_price; list inclusions; ask if I should book a site visit."
+result_schema:
+  final_price:     {type: number, unit: INR}
+  negotiable:      {type: boolean}
+  inclusions:      {type: list}
+  offers:          {type: string}
+  site_visit_slot: {type: string}

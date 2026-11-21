@@ -28,3 +28,16 @@ Chose: create the agent from code (scripts/omni_create_agent.py) instead of dash
 Voice: cartesia c7bbe380… (same as Telugu clinic agent). LLM: gpt-4.1-mini (Omni default; live-turn latency).
 Gave up: dashboard tweaking.
 Would change if: smoke call shows placeholders not filled → fallback per-call agent (CLAUDE.md §4).
+
+## [Sat 13:05] Spec format additions (engine stays generic)
+Observed: dealer_quotes needs one call per dealer and a total-price comparison; banner_rate needs callee role from inputs.
+Chose: added generic spec keys `for_each` (fan-out over a list input), `callee` (templated name/role), placeholders `{inputs.x}` / `{item.y}`, and on reply steps `rank_by` (safe + - * / expression, deterministic) + `rank_label`. No `if spec ==` in engine.
+Gave up: CLAUDE.md's bare `{phone}` syntax (now `{inputs.phone}`).
+Would change if: a feature needs a non-arithmetic comparison.
+
+## [Sat 13:05] Engine verified with LIVE brain, SIMULATED call (scripts/sim_e2e.py)
+Observed: WA text → route (gpt-5.4-mini) picked dealer_quotes, parsed 2 dealers + E.164 → confirm gate → 2 briefs (gpt-5.5, Telugu-English, AI disclosure in opening) → simulated transcripts → extract (gpt-5.5):
+Ravi 385 + transport 2000 (confirmed); Sai "moodu vandala tombhai" = 390, transport 0, delivery TENTATIVE ("evening confirm chesta").
+Deterministic rank: Sai 19500 < Ravi 21250 (transport-extra pair flips winner). Reply led with best total, marked "(not confirmed)", quoted evidence.
+Chose: keep extraction guard (confirmed without quote → tentative).
+Would change if: live Omni transcripts have a different shape.
