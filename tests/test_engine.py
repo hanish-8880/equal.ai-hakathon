@@ -365,7 +365,7 @@ def test_inbound_call_only_owner_becomes_task(monkeypatch):
     import app.main as m
     monkeypatch.setattr(m.settings(), "user_whatsapp", "whatsapp:+919989683607")
     got, sent = [], []
-    monkeypatch.setattr(m.runner, "handle_message", lambda user, text, image, send: got.append((user, text)))
+    monkeypatch.setattr(m.runner, "handle_message", lambda user, text, image, send, **kw: got.append((user, text)))
     monkeypatch.setattr(m.whatsapp, "send", lambda to, body, media=None: sent.append(to))
     base = {"direction": "inbound", "transcript": "assistant: Hello\nuser: PDF total Suresh ki mail pettu\nuser: avunu", "summary": "s"}
     m.process_omni({**base, "from_number": "+918888888888"})  # stranger

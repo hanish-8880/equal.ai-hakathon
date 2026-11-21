@@ -155,7 +155,7 @@ def inbound():
     import app.main as m
     got = []
     orig = m.runner.handle_message
-    m.runner.handle_message = lambda user, text, image, send: got.append((user, text))
+    m.runner.handle_message = lambda user, text, image, send, **kw: got.append((user, text))
     m.whatsapp.send = lambda to, body, media=None: None
     base = {"direction": "inbound", "summary": "Caller asked for PDF total mailed to Suresh",
             "transcript": "assistant: Chinku here, em cheyyali?\nuser: PDF total Suresh ki mail pettu\nassistant: Correct aa?\nuser: Avunu"}
