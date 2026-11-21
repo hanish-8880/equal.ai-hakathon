@@ -15,9 +15,14 @@ from typing import Any
 import httpx
 
 BASE = "https://mcp.swiggy.com"
-ALLOWED = {"get_addresses", "search_products", "get_cart", "update_cart", "your_go_to_items"}  # NO checkout / clear_cart / payment
+ALLOWED = {  # per server. NEVER: checkout, place_food_order, confirm_order, payment tools, clear/flush cart
+    "im": {"get_addresses", "search_products", "get_cart", "update_cart", "your_go_to_items"},
+    "food": {"get_addresses", "search_restaurants", "search_menu", "get_restaurant_menu", "get_food_cart", "update_food_cart",
+             "fetch_food_coupons"},
+    "dineout": set(),  # filled after the tool list is verified (scripts/swiggy_tools.py)
+}
 _lock = threading.Lock()
-_session: dict[str, Any] = {}
+_sessions: dict[str, dict[str, Any]] = {}
 
 
 class SwiggyError(Exception):
@@ -49,11 +54,11 @@ def _token() -> str:
     return t["access_token"]
 
 
-def _post(msg: dict[str, Any], tok: str, sid: str | None) -> tuple[dict[str, Any] | None, str | None]:
+def _post(msg: dict[str, Any], tok: str, sid: str | None, server: str = "im") -> tuple[dict[str, Any] | None, str | None]:
     h = {"Authorization": f"Bearer {tok}", "Accept": "application/json, text/event-stream", "Content-Type": "application/json"}
     if sid:
         h["Mcp-Session-Id"] = sid
-    r = httpx.post(f"{BASE}/im", json=msg, headers=h, timeout=60)
+    r = httpx.post(f"{BASE}/{server}", json=msg, headers=h, timeout=60)
     sid = r.headers.get("mcp-session-id") or sid
     if r.status_code == 401:
         raise SwiggyError("Swiggy login expired — please log in again.")
@@ -68,19 +73,21 @@ def _post(msg: dict[str, Any], tok: str, sid: str | None) -> tuple[dict[str, Any
     return json.loads(body or "{}"), sid
 
 
-def call(name: str, args: dict[str, Any]) -> dict[str, Any]:
-    if name not in ALLOWED:
+def call(name: str, args: dict[str, Any], server: str = "im") -> dict[str, Any]:
+    if name not in ALLOWED.get(server, set()):
         raise PermissionError(f"Chinku never calls Swiggy's “{name}” (checkout, payment and clearing the cart are yours to do).")
-    with _lock:  # one session per user, calls in sequence (Swiggy's guidance)
+    with _lock:  # one session per user per server, calls in sequence (Swiggy's guidance)
         tok = _token()
-        if _session.get("tok") != tok or time.time() - _session.get("at", 0) > 600:
+        ses = _sessions.setdefault(server, {})
+        if ses.get("tok") != tok or time.time() - ses.get("at", 0) > 600:
             out, sid = _post({"jsonrpc": "2.0", "id": 1, "method": "initialize",
-                              "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "chinku", "version": "0.1"}}}, tok, None)
-            _post({"jsonrpc": "2.0", "method": "notifications/initialized"}, tok, sid)
-            _session.update(tok=tok, sid=sid, at=time.time(), n=1)
-        _session["n"] += 1
-        out, _ = _post({"jsonrpc": "2.0", "id": _session["n"], "method": "tools/call", "params": {"name": name, "arguments": args}},
-                       tok, _session.get("sid"))
+                              "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "chinku", "version": "0.1"}}},
+                             tok, None, server)
+            _post({"jsonrpc": "2.0", "method": "notifications/initialized"}, tok, sid, server)
+            ses.update(tok=tok, sid=sid, at=time.time(), n=1)
+        ses["n"] += 1
+        out, _ = _post({"jsonrpc": "2.0", "id": ses["n"], "method": "tools/call", "params": {"name": name, "arguments": args}},
+                       tok, ses.get("sid"), server)
     if (out or {}).get("error"):
         raise SwiggyError(f"Swiggy: {out['error'].get('message', 'error')}")
     res = (out or {}).get("result") or {}
@@ -95,17 +102,18 @@ def call(name: str, args: dict[str, Any]) -> dict[str, Any]:
         return {"text": txt}
 
 
-def address_id() -> str:
-    if _session.get("addr"):
-        return _session["addr"]
-    data = call("get_addresses", {})
+def address_id(server: str = "im") -> str:
+    ses = _sessions.setdefault(server, {})
+    if ses.get("addr"):
+        return ses["addr"]
+    data = call("get_addresses", {}, server)
     rows = data if isinstance(data, list) else next((v for v in data.values() if isinstance(v, list)), [])
     a = next((r for r in rows if isinstance(r, dict) and (r.get("id") or r.get("addressId"))), None)
     if not a:
         raise SwiggyError("No delivery address on your Swiggy account — add one in the Swiggy app first.")
-    _session["addr"] = str(a.get("id") or a.get("addressId"))
-    _session["addr_label"] = str(a.get("annotation") or a.get("label") or a.get("tag") or "your address")
-    return _session["addr"]
+    ses["addr"] = str(a.get("id") or a.get("addressId"))
+    ses["addr_label"] = str(a.get("annotation") or a.get("label") or a.get("tag") or "your address")
+    return ses["addr"]
 
 
 def grams(desc: str | None) -> float | None:
