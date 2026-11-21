@@ -72,6 +72,58 @@ Channel rule: **one router, one job store, many channels.** Channel adapters onl
 
 ---
 
+## 3A. Listening and understanding (transcribe → normalise → intent → act)
+
+Every input goes through the same pipeline, whatever the channel. Build it as one module (app/brain/understand.py) with a typed result, and log every stage to the job timeline.
+
+Step 1 — Capture
+- Chinku App: MediaRecorder (webm/opus), hold-to-talk, max 90 s, upload to /api/voice.
+- WhatsApp: voice notes (ogg/opus) downloaded from the Twilio media URL.
+- Phone (inbound Omni): use Omni's transcript and skip to Step 3 (keep the raw text too).
+- Keep the original audio on the job (evidence + re-transcription). Silent/empty audio → reply "I didn't hear anything, try again".
+
+Step 2 — Transcribe (OpenAI)
+- Model from env OPENAI_MODEL_TRANSCRIBE (best available; verify it works first).
+- Telugu + English + Hindi mixed; do not force one language. Keep the words actually spoken.
+- Domain vocabulary prompt, built per request:
+  plumbing terms (angle valve, ball valve, pillar cock, bib cock, health faucet, flush tank, geyser, CPVC, UPVC, PVC, elbow, tee, reducer, union, hose, connection pipe, teflon tape, ½ inch, ¾ inch, 15 mm, 20 mm),
+  brands (Jaquar, Cera, Hindware, Parryware, Astral, Supreme, Ashirvad, Finolex, Prince),
+  plus THIS plumber's contact names, shop names, open job IDs ("Job 24"), work-order refs and recent model numbers from the job store.
+- Return: transcript, detected_languages, low_confidence_spans (if the API gives segments/logprobs; otherwise mark every number and model code as "check"), duration.
+
+Step 3 — Normalise (code first; LLM only for what code cannot do)
+- Numbers: dedicated normaliser for spoken Telugu/English/Hindi numbers and money ("rendu" = 2, "moodu vandala yabhai" = 350, "padhihenu" = 15, "two-fifty" = 250, "1.5 lakh", ₹ variants) and units ("per piece", "each", "total", "inch", "mm"). Unit tests for every pattern seen in real recordings.
+- Entities: job refs ("job 24", "J24", "Flat 304 job"), phone numbers (E.164, +91, starts 6–9), model codes (keep exact characters, never "correct" them), names matched against the plumber's contacts.
+- Self-corrections in the same note ("350… no, 300") → keep the last value and record the correction.
+
+Step 4 — Understand intent (OpenAI router, structured output, Pydantic)
+Input: normalised transcript + the plumber's open jobs (id, site, status, next action) + contacts + recent conversation.
+Output:
+  UnderstandResult:
+    actions: [ {intent, job_ref: id | "new" | "ambiguous", entities{...}, missing[...], confidence 0-1} ]
+    clarifying_question: str | null   (ONE short question, in the plumber's language)
+    readback: str                     (what Chinku understood, 1–2 lines)
+Rules:
+- Multi-intent: one note can hold several actions → split them, keep order.
+- Job resolution: explicit ref wins; else match by site/client/part; else the only open job; else "ambiguous" → ask "Which job — Flat 304 tap or Flat 210 geyser?". Never change a job on a guess.
+- Confidence gate: confidence < 0.8, any missing required field, or any number/model code flagged "check" → ask or read back before acting.
+- Consequential intents (book, approval request, send invoice, any shop commitment) always show the readback and wait for "yes" (voice: haa / avunu / yes / pampu, or a button).
+- Small talk or unclear → friendly reply, no state change.
+
+Step 5 — Show what Chinku heard
+- The plumber's bubble shows the transcript; numbers and model codes are highlighted and tappable to correct.
+- Chinku's reply starts with the readback, e.g. "Job 24 · 2 angle valves · Srinivas, Ravi · limit ₹500 — calling now?"
+- Voice correction anywhere ("kaadu, 300", "not Ravi, Suresh") updates only that field and reads back again.
+
+Accuracy checks (add to the evidence section)
+- Record ≥20 real voice notes (Telugu, English, mixed; quiet and noisy) with labelled expected actions.
+- Compare baseline (plain transcription + one generic prompt) vs our pipeline (vocabulary prompt + normaliser + structured router + confidence gate).
+- Metrics: intent accuracy, job-resolution accuracy, key-entity accuracy (numbers, quantities, model codes, names).
+- Companion metric: wrong-action rate (an action executed that the plumber did not ask for). Target 0.
+- Generate results into eval/results.md by script; never hand-edit.
+
+---
+
 ## 4. Stack and ownership (verify what is configured; do not assume)
 
 | Layer | Owner | Notes |
@@ -304,7 +356,7 @@ Fallback: a recorded replay of the same run, labelled as a recording.
 
 | By | Must be working (observed) |
 |---|---|
-| Sat 9:00 PM | Job model + roles + router intents; create job from voice in Chinku App; job card shows |
+| Sat 9:00 PM | Job model + roles; section 3A pipeline working; create a job from a real Telugu-English voice note in Chinku App; job card shows |
 | Sat 11:30 PM | Client booking call with slot re-check and confirmations |
 | Sun 2:00 AM | Part sourcing: 2 shop calls, offers, comparison, different-model/tomorrow handling, dependency rule |
 | Sun 4:00 AM | Extra-work approval with designated-approver rule |
