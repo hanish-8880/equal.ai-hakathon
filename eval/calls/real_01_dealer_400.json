@@ -1,0 +1,28 @@
+{
+ "id": "real_01_dealer_400",
+ "source": "real_call",
+ "fresh": false,
+ "spec": "dealer_quotes",
+ "step": "ask_dealers",
+ "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: చెప్పండి.\nassistant: హానిష్ గారికి నాలుగు cement bags కావాలి. ఒక్క bag కి మీ current price ఎంత అండి?\nuser: 400.  400 రూపీస్.\nassistant: సరే అండి, delivery కి ఎంత time పడుతుంది?\nuser: 2 డేస్.\nassistant: సరే అండి, transport charge exact గా ఎంత అవుతుంది చెప్పండి please?\nuser: 1,000 రూపీస్.\nassistant: పేమెంట్ terms ఎలా ఉంటాయి అండి?\nuser: పేమెంట్ కట్టాకే వస్తుంది కార్డ్.\nassistant: సరే అండి, ఒక్క bag rate నాలుగు వందలు, delivery time రెండు రోజులు, transport charge వెయ్యి రూపాయలు, payment కట్టాకే వస్తుంది అని confirm చేస్తున్నాను. కరెక్ట్ గా చెప్పానా?\nuser: యా.  ఓకే.\nassistant: ధన్యవాదాలు అండి, మీ సమయం కోసం. ఈ వివరాలు హానిష్ గారికి చెబుతాను. మంచి రోజు!",
+ "expected": {
+  "price_per_unit": {
+   "value": 400,
+   "status": "confirmed"
+  },
+  "delivery_time": {
+   "value": "2 days",
+   "status": "confirmed"
+  },
+  "transport_charge": {
+   "value": 1000,
+   "status": "confirmed"
+  },
+  "payment_terms": {
+   "value": "payment before delivery (advance)",
+   "status": "confirmed"
+  }
+ },
+ "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+ "notes": "Telugu-script call; payment answer is colloquial Telugu"
+}

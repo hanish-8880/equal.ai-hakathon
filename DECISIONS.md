@@ -235,3 +235,14 @@ Agents always SPEAK English but still UNDERSTAND Telugu/Hindi answers (Soniox te
 Voice: Cartesia f8f5f1b2 "Kiara" (tag en, Indian accent) on both agents — best English-Indian option with low latency;
 ElevenLabs is premium with only one Indian (male) voice; agent LLM stays gpt-4.1 (proven on live calls; only gpt-4o is premium above it).
 Would change if: Telugu needed again → set DEFAULT_LANGUAGE and spec language back, choose a Telugu voice.
+
+## [Sat 18:30] Eval v1 (12 cases: 5 real calls + 7 scripted) — honest result: NO accuracy win over the baseline yet
+Harness: eval/run_eval.py → eval/results.md/json (generated). Baseline = same model gpt-5.5 + "Summarise this call and list the price and details."
+(asked to fill the same field names, for scoring). Scoring bugs that were unfair to the BASELINE were fixed before reading results:
+empty answers counted as values; "free"/"no charge" not read as 0; hedge words ("maybe", "to be confirmed") now count as tentative for the baseline.
+Labels were written before running and not changed after (real_03 inclusions label debate noted in the case file).
+Result: field accuracy Chinku 43/44 vs baseline 44/44; wrong-confirmed 0/11 vs 1/11; Chinku status accuracy 42/44.
+Meaning: on clear transcripts a plain gpt-5.5 prompt reads values as well as Chinku. Do NOT claim "more accurate".
+Defensible claim: Chinku returns machine-usable status + evidence per field, which drives the confirm gates, deterministic ranking and
+"(not confirmed)" marks; the baseline returns prose. Would change if: harder REAL role-play calls (noisy, mixed language, ranges,
+conflicting answers) show a gap — that is the next eval step (needs volunteers).

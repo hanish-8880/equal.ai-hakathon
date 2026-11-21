@@ -1,0 +1,1842 @@
+{
+ "summary": {
+  "ALL": {
+   "cases": 12,
+   "chinku": {
+    "fields": 44,
+    "correct": 43,
+    "not_firm_fields": 11,
+    "wrong_confirmed": 0,
+    "status_correct": 42
+   },
+   "baseline": {
+    "fields": 44,
+    "correct": 44,
+    "not_firm_fields": 11,
+    "wrong_confirmed": 1
+   }
+  },
+  "real calls": {
+   "cases": 5,
+   "chinku": {
+    "fields": 16,
+    "correct": 15,
+    "not_firm_fields": 1,
+    "wrong_confirmed": 0,
+    "status_correct": 15
+   },
+   "baseline": {
+    "fields": 16,
+    "correct": 16,
+    "not_firm_fields": 1,
+    "wrong_confirmed": 1
+   }
+  },
+  "scripted (simulated)": {
+   "cases": 7,
+   "chinku": {
+    "fields": 28,
+    "correct": 28,
+    "not_firm_fields": 10,
+    "wrong_confirmed": 0,
+    "status_correct": 27
+   },
+   "baseline": {
+    "fields": 28,
+    "correct": 28,
+    "not_firm_fields": 10,
+    "wrong_confirmed": 0
+   }
+  }
+ },
+ "cases": [
+  {
+   "id": "fail_cut_off",
+   "source": "scripted (SIMULATED transcript)",
+   "fresh": false,
+   "notes": "call cut off mid-way",
+   "labelled_by": "scripted with known answers",
+   "chinku": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 410,
+       "status": "confirmed"
+      },
+      "got_value": 410,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": "not_mentioned",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": "not_mentioned",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": "not_mentioned",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 410,
+       "status": "confirmed"
+      },
+      "got_value": "410 per bag",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "price_per_unit",
+      "value": 410,
+      "unit": "per bag",
+      "status": "confirmed",
+      "evidence_quote": "It's 410 per bag."
+     },
+     {
+      "name": "delivery_time",
+      "value": null,
+      "unit": null,
+      "status": "not_mentioned",
+      "evidence_quote": null
+     },
+     {
+      "name": "transport_charge",
+      "value": null,
+      "unit": null,
+      "status": "not_mentioned",
+      "evidence_quote": null
+     },
+     {
+      "name": "payment_terms",
+      "value": null,
+      "unit": null,
+      "status": "not_mentioned",
+      "evidence_quote": null
+     }
+    ],
+    "call_outcome": "cut_off",
+    "follow_up_needed": true
+   },
+   "baseline_raw": {
+    "price_per_unit": "410 per bag",
+    "delivery_time": null,
+    "transport_charge": null,
+    "payment_terms": null
+   }
+  },
+  {
+   "id": "fail_refused_price",
+   "source": "scripted (SIMULATED transcript)",
+   "fresh": false,
+   "notes": "refusal must not become a number",
+   "labelled_by": "scripted with known answers",
+   "chinku": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": null,
+       "status": "refused"
+      },
+      "got_value": null,
+      "got_status": "refused",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "within 2 days",
+       "status": "confirmed"
+      },
+      "got_value": "within 2 days",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": "not_mentioned",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": "not_mentioned",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": null,
+       "status": "refused"
+      },
+      "got_value": null,
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "within 2 days",
+       "status": "confirmed"
+      },
+      "got_value": "within 2 days",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "price_per_unit",
+      "value": null,
+      "unit": "INR",
+      "status": "refused",
+      "evidence_quote": "We don't give rates on the phone. Come to the shop."
+     },
+     {
+      "name": "delivery_time",
+      "value": "within 2 days",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Yes, within 2 days."
+     },
+     {
+      "name": "transport_charge",
+      "value": null,
+      "unit": "INR",
+      "status": "not_mentioned",
+      "evidence_quote": null
+     },
+     {
+      "name": "payment_terms",
+      "value": null,
+      "unit": null,
+      "status": "not_mentioned",
+      "evidence_quote": null
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": true
+   },
+   "baseline_raw": {
+    "price_per_unit": null,
+    "delivery_time": "within 2 days",
+    "transport_charge": null,
+    "payment_terms": null
+   }
+  },
+  {
+   "id": "fail_vague_price",
+   "source": "scripted (SIMULATED transcript)",
+   "fresh": false,
+   "notes": "ranges/maybes must be tentative; 'I'll see' = not stated",
+   "labelled_by": "scripted with known answers",
+   "chinku": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "tentative"
+      },
+      "got_value": 385,
+      "got_status": "tentative",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "Monday",
+       "status": "tentative"
+      },
+      "got_value": "2026-11-23",
+      "got_status": "tentative",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": "tentative",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": false
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "cash",
+       "status": "confirmed"
+      },
+      "got_value": "Cash",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "tentative"
+      },
+      "got_value": "roughly 385 per bag",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "Monday",
+       "status": "tentative"
+      },
+      "got_value": "maybe Monday",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": null,
+       "status": "not_mentioned"
+      },
+      "got_value": null,
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "cash",
+       "status": "confirmed"
+      },
+      "got_value": "Cash",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "price_per_unit",
+      "value": 385,
+      "unit": "INR",
+      "status": "tentative",
+      "evidence_quote": "Not now, roughly 385 only."
+     },
+     {
+      "name": "delivery_time",
+      "value": "2026-11-23",
+      "unit": null,
+      "status": "tentative",
+      "evidence_quote": "Maybe Monday."
+     },
+     {
+      "name": "transport_charge",
+      "value": null,
+      "unit": "INR",
+      "status": "tentative",
+      "evidence_quote": "That I'll see."
+     },
+     {
+      "name": "payment_terms",
+      "value": "Cash",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Cash."
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": true
+   },
+   "baseline_raw": {
+    "price_per_unit": "roughly 385 per bag",
+    "delivery_time": "maybe Monday",
+    "transport_charge": null,
+    "payment_terms": "Cash"
+   }
+  },
+  {
+   "id": "pair_1a_delivery_sure",
+   "source": "scripted (SIMULATED transcript)",
+   "fresh": false,
+   "notes": "pair 1 (sure)",
+   "labelled_by": "scripted with known answers",
+   "chinku": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "confirmed"
+      },
+      "got_value": 385,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "tomorrow",
+       "status": "confirmed"
+      },
+      "got_value": "2026-11-22",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 0,
+       "status": "confirmed"
+      },
+      "got_value": 0,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "cash on delivery",
+       "status": "confirmed"
+      },
+      "got_value": "Cash on delivery",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "confirmed"
+      },
+      "got_value": "385 per bag",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "tomorrow",
+       "status": "confirmed"
+      },
+      "got_value": "tomorrow",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 0,
+       "status": "confirmed"
+      },
+      "got_value": "free",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "cash on delivery",
+       "status": "confirmed"
+      },
+      "got_value": "cash on delivery",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "price_per_unit",
+      "value": 385,
+      "unit": "per bag",
+      "status": "confirmed",
+      "evidence_quote": "385 per bag."
+     },
+     {
+      "name": "delivery_time",
+      "value": "2026-11-22",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Delivery tomorrow pakka."
+     },
+     {
+      "name": "transport_charge",
+      "value": 0,
+      "unit": "INR",
+      "status": "confirmed",
+      "evidence_quote": "Free."
+     },
+     {
+      "name": "payment_terms",
+      "value": "Cash on delivery",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Cash on delivery."
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": false
+   },
+   "baseline_raw": {
+    "price_per_unit": "385 per bag",
+    "delivery_time": "tomorrow",
+    "transport_charge": "free",
+    "payment_terms": "cash on delivery"
+   }
+  },
+  {
+   "id": "pair_1b_delivery_tentative",
+   "source": "scripted (SIMULATED transcript)",
+   "fresh": false,
+   "notes": "pair 1 (tentative): only delivery status differs",
+   "labelled_by": "scripted with known answers",
+   "chinku": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "confirmed"
+      },
+      "got_value": 385,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "tomorrow",
+       "status": "tentative"
+      },
+      "got_value": "2026-11-22",
+      "got_status": "tentative",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 0,
+       "status": "confirmed"
+      },
+      "got_value": 0,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "cash on delivery",
+       "status": "confirmed"
+      },
+      "got_value": "Cash on delivery",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "confirmed"
+      },
+      "got_value": "385 per bag",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "tomorrow",
+       "status": "tentative"
+      },
+      "got_value": "Tomorrow, to be confirmed in the evening",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 0,
+       "status": "confirmed"
+      },
+      "got_value": "Free",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "cash on delivery",
+       "status": "confirmed"
+      },
+      "got_value": "Cash on delivery",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "price_per_unit",
+      "value": 385,
+      "unit": "INR per bag",
+      "status": "confirmed",
+      "evidence_quote": "385 per bag."
+     },
+     {
+      "name": "delivery_time",
+      "value": "2026-11-22",
+      "unit": null,
+      "status": "tentative",
+      "evidence_quote": "Delivery tomorrow, but I'll confirm in the evening."
+     },
+     {
+      "name": "transport_charge",
+      "value": 0,
+      "unit": "INR",
+      "status": "confirmed",
+      "evidence_quote": "Free."
+     },
+     {
+      "name": "payment_terms",
+      "value": "Cash on delivery",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Cash on delivery."
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": true
+   },
+   "baseline_raw": {
+    "price_per_unit": "385 per bag",
+    "delivery_time": "Tomorrow, to be confirmed in the evening",
+    "transport_charge": "Free",
+    "payment_terms": "Cash on delivery"
+   }
+  },
+  {
+   "id": "pair_2a_transport_free",
+   "source": "scripted (SIMULATED transcript)",
+   "fresh": false,
+   "notes": "pair 2 (no transport)",
+   "labelled_by": "scripted with known answers",
+   "chinku": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "confirmed"
+      },
+      "got_value": 385,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "day after tomorrow",
+       "status": "confirmed"
+      },
+      "got_value": "2026-11-23",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 0,
+       "status": "confirmed"
+      },
+      "got_value": 0,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "half advance",
+       "status": "confirmed"
+      },
+      "got_value": "Half advance",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "confirmed"
+      },
+      "got_value": "Rs 385 per bag",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "day after tomorrow",
+       "status": "confirmed"
+      },
+      "got_value": "Day after tomorrow",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 0,
+       "status": "confirmed"
+      },
+      "got_value": "No transport charge",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "half advance",
+       "status": "confirmed"
+      },
+      "got_value": "Half advance",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "price_per_unit",
+      "value": 385,
+      "unit": "per bag",
+      "status": "confirmed",
+      "evidence_quote": "Rs 385 per bag."
+     },
+     {
+      "name": "delivery_time",
+      "value": "2026-11-23",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Day after tomorrow."
+     },
+     {
+      "name": "transport_charge",
+      "value": 0,
+      "unit": "INR",
+      "status": "confirmed",
+      "evidence_quote": "No transport charge."
+     },
+     {
+      "name": "payment_terms",
+      "value": "Half advance",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Half advance."
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": false
+   },
+   "baseline_raw": {
+    "price_per_unit": "Rs 385 per bag",
+    "delivery_time": "Day after tomorrow",
+    "transport_charge": "No transport charge",
+    "payment_terms": "Half advance"
+   }
+  },
+  {
+   "id": "pair_2b_transport_extra",
+   "source": "scripted (SIMULATED transcript)",
+   "fresh": false,
+   "notes": "pair 2 (transport extra): unit price same, total differs",
+   "labelled_by": "scripted with known answers",
+   "chinku": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "confirmed"
+      },
+      "got_value": 385,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "day after tomorrow",
+       "status": "confirmed"
+      },
+      "got_value": "2026-11-23",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 2000,
+       "status": "confirmed"
+      },
+      "got_value": 2000,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "half advance",
+       "status": "confirmed"
+      },
+      "got_value": "Half advance",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 385,
+       "status": "confirmed"
+      },
+      "got_value": "Rs 385 per bag",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "day after tomorrow",
+       "status": "confirmed"
+      },
+      "got_value": "Day after tomorrow",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 2000,
+       "status": "confirmed"
+      },
+      "got_value": "Rs 2000 extra",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "half advance",
+       "status": "confirmed"
+      },
+      "got_value": "Half advance",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "price_per_unit",
+      "value": 385,
+      "unit": "INR per bag",
+      "status": "confirmed",
+      "evidence_quote": "Rs 385 per bag, transport extra 2000."
+     },
+     {
+      "name": "delivery_time",
+      "value": "2026-11-23",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Day after tomorrow."
+     },
+     {
+      "name": "transport_charge",
+      "value": 2000,
+      "unit": "INR",
+      "status": "confirmed",
+      "evidence_quote": "Rs 385 per bag, transport extra 2000."
+     },
+     {
+      "name": "payment_terms",
+      "value": "Half advance",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Half advance."
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": false
+   },
+   "baseline_raw": {
+    "price_per_unit": "Rs 385 per bag",
+    "delivery_time": "Day after tomorrow",
+    "transport_charge": "Rs 2000 extra",
+    "payment_terms": "Half advance"
+   }
+  },
+  {
+   "id": "real_01_dealer_400",
+   "source": "real_call",
+   "fresh": false,
+   "notes": "Telugu-script call; payment answer is colloquial Telugu",
+   "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+   "chinku": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 400,
+       "status": "confirmed"
+      },
+      "got_value": 400,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "2 days",
+       "status": "confirmed"
+      },
+      "got_value": "2 days",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 1000,
+       "status": "confirmed"
+      },
+      "got_value": 1000,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "payment before delivery (advance)",
+       "status": "confirmed"
+      },
+      "got_value": "payment after payment is made / advance payment required",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 400,
+       "status": "confirmed"
+      },
+      "got_value": "₹400 per bag",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "2 days",
+       "status": "confirmed"
+      },
+      "got_value": "2 days",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 1000,
+       "status": "confirmed"
+      },
+      "got_value": "₹1,000",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "payment before delivery (advance)",
+       "status": "confirmed"
+      },
+      "got_value": "Payment required before delivery",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "price_per_unit",
+      "value": 400,
+      "unit": "INR per bag",
+      "status": "confirmed",
+      "evidence_quote": "400.  400 రూపీస్."
+     },
+     {
+      "name": "delivery_time",
+      "value": "2 days",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "2 డేస్."
+     },
+     {
+      "name": "transport_charge",
+      "value": 1000,
+      "unit": "INR",
+      "status": "confirmed",
+      "evidence_quote": "1,000 రూపీస్."
+     },
+     {
+      "name": "payment_terms",
+      "value": "payment after payment is made / advance payment required",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "పేమెంట్ కట్టాకే వస్తుంది కార్డ్."
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": false
+   },
+   "baseline_raw": {
+    "price_per_unit": "₹400 per bag",
+    "delivery_time": "2 days",
+    "transport_charge": "₹1,000",
+    "payment_terms": "Payment required before delivery"
+   }
+  },
+  {
+   "id": "real_02_dealer_714",
+   "source": "real_call",
+   "fresh": false,
+   "notes": "",
+   "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+   "chinku": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 714,
+       "status": "confirmed"
+      },
+      "got_value": 714,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "7 days",
+       "status": "confirmed"
+      },
+      "got_value": "7 days",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 0,
+       "status": "confirmed"
+      },
+      "got_value": 0,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "full advance",
+       "status": "confirmed"
+      },
+      "got_value": "Full advance",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "price_per_unit",
+      "expected": {
+       "value": 714,
+       "status": "confirmed"
+      },
+      "got_value": "₹714 per bag",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "delivery_time",
+      "expected": {
+       "value": "7 days",
+       "status": "confirmed"
+      },
+      "got_value": "7 days",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "transport_charge",
+      "expected": {
+       "value": 0,
+       "status": "confirmed"
+      },
+      "got_value": "No extra transport or unloading charges",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "payment_terms",
+      "expected": {
+       "value": "full advance",
+       "status": "confirmed"
+      },
+      "got_value": "Full advance",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "price_per_unit",
+      "value": 714,
+      "unit": "INR per bag",
+      "status": "confirmed",
+      "evidence_quote": "It's 714."
+     },
+     {
+      "name": "delivery_time",
+      "value": "7 days",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "7 days, 7 days."
+     },
+     {
+      "name": "transport_charge",
+      "value": 0,
+      "unit": "INR",
+      "status": "confirmed",
+      "evidence_quote": "No.  No, thank you."
+     },
+     {
+      "name": "payment_terms",
+      "value": "Full advance",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "Full advance."
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": false
+   },
+   "baseline_raw": {
+    "price_per_unit": "₹714 per bag",
+    "delivery_time": "7 days",
+    "transport_charge": "No extra transport or unloading charges",
+    "payment_terms": "Full advance"
+   }
+  },
+  {
+   "id": "real_03_builder_65L",
+   "source": "real_call",
+   "fresh": false,
+   "notes": "TRAP: inclusions = bare 'Yeah' to a leading list → tentative, not confirmed | label debate: an empty list marked tentative is also defensible; label kept as written BEFORE running the eval",
+   "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+   "chinku": {
+    "fields": [
+     {
+      "field": "final_price",
+      "expected": {
+       "value": 6500000,
+       "status": "confirmed"
+      },
+      "got_value": 6500000,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "negotiable",
+      "expected": {
+       "value": false,
+       "status": "confirmed"
+      },
+      "got_value": false,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "inclusions",
+      "expected": {
+       "value": [
+        "car parking",
+        "amenities",
+        "GST",
+        "registration",
+        "corpus",
+        "maintenance"
+       ],
+       "status": "tentative"
+      },
+      "got_value": [],
+      "got_status": "tentative",
+      "correct": false,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "offers",
+      "expected": {
+       "value": "none",
+       "status": "confirmed"
+      },
+      "got_value": "No current offers",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "site_visit_slot",
+      "expected": {
+       "value": "tomorrow evening",
+       "status": "confirmed"
+      },
+      "got_value": "2026-11-22 evening",
+      "got_status": "tentative",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": false
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "final_price",
+      "expected": {
+       "value": 6500000,
+       "status": "confirmed"
+      },
+      "got_value": "65 lakhs",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "negotiable",
+      "expected": {
+       "value": false,
+       "status": "confirmed"
+      },
+      "got_value": "No",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "inclusions",
+      "expected": {
+       "value": [
+        "car parking",
+        "amenities",
+        "GST",
+        "registration",
+        "corpus",
+        "maintenance"
+       ],
+       "status": "tentative"
+      },
+      "got_value": "Car parking, amenities, GST, registration, corpus, and maintenance charges included",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": true,
+      "status_ok": null
+     },
+     {
+      "field": "offers",
+      "expected": {
+       "value": "none",
+       "status": "confirmed"
+      },
+      "got_value": "No current offers or discounts",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "site_visit_slot",
+      "expected": {
+       "value": "tomorrow evening",
+       "status": "confirmed"
+      },
+      "got_value": "Tomorrow evening",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "final_price",
+      "value": 6500000,
+      "unit": "INR",
+      "status": "confirmed",
+      "evidence_quote": "It's 65 lakhs."
+     },
+     {
+      "name": "negotiable",
+      "value": false,
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "No. No.  I'm not doing that.  Right now."
+     },
+     {
+      "name": "inclusions",
+      "value": [],
+      "unit": null,
+      "status": "tentative",
+      "evidence_quote": "Yeah."
+     },
+     {
+      "name": "offers",
+      "value": "No current offers",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "No.  Not right now."
+     },
+     {
+      "name": "site_visit_slot",
+      "value": "2026-11-22 evening",
+      "unit": null,
+      "status": "tentative",
+      "evidence_quote": "Tomorrow evening.  You can do that."
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": true
+   },
+   "baseline_raw": {
+    "final_price": "65 lakhs",
+    "negotiable": "No",
+    "inclusions": "Car parking, amenities, GST, registration, corpus, and maintenance charges included",
+    "offers": "No current offers or discounts",
+    "site_visit_slot": "Tomorrow evening"
+   }
+  },
+  {
+   "id": "real_04_passbook_ask_photo",
+   "source": "real_call",
+   "fresh": false,
+   "notes": "",
+   "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+   "chinku": {
+    "fields": [
+     {
+      "field": "agreed_to_send_photo",
+      "expected": {
+       "value": true,
+       "status": "confirmed"
+      },
+      "got_value": true,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "agreed_to_send_photo",
+      "expected": {
+       "value": true,
+       "status": "confirmed"
+      },
+      "got_value": true,
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "agreed_to_send_photo",
+      "value": true,
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "పంపించాను."
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": false
+   },
+   "baseline_raw": {
+    "agreed_to_send_photo": true
+   }
+  },
+  {
+   "id": "real_05_passbook_explain",
+   "source": "real_call",
+   "fresh": false,
+   "notes": "",
+   "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+   "chinku": {
+    "fields": [
+     {
+      "field": "understood",
+      "expected": {
+       "value": true,
+       "status": "confirmed"
+      },
+      "got_value": true,
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     },
+     {
+      "field": "doubts",
+      "expected": {
+       "value": "wants to know the passbook number",
+       "status": "confirmed"
+      },
+      "got_value": "పాస్‌బుక్ నంబర్ గురించి అడిగారు",
+      "got_status": "confirmed",
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": true
+     }
+    ]
+   },
+   "baseline": {
+    "fields": [
+     {
+      "field": "understood",
+      "expected": {
+       "value": true,
+       "status": "confirmed"
+      },
+      "got_value": "Yes, the user said she understood.",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     },
+     {
+      "field": "doubts",
+      "expected": {
+       "value": "wants to know the passbook number",
+       "status": "confirmed"
+      },
+      "got_value": "The user asked for the passbook number; the assistant said it was not available and would be conveyed to Hanish.",
+      "got_status": null,
+      "correct": true,
+      "wrong_confirmed": false,
+      "status_ok": null
+     }
+    ]
+   },
+   "chinku_raw": {
+    "fields": [
+     {
+      "name": "understood",
+      "value": true,
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "అర్థమైంది, ఏంటి?"
+     },
+     {
+      "name": "doubts",
+      "value": "పాస్‌బుక్ నంబర్ గురించి అడిగారు",
+      "unit": null,
+      "status": "confirmed",
+      "evidence_quote": "ఇప్పుడు పాస్‌బుక్ నంబర్ చెప్పగలవా?"
+     }
+    ],
+    "call_outcome": "completed",
+    "follow_up_needed": false
+   },
+   "baseline_raw": {
+    "understood": "Yes, the user said she understood.",
+    "doubts": "The user asked for the passbook number; the assistant said it was not available and would be conveyed to Hanish."
+   }
+  }
+ ],
+ "judge": [
+  {
+   "field": "delivery_time",
+   "expected": "Monday",
+   "got": "2026-11-23",
+   "same": true,
+   "why": "2026-11-23 falls on a Monday, so it matches the expected delivery time of Monday."
+  },
+  {
+   "field": "delivery_time",
+   "expected": "tomorrow",
+   "got": "2026-11-22",
+   "same": true,
+   "why": "Given the current date is 2026-11-21, \"tomorrow\" means 2026-11-22, which matches the got value."
+  },
+  {
+   "field": "delivery_time",
+   "expected": "tomorrow",
+   "got": "2026-11-22",
+   "same": true,
+   "why": "The current date is 2026-11-21, so \"tomorrow\" refers to 2026-11-22, which matches the got value."
+  },
+  {
+   "field": "delivery_time",
+   "expected": "day after tomorrow",
+   "got": "2026-11-23",
+   "same": true,
+   "why": "Given the current date is 2026-11-21, 'day after tomorrow' means 2026-11-23, which matches the got value."
+  },
+  {
+   "field": "delivery_time",
+   "expected": "day after tomorrow",
+   "got": "2026-11-23",
+   "same": true,
+   "why": "Given the current date is 2026-11-21, 'day after tomorrow' means 2026-11-23, which matches the provided date."
+  },
+  {
+   "field": "payment_terms",
+   "expected": "payment before delivery (advance)",
+   "got": "payment after payment is made / advance payment required",
+   "same": true,
+   "why": "Both indicate that payment must be made in advance/before delivery. The extra wording in the got value is awkward but does not change the payment term."
+  },
+  {
+   "field": "payment_terms",
+   "expected": "payment before delivery (advance)",
+   "got": "Payment required before delivery",
+   "same": true,
+   "why": "Both state that payment must be made before delivery, i.e. advance payment."
+  },
+  {
+   "field": "offers",
+   "expected": "none",
+   "got": "No current offers",
+   "same": true,
+   "why": "Both indicate that there are no offers available/currently."
+  },
+  {
+   "field": "site_visit_slot",
+   "expected": "tomorrow evening",
+   "got": "2026-11-22 evening",
+   "same": true,
+   "why": "Given the current date is 2026-11-21, \"tomorrow evening\" means 2026-11-22 evening, which matches the got value."
+  },
+  {
+   "field": "offers",
+   "expected": "none",
+   "got": "No current offers or discounts",
+   "same": true,
+   "why": "Both indicate that there are currently no offers available."
+  },
+  {
+   "field": "doubts",
+   "expected": "wants to know the passbook number",
+   "got": "పాస్‌బుక్ నంబర్ గురించి అడిగారు",
+   "same": true,
+   "why": "Both indicate that the person asked about or wants to know the passbook number."
+  },
+  {
+   "field": "doubts",
+   "expected": "wants to know the passbook number",
+   "got": "The user asked for the passbook number; the assistant said it was not available and would be conveyed to Hanish.",
+   "same": true,
+   "why": "Both indicate that the user wanted/asked to know the passbook number. The extra note about it being unavailable and conveyed to Hanish does not change the stated doubt."
+  }
+ ],
+ "models": {
+  "brain": "gpt-5.5"
+ },
+ "baseline_prompt": "Summarise this call and list the price and details."
+}

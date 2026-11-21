@@ -1,0 +1,28 @@
+{
+ "id": "pair_1b_delivery_tentative",
+ "source": "scripted (SIMULATED transcript)",
+ "fresh": false,
+ "spec": "dealer_quotes",
+ "step": "ask_dealers",
+ "transcript": "assistant: Hello, I'm Chinku, an AI assistant calling on behalf of Hanish. What is the price per bag for 50 bags of cement?\nuser: 385 per bag.\nassistant: When can you deliver?\nuser: Delivery tomorrow, but I'll confirm in the evening.\nassistant: Any transport charge?\nuser: Free.\nassistant: Payment terms?\nuser: Cash on delivery.\nassistant: So 385 per bag, delivery tomorrow, transport free, cash on delivery — right?\nuser: Yes, delivery I will confirm evening.",
+ "expected": {
+  "price_per_unit": {
+   "value": 385,
+   "status": "confirmed"
+  },
+  "delivery_time": {
+   "value": "tomorrow",
+   "status": "tentative"
+  },
+  "transport_charge": {
+   "value": 0,
+   "status": "confirmed"
+  },
+  "payment_terms": {
+   "value": "cash on delivery",
+   "status": "confirmed"
+  }
+ },
+ "labelled_by": "scripted with known answers",
+ "notes": "pair 1 (tentative): only delivery status differs"
+}

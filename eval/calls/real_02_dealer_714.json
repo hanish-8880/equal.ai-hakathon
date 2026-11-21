@@ -1,0 +1,28 @@
+{
+ "id": "real_02_dealer_714",
+ "source": "real_call",
+ "fresh": false,
+ "spec": "dealer_quotes",
+ "step": "ask_dealers",
+ "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: Yes.\nassistant: Could you please tell me the price per bag for fifty cement bags, sir? If the price varies by brand, please share the main available brand prices.\nuser: It's 714.\nassistant: Thank you, sir. Which brand is this price for?\nuser: Sagar so many.\nassistant: Got it, sir, Sagar brand at seven hundred fourteen per bag. If I confirm the order, when can you deliver? Same day or next day?\nuser: 7 days, 7 days.\nassistant: Okay sir, delivery will take seven days. Are there any extra charges for transport or unloading? If yes, how much?\nuser: No.  No, thank you.\nassistant: And what about payment terms, sir? Is it full advance, payment on delivery, or do you offer credit?\nuser: Full advance.\nassistant: Just to confirm, the price is seven hundred fourteen per bag for Sagar brand, delivery in seven days, no extra transport or unloading charges, and payment is full advance, right sir?\nuser: Yeah.  Yeah.  Bye. Bye, bye.  Bye.\nassistant: Thank you very much, sir, for your time and the details. I will pass this information to Hanish garu. Have a good day, bye.",
+ "expected": {
+  "price_per_unit": {
+   "value": 714,
+   "status": "confirmed"
+  },
+  "delivery_time": {
+   "value": "7 days",
+   "status": "confirmed"
+  },
+  "transport_charge": {
+   "value": 0,
+   "status": "confirmed"
+  },
+  "payment_terms": {
+   "value": "full advance",
+   "status": "confirmed"
+  }
+ },
+ "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+ "notes": ""
+}

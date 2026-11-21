@@ -1,0 +1,28 @@
+{
+ "id": "pair_2a_transport_free",
+ "source": "scripted (SIMULATED transcript)",
+ "fresh": false,
+ "spec": "dealer_quotes",
+ "step": "ask_dealers",
+ "transcript": "assistant: Hello, I'm Chinku, an AI assistant calling on behalf of Hanish. What is the price per bag for 50 bags of cement?\nuser: Rs 385 per bag.\nassistant: Delivery?\nuser: Day after tomorrow.\nassistant: Transport charge?\nuser: No transport charge.\nassistant: Payment?\nuser: Half advance.\nassistant: Confirming 385 per bag, day after tomorrow, no transport, half advance?\nuser: Correct.",
+ "expected": {
+  "price_per_unit": {
+   "value": 385,
+   "status": "confirmed"
+  },
+  "delivery_time": {
+   "value": "day after tomorrow",
+   "status": "confirmed"
+  },
+  "transport_charge": {
+   "value": 0,
+   "status": "confirmed"
+  },
+  "payment_terms": {
+   "value": "half advance",
+   "status": "confirmed"
+  }
+ },
+ "labelled_by": "scripted with known answers",
+ "notes": "pair 2 (no transport)"
+}

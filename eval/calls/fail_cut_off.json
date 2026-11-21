@@ -1,0 +1,28 @@
+{
+ "id": "fail_cut_off",
+ "source": "scripted (SIMULATED transcript)",
+ "fresh": false,
+ "spec": "dealer_quotes",
+ "step": "ask_dealers",
+ "transcript": "assistant: Hello, I'm Chinku, an AI assistant calling on behalf of Hanish. What is the price per bag for 50 bags of cement?\nuser: It's 410 per bag.\nassistant: When can you deliver?\nuser: Deli— [call drops]",
+ "expected": {
+  "price_per_unit": {
+   "value": 410,
+   "status": "confirmed"
+  },
+  "delivery_time": {
+   "value": null,
+   "status": "not_mentioned"
+  },
+  "transport_charge": {
+   "value": null,
+   "status": "not_mentioned"
+  },
+  "payment_terms": {
+   "value": null,
+   "status": "not_mentioned"
+  }
+ },
+ "labelled_by": "scripted with known answers",
+ "notes": "call cut off mid-way"
+}

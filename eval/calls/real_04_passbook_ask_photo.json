@@ -1,0 +1,16 @@
+{
+ "id": "real_04_passbook_ask_photo",
+ "source": "real_call",
+ "fresh": false,
+ "spec": "passbook_explain",
+ "step": "ask_photo",
+ "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: చెప్పండి.\nassistant: అమ్మా, నేడు మీ పాస్‌బుక్ తాజా పేజీని స్పష్టంగా ఫోటో తీసి, చింకు వాట్సాప్ చాట్‌లో పంపించండి. అదే చాట్‌లో హనిష్ చింకుతో మాట్లాడుతున్నాడు.\nuser: పంపించానండి.\nassistant: అమ్మా, మీరు ఫోటో ఎప్పుడు పంపగలరు?\nuser: ఇప్పుడు పంపిస్తా.\nassistant: సరే అమ్మా, మీరు ఇప్పుడు ఫోటో పంపిస్తారు అని మీరు చెప్పారు. ఫోటో స్పష్టంగా ఉండాలి, తాజా పేజీ మొత్తం కనిపించాలి.\nassistant: ఫోటో పంపిన తర్వాత నాకు చెప్పగలరా అమ్మా?\nuser: పంపించాను.\nassistant: సరే అమ్మా, మీరు ఫోటో పంపినట్లు నాకు తెలుస్తోంది. ఫోటో స్పష్టంగా ఉందని ధృవీకరిస్తారా?\nuser: స్పష్టంగానే ఉంది.\nassistant: సరే అమ్మా, మీరు ఫోటో స్పష్టంగా ఉందని చెప్పారు. ఫోటో పంపిన విషయం హనిష్ కి తెలియజేస్తాను. ఫోటో పంపిన తర్వాత చింకు మళ్ళీ కాల్ చేసి మీకు నిదానం గా వివరించును. ధన్యవాదాలు.",
+ "expected": {
+  "agreed_to_send_photo": {
+   "value": true,
+   "status": "confirmed"
+  }
+ },
+ "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+ "notes": ""
+}

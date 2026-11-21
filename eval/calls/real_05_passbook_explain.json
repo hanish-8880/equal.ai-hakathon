@@ -1,0 +1,20 @@
+{
+ "id": "real_05_passbook_explain",
+ "source": "real_call",
+ "fresh": false,
+ "spec": "passbook_explain",
+ "step": "explain",
+ "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: చెప్పండి.\nassistant: అమ్మా, అక్టోబర్ ఒకటున నేను cash deposit చేసాను, అప్పుడే balance నలభై ఐదు వేల ఐదు వందలు. అక్టోబర్ ఐదున ATM లో ఐదు వేల withdraw అయ్యాయి, balance నలభై ఐదు వేల వందలు. అక్టోబర్ పది న పింషన్ వచ్చింది, ఇరవై ఐదు వేల. balance యాబై తొమ్మిది వేల. అక్టోబర్ పదిహేను న LIC ప్రీమియం మూడు వేల రెండు వందలు కట్టారు, balance యాబై ఐదు వేల ఏడు వందలు. అక్టోబర్ ఇరవై రెండు న ఎలక్ట్రిసిటీ బిల్ వంద ఎనభై కట్టారు, balance యాబై నాలుగు వేల ఐదు వందల డెబ్బాయి. అక్టోబర్ ముప్పై ఒకటున ఇంటరెస్ట్ మూడు వందలు పన్నెండు వచ్చింది, current balance యాబై నాలుగు వేల ఎనిమిది వందల ఎనభై రెండు. అమ్మా, నేను చెప్పింది మీకు ఎలా అర్థం అయ్య\nuser: అర్థమైంది, ఏంటి?\nassistant: అమ్మా, మీకు ఏమైనా సందేహం ఉందా?\nuser: ఇప్పుడు పాస్‌బుక్ నంబర్ చెప్పగలవా?\nassistant: అమ్మా, పాస్‌బుక్ నంబర్ నాకు తెలియదు, హనిష్ కి చెప్పి మీకు తెలియజేస్తారు.\nuser: ఓకే.\nassistant: సరే అమ్మా, మీ doubts హనిష్ కి చెప్తాను. ధన్యవాదాలు, జాగ్రత్తగా ఉండండి.",
+ "expected": {
+  "understood": {
+   "value": true,
+   "status": "confirmed"
+  },
+  "doubts": {
+   "value": "wants to know the passbook number",
+   "status": "confirmed"
+  }
+ },
+ "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+ "notes": ""
+}

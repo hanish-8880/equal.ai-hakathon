@@ -1,0 +1,39 @@
+{
+ "id": "real_03_builder_65L",
+ "source": "real_call",
+ "fresh": false,
+ "spec": "banner_rate",
+ "step": "ask_builder",
+ "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: Yes.\nassistant: Could you please tell me the final best price for the two and three BHK luxury apartments right now?\nuser: It's 65 lakhs.\nassistant: Is there any scope for negotiation on this price, and what is the final amount you would consider for a serious buyer?\nuser: No. No.  I'm not doing that.  Right now.\nassistant: Okay, so no negotiation on the price. Does this price include car parking, amenities, GST, registration, corpus, and maintenance charges?\nuser: Yeah.\nassistant: Are there any current offers or discounts available on these apartments?\nuser: No.  Not right now.\nassistant: When can I schedule a site visit? Are there any slots available this evening or over the weekend?\nuser: Tomorrow evening.  You can do that.\nassistant: So, the final price is sixty-five lakhs with no negotiation, all charges included, no current offers, and the site visit slot is tomorrow evening, right?\nassistant: Great, so the site visit is scheduled for tomorrow evening. To confirm, the price is sixty-five lakhs with no negotiation, all charges included, no current discounts, and the visit slot is tomorrow evening. Is that correct?\nuser: Yeah.\nassistant: Thanks for your time. I will pass these details to Hanish, and he will contact you to confirm the visit slot. Have a good day!",
+ "expected": {
+  "final_price": {
+   "value": 6500000,
+   "status": "confirmed"
+  },
+  "negotiable": {
+   "value": false,
+   "status": "confirmed"
+  },
+  "inclusions": {
+   "value": [
+    "car parking",
+    "amenities",
+    "GST",
+    "registration",
+    "corpus",
+    "maintenance"
+   ],
+   "status": "tentative"
+  },
+  "offers": {
+   "value": "none",
+   "status": "confirmed"
+  },
+  "site_visit_slot": {
+   "value": "tomorrow evening",
+   "status": "confirmed"
+  }
+ },
+ "labelled_by": "drafted by Claude from the transcript — Hanish to verify",
+ "notes": "TRAP: inclusions = bare 'Yeah' to a leading list → tentative, not confirmed | label debate: an empty list marked tentative is also defensible; label kept as written BEFORE running the eval"
+}

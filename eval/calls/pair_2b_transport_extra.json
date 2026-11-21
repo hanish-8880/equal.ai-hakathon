@@ -1,0 +1,28 @@
+{
+ "id": "pair_2b_transport_extra",
+ "source": "scripted (SIMULATED transcript)",
+ "fresh": false,
+ "spec": "dealer_quotes",
+ "step": "ask_dealers",
+ "transcript": "assistant: Hello, I'm Chinku, an AI assistant calling on behalf of Hanish. What is the price per bag for 50 bags of cement?\nuser: Rs 385 per bag, transport extra 2000.\nassistant: Delivery?\nuser: Day after tomorrow.\nassistant: So transport is 2000 extra?\nuser: Yes 2000.\nassistant: Payment?\nuser: Half advance.\nassistant: Confirming 385 per bag plus 2000 transport, day after tomorrow, half advance?\nuser: Correct.",
+ "expected": {
+  "price_per_unit": {
+   "value": 385,
+   "status": "confirmed"
+  },
+  "delivery_time": {
+   "value": "day after tomorrow",
+   "status": "confirmed"
+  },
+  "transport_charge": {
+   "value": 2000,
+   "status": "confirmed"
+  },
+  "payment_terms": {
+   "value": "half advance",
+   "status": "confirmed"
+  }
+ },
+ "labelled_by": "scripted with known answers",
+ "notes": "pair 2 (transport extra): unit price same, total differs"
+}

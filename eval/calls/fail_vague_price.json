@@ -1,0 +1,28 @@
+{
+ "id": "fail_vague_price",
+ "source": "scripted (SIMULATED transcript)",
+ "fresh": false,
+ "spec": "dealer_quotes",
+ "step": "ask_dealers",
+ "transcript": "assistant: Hello, I'm Chinku, an AI assistant calling on behalf of Hanish. What is the price per bag for 50 bags of cement?\nuser: Around 380, 390, depends on the stock. I'll tell you exactly tomorrow.\nassistant: Could you give one exact price?\nuser: Not now, roughly 385 only.\nassistant: Delivery?\nuser: Maybe Monday.\nassistant: Transport?\nuser: That I'll see.\nassistant: Payment?\nuser: Cash.",
+ "expected": {
+  "price_per_unit": {
+   "value": 385,
+   "status": "tentative"
+  },
+  "delivery_time": {
+   "value": "Monday",
+   "status": "tentative"
+  },
+  "transport_charge": {
+   "value": null,
+   "status": "not_mentioned"
+  },
+  "payment_terms": {
+   "value": "cash",
+   "status": "confirmed"
+  }
+ },
+ "labelled_by": "scripted with known answers",
+ "notes": "ranges/maybes must be tentative; 'I'll see' = not stated"
+}

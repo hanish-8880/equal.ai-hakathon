@@ -1,0 +1,42 @@
+[
+ {
+  "omni_log_id": 11694604,
+  "time": "11/21/2026 10:35:38",
+  "task_id": "t_b1553b06",
+  "step_id": "ask_dealers",
+  "duration_s": 6.0,
+  "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: చెప్పండి.\nassistant: హానిష్ గారికి నాలుగు cement bags కావాలి. ఒక్క bag కి మీ current price ఎంత అండి?\nuser: 400.  400 రూపీస్.\nassistant: సరే అండి, delivery కి ఎంత time పడుతుంది?\nuser: 2 డేస్.\nassistant: సరే అండి, transport charge exact గా ఎంత అవుతుంది చెప్పండి please?\nuser: 1,000 రూపీస్.\nassistant: పేమెంట్ terms ఎలా ఉంటాయి అండి?\nuser: పేమెంట్ కట్టాకే వస్తుంది కార్డ్.\nassistant: సరే అండి, ఒక్క bag rate నాలుగు వందలు, delivery time రెండు రోజులు, transport charge వెయ్యి రూపాయలు, payment కట్టాకే వస్తుంది అని confirm చేస్తున్నాను. కరెక్ట్ గా చెప్పానా?\nuser: యా.  ఓకే.\nassistant: ధన్యవాదాలు అండి, మీ సమయం కోసం. ఈ వివరాలు హానిష్ గారికి చెబుతాను. మంచి రోజు!"
+ },
+ {
+  "omni_log_id": 11687032,
+  "time": "11/21/2026 08:59:23",
+  "task_id": "t_43d935ef",
+  "step_id": "explain",
+  "duration_s": 5.0,
+  "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: చెప్పండి.\nassistant: అమ్మా, అక్టోబర్ ఒకటున నేను cash deposit చేసాను, అప్పుడే balance నలభై ఐదు వేల ఐదు వందలు. అక్టోబర్ ఐదున ATM లో ఐదు వేల withdraw అయ్యాయి, balance నలభై ఐదు వేల వందలు. అక్టోబర్ పది న పింషన్ వచ్చింది, ఇరవై ఐదు వేల. balance యాబై తొమ్మిది వేల. అక్టోబర్ పదిహేను న LIC ప్రీమియం మూడు వేల రెండు వందలు కట్టారు, balance యాబై ఐదు వేల ఏడు వందలు. అక్టోబర్ ఇరవై రెండు న ఎలక్ట్రిసిటీ బిల్ వంద ఎనభై కట్టారు, balance యాబై నాలుగు వేల ఐదు వందల డెబ్బాయి. అక్టోబర్ ముప్పై ఒకటున ఇంటరెస్ట్ మూడు వందలు పన్నెండు వచ్చింది, current balance యాబై నాలుగు వేల ఎనిమిది వందల ఎనభై రెండు. అమ్మా, నేను చెప్పింది మీకు ఎలా అర్థం అయ్య\nuser: అర్థమైంది, ఏంటి?\nassistant: అమ్మా, మీకు ఏమైనా సందేహం ఉందా?\nuser: ఇప్పుడు పాస్‌బుక్ నంబర్ చెప్పగలవా?\nassistant: అమ్మా, పాస్‌బుక్ నంబర్ నాకు తెలియదు, హనిష్ కి చెప్పి మీకు తెలియజేస్తారు.\nuser: ఓకే.\nassistant: సరే అమ్మా, మీ doubts హనిష్ కి చెప్తాను. ధన్యవాదాలు, జాగ్రత్తగా ఉండండి."
+ },
+ {
+  "omni_log_id": 11686912,
+  "time": "11/21/2026 08:57:57",
+  "task_id": "t_0935d538",
+  "step_id": "ask_photo",
+  "duration_s": 17.0,
+  "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: చెప్పండి.\nassistant: అమ్మా, నేడు మీ పాస్‌బుక్ తాజా పేజీని స్పష్టంగా ఫోటో తీసి, చింకు వాట్సాప్ చాట్‌లో పంపించండి. అదే చాట్‌లో హనిష్ చింకుతో మాట్లాడుతున్నాడు.\nuser: పంపించానండి.\nassistant: అమ్మా, మీరు ఫోటో ఎప్పుడు పంపగలరు?\nuser: ఇప్పుడు పంపిస్తా.\nassistant: సరే అమ్మా, మీరు ఇప్పుడు ఫోటో పంపిస్తారు అని మీరు చెప్పారు. ఫోటో స్పష్టంగా ఉండాలి, తాజా పేజీ మొత్తం కనిపించాలి.\nassistant: ఫోటో పంపిన తర్వాత నాకు చెప్పగలరా అమ్మా?\nuser: పంపించాను.\nassistant: సరే అమ్మా, మీరు ఫోటో పంపినట్లు నాకు తెలుస్తోంది. ఫోటో స్పష్టంగా ఉందని ధృవీకరిస్తారా?\nuser: స్పష్టంగానే ఉంది.\nassistant: సరే అమ్మా, మీరు ఫోటో స్పష్టంగా ఉందని చెప్పారు. ఫోటో పంపిన విషయం హనిష్ కి తెలియజేస్తాను. ఫోటో పంపిన తర్వాత చింకు మళ్ళీ కాల్ చేసి మీకు నిదానం గా వివరించును. ధన్యవాదాలు."
+ },
+ {
+  "omni_log_id": 11684424,
+  "time": "11/21/2026 08:20:14",
+  "task_id": "t_2e3eac4e",
+  "step_id": "ask_builder",
+  "duration_s": 32.0,
+  "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: Yes.\nassistant: Could you please tell me the final best price for the two and three BHK luxury apartments right now?\nuser: It's 65 lakhs.\nassistant: Is there any scope for negotiation on this price, and what is the final amount you would consider for a serious buyer?\nuser: No. No.  I'm not doing that.  Right now.\nassistant: Okay, so no negotiation on the price. Does this price include car parking, amenities, GST, registration, corpus, and maintenance charges?\nuser: Yeah.\nassistant: Are there any current offers or discounts available on these apartments?\nuser: No.  Not right now.\nassistant: When can I schedule a site visit? Are there any slots available this evening or over the weekend?\nuser: Tomorrow evening.  You can do that.\nassistant: So, the final price is sixty-five lakhs with no negotiation, all charges included, no current offers, and the site visit slot is tomorrow evening, right?\nassistant: Great, so the site visit is scheduled for tomorrow evening. To confirm, the price is sixty-five lakhs with no negotiation, all charges included, no current discounts, and the visit slot is tomorrow evening. Is that correct?\nuser: Yeah.\nassistant: Thanks for your time. I will pass these details to Hanish, and he will contact you to confirm the visit slot. Have a good day!"
+ },
+ {
+  "omni_log_id": 11683737,
+  "time": "11/21/2026 08:08:30",
+  "task_id": "t_6a73d6cc",
+  "step_id": "ask_dealers",
+  "duration_s": 34.0,
+  "transcript": "assistant: Namaste, I am Chinku, an AI assistant calling for Hanish.\nuser: Yes.\nassistant: Could you please tell me the price per bag for fifty cement bags, sir? If the price varies by brand, please share the main available brand prices.\nuser: It's 714.\nassistant: Thank you, sir. Which brand is this price for?\nuser: Sagar so many.\nassistant: Got it, sir, Sagar brand at seven hundred fourteen per bag. If I confirm the order, when can you deliver? Same day or next day?\nuser: 7 days, 7 days.\nassistant: Okay sir, delivery will take seven days. Are there any extra charges for transport or unloading? If yes, how much?\nuser: No.  No, thank you.\nassistant: And what about payment terms, sir? Is it full advance, payment on delivery, or do you offer credit?\nuser: Full advance.\nassistant: Just to confirm, the price is seven hundred fourteen per bag for Sagar brand, delivery in seven days, no extra transport or unloading charges, and payment is full advance, right sir?\nuser: Yeah.  Yeah.  Bye. Bye, bye.  Bye.\nassistant: Thank you very much, sir, for your time and the details. I will pass this information to Hanish garu. Have a good day, bye."
+ }
+]

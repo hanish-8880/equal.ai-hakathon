@@ -1,0 +1,28 @@
+{
+ "id": "fail_refused_price",
+ "source": "scripted (SIMULATED transcript)",
+ "fresh": false,
+ "spec": "dealer_quotes",
+ "step": "ask_dealers",
+ "transcript": "assistant: Hello, I'm Chinku, an AI assistant calling on behalf of Hanish. What is the price per bag for 50 bags of cement?\nuser: We don't give rates on the phone. Come to the shop.\nassistant: Even an approximate price?\nuser: No sir, shop policy.\nassistant: Okay. Delivery available?\nuser: Yes, within 2 days.\nassistant: Thank you.",
+ "expected": {
+  "price_per_unit": {
+   "value": null,
+   "status": "refused"
+  },
+  "delivery_time": {
+   "value": "within 2 days",
+   "status": "confirmed"
+  },
+  "transport_charge": {
+   "value": null,
+   "status": "not_mentioned"
+  },
+  "payment_terms": {
+   "value": null,
+   "status": "not_mentioned"
+  }
+ },
+ "labelled_by": "scripted with known answers",
+ "notes": "refusal must not become a number"
+}
