@@ -1,12 +1,13 @@
 name: dealer_quotes
-description: "User wants the best price for a material (cement, steel, sand...) by calling several dealers"
+description: "User wants the price / best rate for ANY item (cement, steel, chairs, furniture, appliances, ...) by calling one or more shops, dealers or sellers"
 route_examples:
   - "Chinku, 50 bags cement, ee 3 dealers ki call chesi best rate kanukko"
   - "call these dealers and get the best rate for 2 ton steel"
+  - "call him for chair price 98xxxxxxxx"
 inputs:
   item:     {source: text, required: true}
   quantity: {source: text, required: true, type: number}
-  unit:     {source: text, default: "bag"}
+  unit:     {source: text, default: "piece"}
   dealers:  {source: image_or_text, required: true, type: list, item_fields: [name, phone], validate_item: {phone: indian_mobile}}
 confirm_before: [call]
 steps:

@@ -11,5 +11,6 @@ def route(message: str, image: dict[str, Any] | None, catalog: list[dict[str, An
     s = settings()
     user = json.dumps({"message": message, "image": image, "spec_catalog": catalog, "contacts": contacts},
                       ensure_ascii=False)
-    return json_call(s.openai_model_fast, prompt("router").replace("{user_name}", s.user_name), user,
+    return json_call(s.openai_model_brain,  # brain model: misrouting costs more than 2-3 s
+                      prompt("router").replace("{user_name}", s.user_name), user,
                      RouteResult, task_id, "route")

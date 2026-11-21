@@ -204,3 +204,10 @@ null + "can't do that yet" for requests that match no spec. Gave up: re-transcri
 
 ## [Sat 17:15] Twilio upgraded → Full account, $20 balance (VERIFIED: type=Full, test message delivered)
 50/day trial cap removed. Sandbox still used (judges must send the join code once).
+
+## [Sat 17:25] Router over-correction fixed; routing on gpt-5.5; new spec call_and_ask
+Observed: after the "never force a spec" rule, gpt-5.4-mini refused valid requests ("Call him for chair price 99…", "Book alinement").
+Chose: rule matches on ACTION (choose the spec, ask for missing details; null only when no action fits); dealer_quotes covers ANY item
+(default unit "piece"); new generic spec call_and_ask (call given numbers/contacts, questions from the request); router model → gpt-5.5.
+Observed (LIVE): 10/10 routing cases correct incl. both refusals for unsupported (reply to mail, book cab); avg 4.7 s per route.
+Gave up: ~3 s per message vs gpt-5.4-mini. Would change if: latency complaints → few-shot examples on the fast model.

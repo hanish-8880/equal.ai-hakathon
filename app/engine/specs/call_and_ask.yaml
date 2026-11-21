@@ -1,0 +1,27 @@
+name: call_and_ask
+description: "Call one or more people/businesses whose numbers the user gives (or saved contacts) and ask them anything: availability, timings, details, a message to pass on. Use dealer_quotes when the main goal is a price for an item."
+route_examples:
+  - "ee number ki call chesi shop eppudu open avutundo adugu 98xxxxxxxx"
+  - "call Ravi and ask if he can come tomorrow"
+  - "plumber ki call chesi repu ravagalara ani adugu"
+inputs:
+  targets:   {source: text_or_contacts, required: true, type: list, item_fields: [label, phone, role], validate_item: {phone: indian_mobile}}
+  purpose:   {source: text, required: true}
+  questions: {source: text, required: true, type: list, item_fields: [field, question]}
+confirm_before: [call]
+steps:
+  - id: ask
+    type: call
+    for_each: targets
+    to: "{item.phone}"
+    callee: {name: "{item.label}", role: "{item.role}"}
+    goal: "{inputs.purpose}"
+    plan_text: "{inputs.purpose}"
+    must_collect_from: inputs.questions
+    language: Telugu-English mix
+    max_minutes: 3
+    retry_on_no_answer: 1
+  - id: report
+    type: reply
+    template_hint: "For each person called: each question with the answer and status, quote their words for key facts. Then one clear next step question."
+result_schema: {}
