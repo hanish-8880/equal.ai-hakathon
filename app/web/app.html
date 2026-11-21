@@ -72,7 +72,10 @@
   .card h3 { font-size:22px; font-weight:700; margin:10px 0 6px; line-height:1.15; letter-spacing:-.3px; }
   .card p { margin:0 0 3px; font-size:14px; } .card .foot { margin-top:auto; display:flex; align-items:center; gap:10px; padding-top:10px; }
   .card .ico { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.7); display:grid; place-items:center; font-weight:800; font-size:13px; flex:none; }
-  .card svg.mini { position:absolute; right:-6px; bottom:-6px; width:84px; opacity:.95; pointer-events:none; }
+  .card svg.mini { position:absolute; right:-4px; bottom:-4px; width:70px; height:70px; opacity:.55; pointer-events:none; z-index:0; }
+  .card.tall svg.mini { width:96px; height:96px; opacity:.9; }
+  .card > :not(svg) { position:relative; z-index:1; }
+  .card > .chip, .item .top .chip { align-self:flex-start; }
   .price { font-size:26px; font-weight:800; letter-spacing:-.5px; } .mrp { text-decoration:line-through; color:var(--ink2); font-size:14px; margin-left:6px; }
   .empty { opacity:.92; } .empty h3 { font-size:18px; }
 
@@ -406,7 +409,9 @@ function renderJobs() {
 const callColor = c => ["dealer_quotes", "source_part"].includes(c.spec) ? "c-sky" : ["appointment", "book_visit"].includes(c.spec) ? "c-mango" : c.spec === "request_approval" ? "c-pink" : "c-violet";
 function renderCalls() {
   $("calllist").innerHTML = calls.length ? calls.map((c, i) => {
-    const f = Object.values(c.fields || {}).map(x => `<dt>${esc(x.name.replace(/_/g, " "))}</dt><dd>${esc(x.value ?? "—")} ${chip(x.status)}${x.evidence_quote ? `<br><span class="quote">“${esc(x.evidence_quote)}”</span>` : ""}</dd>`).join("");
+    const money = n => /price|charge|amount|total|fee|cost|rate/.test(n);
+    const val = x => x.value == null || x.value === "" ? "—" : (money(x.name) && !isNaN(Number(x.value)) ? inr(x.value) : (Array.isArray(x.value) ? x.value.join(", ") : x.value));
+    const f = Object.values(c.fields || {}).map(x => `<dt>${esc(x.name.replace(/_/g, " "))}</dt><dd>${esc(val(x))} ${chip(x.status)}${x.evidence_quote ? `<br><span class="quote">“${esc(x.evidence_quote)}”</span>` : ""}</dd>`).join("");
     return `<article class="item ${callColor(c)} fade" style="--i:${Math.min(i, 8)}"><div class="top">${chip(c.status)}${c.attempt ? chip("Retry " + c.attempt) : ""}${chip("Live call")}
       <span class="meta" style="margin-left:auto">${c.ts ? esc(hhmm(c.ts)) : ""}</span></div>
       <h3>${esc((c.callee && (c.callee.name || c.callee.role)) || "Call")}</h3><p class="meta">${esc(c.to)} · ${esc((c.spec || "").replace(/_/g, " "))}</p>
