@@ -14,6 +14,16 @@ CARD: Callable[[str, str, dict[str, Any]], None] = lambda to, text, card: None  
 NOTIFY: Callable[[str, str, Any], None] = lambda to, text, audio=None: None      # set by main.py
 
 
+def wa_joined(phone: str | None) -> bool:
+    """Sandbox reaches only joined numbers: the owner (he chats with Chinku) or anyone who has messaged the sandbox."""
+    from app.config import settings
+    from app.engine.validate import indian_mobile
+    if not phone:
+        return False
+    owner = indian_mobile(settings().user_whatsapp.replace("whatsapp:", ""))
+    return phone == owner or store().get("contacts", f"wajoined:{phone}") is not None
+
+
 def slot_key(plumber: str, start_iso: str) -> str:
     return f"slot:{plumber}:{datetime.fromisoformat(start_iso).astimezone(IST).isoformat()}"
 
@@ -126,7 +136,7 @@ def notify_client(step: dict[str, Any], spec: dict[str, Any], task: dict[str, An
     if not job or not job.appointment.slot or not job.roles.site_contact or not job.roles.site_contact.phone:
         return {"status": "done", "output": {"sent": False, "reason": "nothing booked"}}
     phone = job.roles.site_contact.phone
-    joined = store().get("contacts", f"wajoined:{phone}") is not None
+    joined = wa_joined(phone)
     text = (f"Hello{(' ' + job.roles.site_contact.name) if job.roles.site_contact.name else ''}, this is Chinku, assistant of plumber "
             f"{task['inputs'].get('plumber_name', '')}. Your visit is booked: {job.appointment.slot.label} at "
             f"{job.flat.value or ''} {job.site_address.value or ''}. Reply here if anything changes.")

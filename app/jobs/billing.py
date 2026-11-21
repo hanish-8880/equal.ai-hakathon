@@ -226,7 +226,7 @@ def _deliver(user: str, job: Job, inv: Invoice, kind: str, demo: bool) -> tuple[
     targets = []
     if kind == "invoice" and bt and bt.email:
         targets.append(("email", bt.email))
-    if sc and sc.phone and store().get("contacts", f"wajoined:{sc.phone}"):
+    if sc and sc.phone and ops.wa_joined(sc.phone):
         targets.append(("whatsapp", sc.phone))
     for ch, to in targets:
         if not store().claim(f"docsend:{inv.number}:{inv.idempotency_key}:{ch}:{to}"):

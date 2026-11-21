@@ -89,7 +89,10 @@ def understand(user: str, text: str, image: dict[str, Any] | None = None) -> tup
     s = settings()
     norm = normalise(text or "")
     open_ = [{"job_id": j.job_id, "issue": j.issue.value, "site": j.flat.value or j.site_address.value, "status": j.status,
-              "next_action": j.next_action.what if j.next_action else None} for j in jobs.open_jobs(user)]
+              "next_action": j.next_action.what if j.next_action else None,
+              "bill_to": (j.roles.billing_to.name or j.roles.billing_to.email) if j.roles.billing_to else None,
+              "customer": j.roles.site_contact.name if j.roles.site_contact else None, "visit": j.appointment.slot.label if j.appointment.slot else None}
+             for j in jobs.open_jobs(user)]
     contacts = [{k: c.get(k) for k in ("alias", "phone", "email")} for c in store().scan("contacts", user=user) if c.get("alias")]
     payload = json.dumps({"normalised_text": norm.text, "original_text": text, "spans": [sp.model_dump() for sp in norm.spans],
                           "corrections": norm.corrections, "attachment": image, "open_jobs": open_, "contacts": contacts,

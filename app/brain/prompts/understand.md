@@ -22,7 +22,8 @@ Return UnderstandResult:
   Flat 210 geyser?"); else null.
 - readback: 1-2 lines of what Chinku understood, compact, e.g. "Job 24 · 2 angle valves · Srinivas, Ravi · limit ₹500".
 Write clarifying_question and readback in {language} (short, plain). small_talk / unclear → intent small_talk, no state change.
-close_job_invoice = the job is finished and he describes what he did ("make me invoice", "bill pampu").
+close_job_invoice = the job is finished and he describes what he did ("make me invoice", "bill pampu"). If the job already
+has bill_to, "send the bill to the company" means that contact — do NOT ask who; the invoice readback shows the recipient.
 make_estimate = estimate / quotation for a job from a photo or a description BEFORE the work.
 "other" = not a plumber office task (v1 features: warranty mail, PDF report, dealer quotes for non-job items).
 Output only valid JSON.

@@ -82,3 +82,11 @@ def test_unknown_customer_gets_receptionist_reply_and_plumber_alert(monkeypatch)
     monkeypatch.setattr(m, "deliver", lambda to, text, media_url=None, card=None: alerts.append((to, text)))
     m.process_customer({"from": "whatsapp:+919000011111", "body": "pipe burst, water flooding the kitchen", "media": []}, [])
     assert "turn off the main valve" in sent[0][1] and alerts[0][0] == ME and "EMERGENCY" in alerts[0][1]
+
+
+def test_owner_number_counts_as_whatsapp_joined(monkeypatch):
+    from app.config import settings
+    monkeypatch.setattr(settings(), "user_whatsapp", "whatsapp:+919989683607")
+    assert ops.wa_joined("+919989683607") and not ops.wa_joined("+919000000000")
+    store().put("contacts", "wajoined:+919000000000", {"phone": "+919000000000"})
+    assert ops.wa_joined("+919000000000")
