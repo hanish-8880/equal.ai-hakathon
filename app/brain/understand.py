@@ -94,7 +94,9 @@ def understand(user: str, text: str, image: dict[str, Any] | None = None) -> tup
     payload = json.dumps({"normalised_text": norm.text, "original_text": text, "spans": [sp.model_dump() for sp in norm.spans],
                           "corrections": norm.corrections, "attachment": image, "open_jobs": open_, "contacts": contacts,
                           "recent_conversation": _recent(user)}, ensure_ascii=False, default=str)
-    res = json_call(s.openai_model_brain, prompt("understand").replace("{plumber_name}", s.plumber_name), payload,
+    from app.jobs import prefs
+    sysmsg = prompt("understand").replace("{plumber_name}", s.plumber_name).replace("{language}", prefs.language(user))
+    res = json_call(s.openai_model_brain, sysmsg, payload,
                     UnderstandResult, None, "understand", effort="low")  # 3.7 s vs 14.6 s, same result (DECISIONS 20:45)
     store().add_event("-", "understood", {"normalised": norm.model_dump(), "result": res.model_dump()})
     return norm, res

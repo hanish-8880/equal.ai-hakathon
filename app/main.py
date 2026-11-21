@@ -266,11 +266,12 @@ def _chat_ok(key: str | None) -> bool:
     return bool(k) and key == k
 
 
+@app.get("/app", response_class=HTMLResponse)
 @app.get("/chat", response_class=HTMLResponse)
 def chat_page(key: str = "") -> Response:
     if not _chat_ok(key):
         return HTMLResponse("Forbidden", status_code=403)
-    return HTMLResponse((Path(__file__).parent / "web" / "chat.html").read_text(encoding="utf-8"),
+    return HTMLResponse((Path(__file__).parent / "web" / "app.html").read_text(encoding="utf-8"),
                         headers={"Cache-Control": "no-store, max-age=0"})  # always the latest app
 
 
@@ -333,13 +334,69 @@ async def chat_clear(request: Request) -> JSONResponse:
     return JSONResponse({"ok": True})
 
 
+def _mask_job(j: dict[str, Any]) -> dict[str, Any]:
+    """Full job for the app, phones masked except the last 4 digits (CLAUDE.md §14)."""
+    for role in ("site_contact", "approver", "billing_to"):
+        p = (j.get("roles") or {}).get(role)
+        if p and p.get("phone"):
+            p["phone"] = mask_phone(p["phone"])
+    for a in j.get("extra_work") or []:
+        if (a.get("sent_to") or {}).get("phone"):
+            a["sent_to"]["phone"] = mask_phone(a["sent_to"]["phone"])
+    return j
+
+
 @app.get("/api/jobs")
 def api_jobs(key: str = "") -> JSONResponse:
     if not _chat_ok(key):
         return JSONResponse({"error": "forbidden"}, status_code=403)
     owner = settings().user_whatsapp
     rows = sorted(store().scan("jobs", plumber_id=owner), key=lambda j: j["created_at"], reverse=True)
-    return JSONResponse([job_store.card(job_store.Job.model_validate(j)) | {"timeline": j.get("timeline", [])[-20:]} for j in rows])
+    return JSONResponse([job_store.card(job_store.Job.model_validate(j)) | {"timeline": j.get("timeline", [])[-30:], "full": _mask_job(j)}
+                         for j in rows])
+
+
+@app.get("/api/calls")
+def api_calls(key: str = "") -> JSONResponse:
+    if not _chat_ok(key):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    owner = settings().user_whatsapp
+    tasks = {t["task_id"]: t for t in store().scan("tasks", user=owner)}
+    out = []
+    for c in store().scan("calls"):
+        t = tasks.get(c.get("task_id"))
+        if not t:
+            continue
+        ex = {f["name"]: f for f in (c.get("extracted") or {}).get("fields", [])}
+        out.append({"call_id": c["call_id"], "ts": c.get("created_at"), "to": mask_phone(c.get("to_number")), "callee": c.get("callee"),
+                    "status": c.get("status"), "outcome": c.get("outcome"), "attempt": c.get("attempt", 0), "spec": t.get("spec"),
+                    "job_id": (t.get("inputs") or {}).get("job_id"), "transcript": c.get("transcript"), "fields": ex,
+                    "goal": ((c.get("brief") or {}).get("goal")), "simulated": False})
+    return JSONResponse(sorted(out, key=lambda x: x["ts"] or 0, reverse=True)[:50])
+
+
+@app.get("/api/me")
+def api_me(key: str = "") -> JSONResponse:
+    if not _chat_ok(key):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    from app.jobs import prefs
+    s = settings()
+    p = prefs.get(s.user_whatsapp)
+    return JSONResponse({"name": s.plumber_name, "initials": "".join(w[0] for w in s.plumber_name.split()[:2]).upper(),
+                         "language": p.get("language"), "languages": prefs.LANGUAGES})
+
+
+@app.post("/api/me")
+async def api_me_set(request: Request) -> JSONResponse:
+    form = await request.form()
+    if not _chat_ok(form.get("key")):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    from app.jobs import prefs
+    try:
+        prefs.set_language(settings().user_whatsapp, str(form.get("language")))
+    except ValueError:
+        return JSONResponse({"error": "unknown language"}, status_code=400)
+    return JSONResponse({"ok": True})
 
 
 @app.get("/health")

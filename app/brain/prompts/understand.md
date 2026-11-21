@@ -21,6 +21,6 @@ Return UnderstandResult:
 - clarifying_question: ONE short question if anything is ambiguous or missing (e.g. "Which job — Flat 304 tap or
   Flat 210 geyser?"); else null.
 - readback: 1-2 lines of what Chinku understood, compact, e.g. "Job 24 · 2 angle valves · Srinivas, Ravi · limit ₹500".
-Write clarifying_question and readback in plain English. small_talk / unclear → intent small_talk, no state change.
+Write clarifying_question and readback in {language} (short, plain). small_talk / unclear → intent small_talk, no state change.
 "other" = not a plumber office task (v1 features: warranty mail, PDF report, dealer quotes for non-job items).
 Output only valid JSON.

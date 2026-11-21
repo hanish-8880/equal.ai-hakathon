@@ -263,7 +263,8 @@ def run_reply(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
                    step.get("rank_label", "score")) if step.get("rank_by") else None
     ctx = tctx(task)
     hint = render(step.get("template_hint", ""), ctx)
-    lang = settings().default_language
+    from app.jobs import prefs
+    lang = prefs.language(task["user"])
     text = decider.compose_reply(hint, task["inputs"], results, ranking, lang, task["task_id"])
     to = render(step["to"], ctx) if step.get("to") else None
     if to:  # message for someone other than the task owner
