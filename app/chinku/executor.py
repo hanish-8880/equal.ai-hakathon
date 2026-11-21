@@ -221,7 +221,11 @@ def handle(user: str, text: str, attachments: list[dict[str, Any]], send: Send, 
             return
     if not attachments and text:  # "transcribe it" right after sending a photo → reuse that photo
         recent = store().get("contacts", f"iatt:{user}")
-        if recent and time.time() - recent.get("ts", 0) < 1800:
+        refers = re.search(r"\b(this|that|it|the|same)\s*(photo|picture|pic|image|page|screenshot|card|poster|bill|letter|pdf|one)?\b"
+                           r"|\b(photo|picture|image|page|screenshot|transcri|attach)", text, re.I)
+        photo_words = re.search(r"(photo|picture|pic|image|page|screenshot|transcri|attach|card|poster|bill|letter|pdf|"
+                                r"type it|copy of (it|this|that)|email (it|this|that))", text, re.I)
+        if recent and time.time() - recent.get("ts", 0) < 1800 and refers and photo_words:
             attachments = t.attachments = recent["attachments"]
     p = planner.plan(user, text, attachments, analysis)
     t.plan = p

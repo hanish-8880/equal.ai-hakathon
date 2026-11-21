@@ -725,7 +725,81 @@ def scam_check(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[s
     return v.model_dump() | {"red_flags": flags}
 
 
+# ---------------- J11: trip planner — itinerary + rated hotels/restaurants → user picks → Chinku calls to book ----------------
+class TripPlace(BaseModel):
+    name: str
+    rating: float | None = None          # e.g. 4.3 (out of 5) as listed publicly
+    reviews: str | None = None           # "1.2k reviews"
+    price_hint: str | None = None        # "₹2,500/night", "₹600 for two" — as listed, never invented
+    phone: str | None = None
+    address: str | None = None
+    cuisine: str | None = None
+    url: str | None = None
+
+
+class TripDay(BaseModel):
+    day: str
+    plan: list[str] = Field(default_factory=list)
+    travel_note: str | None = None
+
+
+class Trip(BaseModel):
+    title: str = ""
+    getting_there: list[str] = Field(default_factory=list)
+    itinerary: list[TripDay] = Field(default_factory=list)
+    hotels: list[TripPlace] = Field(default_factory=list)
+    restaurants: list[TripPlace] = Field(default_factory=list)
+    budget_note: str | None = None
+    sources: list[str] = Field(default_factory=list)
+
+
+def trip_plan(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    from app.brain.client import oai
+    from app.engine.validate import indian_mobile
+    dest = inputs.get("destination")
+    if not dest:
+        raise ToolError("Where do you want to go?")
+    days, people = int(inputs.get("days") or 2), int(inputs.get("people") or 2)
+    start = inputs.get("start_date")
+    r = oai().responses.create(model=settings().openai_model_brain, tools=[{"type": "web_search"}], input=(
+        f"Plan a {days}-day trip to {dest} (India) for {people} people"
+        + (f" starting {start}" if start else "") + (f", total budget ₹{inputs.get('budget')}" if inputs.get("budget") else "")
+        + (f", interests: {inputs.get('interests')}" if inputs.get("interests") else "") + ". Use current web sources. "
+        "Return ONLY JSON {\"title\", \"getting_there\": [short options with time], \"itinerary\": [{\"day\": \"Day 1\", \"plan\": [places/"
+        "activities in order], \"travel_note\"}], \"hotels\": [up to 6 {\"name\", \"rating\" (number out of 5 as publicly listed), \"reviews\", "
+        "\"price_hint\" (as listed), \"phone\" (the hotel's real contact number, null if not found), \"address\", \"url\"}], \"restaurants\": "
+        "[up to 6 {\"name\", \"rating\", \"reviews\", \"price_hint\", \"cuisine\", \"phone\", \"address\", \"url\"}], \"budget_note\", \"sources\": "
+        "[urls]}. Never invent a phone number, rating or price — null if not found."))
+    m = re.search(r"\{.*\}", r.output_text or "", re.S)
+    try:
+        t = Trip.model_validate(json.loads(m.group(0))) if m else Trip()
+    except Exception as e:  # noqa: BLE001
+        raise ToolError("I couldn't put the trip plan together — please try again.") from e
+
+    def prep(rows: list[TripPlace], kind: str) -> list[dict[str, Any]]:
+        out = []
+        for p in sorted(rows, key=lambda x: (x.rating is None, -(x.rating or 0))):  # code ranks by rating; unknown rating last
+            ph = indian_mobile(p.phone or "") or (re.sub(r"[^\d+]", "", p.phone or "") or None)
+            out.append(p.model_dump() | {"kind": kind, "phone": ph, "callable": bool(ph and indian_mobile(ph))})
+        return out
+    hotels, restaurants = prep(t.hotels, "hotel"), prep(t.restaurants, "restaurant")
+    checked = datetime.now(IST).strftime("%d %b %Y")
+    card = {"type": "trip", "destination": dest, "days": days, "people": people, "start_date": start, "budget": inputs.get("budget"),
+            "title": t.title or f"{days} days in {dest}", "getting_there": t.getting_there, "itinerary": [d.model_dump() for d in t.itinerary],
+            "hotels": hotels, "restaurants": restaurants, "budget_note": t.budget_note, "sources": t.sources[:6], "checked": checked}
+    ctx["card"](f"🧳 {card['title']} · {people} people · pick hotels/restaurants and I'll call them to book", card)
+    places = [p for p in hotels + restaurants if p.get("address")]
+    if places:
+        try:
+            map_(user, {"items": places[:8], "title": f"Hotels and restaurants in {dest}"}, ctx)
+        except ToolError:
+            pass
+    return {"hotels": hotels, "restaurants": restaurants, "itinerary": card["itinerary"], "destination": dest, "people": people,
+            "start_date": start, "days": days}
+
+
 REGISTRY: dict[str, Callable[[str, dict[str, Any], dict[str, Any]], dict[str, Any]]] = {
+    "trip_plan": trip_plan,
     "find_support": find_support, "promise": promise, "promise_update": promise_update, "scam_check": scam_check,
     "recipe": recipe, "shop_list": shop_list, "cart_add": cart_add,
     "compare": compare,

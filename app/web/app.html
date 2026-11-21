@@ -261,6 +261,11 @@ const I = {
   "Email this photo": ["ఈ ఫోటో ఇమెయిల్ చేయి", "यह फ़ोटो ईमेल करो", "Ee photo email cheyyi"], "Book a doctor": ["డాక్టర్ అపాయింట్‌మెంట్", "डॉक्टर बुक करो", "Doctor book cheyyi"],
   "Complain & follow up": ["ఫిర్యాదు & ఫాలో అప్", "शिकायत और फ़ॉलो अप", "Complaint & follow up"], "Call from a photo": ["ఫోటో నుంచి కాల్", "फ़ोटो से कॉल", "Photo nunchi call"],
   "Is this a scam?": ["ఇది మోసమా?", "क्या यह धोखा है?", "Idi scam aa?"],
+  "Hotels": ["హోటళ్ళు", "होटल", "Hotels"], "Restaurants": ["రెస్టారెంట్లు", "रेस्टोरेंट", "Restaurants"], "by rating": ["రేటింగ్ ప్రకారం", "रेटिंग के हिसाब से", "rating prakaram"],
+  "days": ["రోజులు", "दिन", "rojulu"], "No phone number found": ["ఫోన్ నంబర్ దొరకలేదు", "फ़ोन नंबर नहीं मिला", "Phone number dorakaledu"],
+  "Call selected to book": ["ఎంచుకున్నవాటికి కాల్ చేసి బుక్ చేయి", "चुने हुए को कॉल करके बुक करो", "Select chesinavaatiki call chesi book cheyyi"],
+  "Ratings and prices as listed online": ["రేటింగ్, ధరలు ఆన్‌లైన్‌లో ఉన్నట్టే", "रेटिंग और दाम ऑनलाइन जैसे", "Ratings, prices online lo unnatte"],
+  "Tick the hotels / restaurants to call": ["కాల్ చేయాల్సినవి టిక్ చేయండి", "जिन्हें कॉल करना है उन्हें टिक करें", "Call cheyyalsinavi tick cheyyandi"],
   "Official": ["అధికారికం", "आधिकारिक", "Official"], "Not official — check": ["అధికారికం కాదు — చూసుకోండి", "आधिकारिक नहीं — जाँचें", "Official kadu — check"],
   "Phone": ["ఫోన్", "फ़ोन", "Phone"], "Form": ["ఫారం", "फ़ॉर्म", "Form"], "Source": ["మూలం", "स्रोत", "Source"],
   "Write complaint email": ["ఫిర్యాదు ఇమెయిల్ రాయి", "शिकायत ईमेल लिखो", "Complaint email rayi"], "Call support": ["సపోర్ట్‌కి కాల్", "सपोर्ट को कॉल", "Support ki call"],
@@ -429,6 +434,18 @@ function card(c) {
       <div id="${id}" class="hidden"><ol>${(c.rows || []).map(o => `<li><b>${money(o)}</b> · ${esc(o.item)}<br><span class="src">${tm(o.depart)} → ${tm(o.arrive)} · ${hm(o.duration_min)}${o.link ? ` · <a href="${esc(o.link)}" target="_blank" rel="noopener">${L("Open booking link")}</a>` : ""}</span></li>`).join("")}</ol>
         ${(c.excluded || []).length ? `<div class="src">${L("Not shown")}: ${(c.excluded || []).map(x => esc(x.item + " — " + x.why)).join("; ")}</div>` : ""}</div>
       <div class="src">${esc(c.total_found)} ${L("options")} · ${L("checked")} ${(() => { try { return esc(new Date(c.checked).toLocaleString(LOC(), {weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"})); } catch (e) { return esc(c.checked || ""); } })()} · ${L("Price as shown by the provider; you book and pay on their page — Chinku never pays.")}</div></div>`; }
+  if (c.type === "trip") { const id = "trip" + (++mapN);
+    const row = p => `<label class="memrow" style="cursor:${p.callable ? "pointer" : "default"}"><input type="checkbox" ${p.callable ? "" : "disabled"} data-pick='${esc(JSON.stringify({name: p.name, phone: p.phone, kind: p.kind}))}' style="width:22px;height:22px;flex:none">
+        <div class="t"><b>${esc(p.name)}</b><span>${p.rating != null ? "⭐ " + esc(p.rating) : "⭐ ?"}${p.reviews ? " (" + esc(p.reviews) + ")" : ""}${p.price_hint ? " · " + esc(p.price_hint) : ""}${p.cuisine ? " · " + esc(p.cuisine) : ""}</span>
+        <span>${p.callable ? "☎ " + esc(p.phone) : L("No phone number found")}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">${L("Source")}</a>` : ""}</span></div></label>`;
+    return `<div class="rc" id="${id}"><h4>🧳 ${esc(c.title)} <span class="status">${esc(c.people)} 👤 · ${esc(c.days)} ${L("days")}</span></h4>
+      ${(c.getting_there || []).length ? `<div class="src">🚗 ${esc(c.getting_there.join(" · "))}</div>` : ""}
+      ${(c.itinerary || []).map(d => `<div style="margin-top:6px"><b>${esc(d.day)}</b><ul style="margin:2px 0;padding-left:20px">${(d.plan || []).map(x => `<li>${esc(x)}</li>`).join("")}</ul>${d.travel_note ? `<div class="src">${esc(d.travel_note)}</div>` : ""}</div>`).join("")}
+      <h4 style="margin-top:10px">🏨 ${L("Hotels")} · ${L("by rating")}</h4>${(c.hotels || []).map(row).join("") || `<div class="src">—</div>`}
+      <h4 style="margin-top:10px">🍽️ ${L("Restaurants")} · ${L("by rating")}</h4>${(c.restaurants || []).map(row).join("") || `<div class="src">—</div>`}
+      ${c.budget_note ? `<div class="src">💰 ${esc(c.budget_note)}</div>` : ""}
+      <div class="btns"><button class="btn primary" data-trip="${id}" data-ctx='${esc(JSON.stringify({people: c.people, start: c.start_date, days: c.days, dest: c.destination}))}'>📞 ${L("Call selected to book")}</button></div>
+      <div class="src">${L("Ratings and prices as listed online")} · ${L("Sources")}: ${(c.sources || []).slice(0, 3).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\//, "").slice(0, 30))}</a>`).join(" · ") || "—"} · ${L("checked")} ${esc(c.checked)}</div></div>`; }
   if (c.type === "support") return `<div class="rc"><h4>🛠️ ${esc(c.brand)} ${c.official ? `<span class="status ok">${L("Official")}</span>` : `<span class="status wait">${L("Not official — check")}</span>`}</h4>
       <dl class="kv">${c.email ? `<dt>${L("Email")}</dt><dd>${esc(c.email)}</dd>` : ""}${c.phone ? `<dt>${L("Phone")}</dt><dd>${esc(c.phone)}</dd>` : ""}${c.whatsapp ? `<dt>WhatsApp</dt><dd>${esc(c.whatsapp)}</dd>` : ""}${c.web_form ? `<dt>${L("Form")}</dt><dd><a href="${esc(c.web_form)}" target="_blank" rel="noopener">${esc(c.web_form.replace(/^https?:\/\//, "").slice(0, 40))}</a></dd>` : ""}</dl>
       <div class="src">${L("Source")}: ${c.source_url ? `<a href="${esc(c.source_url)}" target="_blank" rel="noopener">${esc(c.source_url.replace(/^https?:\/\//, "").slice(0, 60))}</a>` : "—"} · ${L("checked")} ${esc(c.checked)}</div>
@@ -487,6 +504,12 @@ function row(m) { const d = document.createElement("div"); const mine = m.dir ==
       <div class="meta">${hhmm(m.ts)}${t.trim() ? `<button class="listen" data-listen="${esc(t)}" aria-label="${L("Listen")}">🔊 ${L("Listen")}</button>` : ""}</div></div>`; }
   d.innerHTML = inner;
   d.querySelectorAll("[data-say]").forEach(b => b.onclick = () => sendMsg(b.dataset.say));
+  d.querySelectorAll("[data-trip]").forEach(b => b.onclick = () => {
+    const picks = [...$(b.dataset.trip).querySelectorAll("input[data-pick]:checked")].map(x => JSON.parse(x.dataset.pick));
+    if (!picks.length) { toast(L("Tick the hotels / restaurants to call")); return; }
+    const k = JSON.parse(b.dataset.ctx || "{}");
+    const list = picks.map(p => `${p.name} (${p.kind}, ${p.phone})`).join("; ");
+    sendMsg(`Call and book for ${k.people || 2} people${k.start ? " from " + k.start : ""}${k.days ? ", " + k.days + " days" : ""} in ${k.dest || ""}: ${list}`); });
   d.querySelectorAll("[data-toggle]").forEach(b => b.onclick = () => $(b.dataset.toggle).classList.toggle("hidden"));
   d.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast(L("Copied")); } catch (e) {} });
   d.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => { $("chattext").value = "Change the email: "; $("chattext").focus(); syncChat(); });

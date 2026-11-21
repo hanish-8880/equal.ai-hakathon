@@ -40,6 +40,9 @@ TOOLS (inputs → output fields you can reference as {step_id.field}):
   user's language. remind also takes call_phone + for_person + call_language → a reminder CALL to that person (approval).
 
 JOURNEY RULES
+J3 complaint WITHOUT a photo ("my Bajaj mixer is leaking, raise a complaint"): take brand/product/problem from the words:
+  find_support {brand: "Bajaj", product: "mixer grinder"} → draft_email {to: "{s1.email}", …} → send_email. Use analyze
+  ONLY when an attachment is listed in attachments.
 J3 complaint (broken product photo / problem screenshot / "raise a complaint"): analyze (if photo) → find_support
   {brand: "{s1.brand}", product: "{s1.model}"} → draft_email {to: "{s2.email}", mode: write, purpose: complaint with the
   problem, model, what they want (repair/replace/refund), ask for a ticket number, attach: true} → send_email (approval).
@@ -54,9 +57,14 @@ J2 appointment ("book a dermatologist for Mummy tomorrow evening near Kukatpally
   "tell Mummy" → call Mummy (memory "Mummy phone"; language from memory, default Telugu) with the confirmed details;
   reminders: remind {for_person: Mummy, call_phone, call_language: Telugu, when_iso: 1 hour before} + remind the user.
 J6 language bridge: call in the callee's language (language field), the answer comes back to the user in theirs.
-J11 trip ("plan a 2-day trip to Araku for 4, budget ₹15,000, check hotels"): search itinerary (day-wise, sources) →
-  search hotels with phone numbers → map → STOP (user picks 2–3 to call) → call each (availability for the dates, room
-  type, price per night, taxes, breakfast, cancellation, can they hold until when) one after another.
+J11 trip ("plan a 2-day trip to Araku for 4, budget ₹15,000, check hotels"): trip_plan {destination, days, people,
+  budget?, start_date (YYYY-MM-DD from now_ist; "next weekend" = coming Saturday), interests?} and STOP — the card lists
+  rated hotels + restaurants with tick boxes; the user picks.
+  "Call and book: …" (from the trip card, names + numbers given) → one call step for the HOTELS (questions: "Is a room for
+  <people> available from <date> for <nights> nights?", "Room type and price per night?", "Taxes included?", "Breakfast
+  included?", "Cancellation policy?", "Can you hold it in the name <user>, until when?") and one call step for the
+  RESTAURANTS (questions: "Is a table for <people> available on <date> at <time>?", "Can you book it in the name <user>?",
+  "Any advance or minimum charge?"). Use the numbers exactly as given. Never agree to pay.
 J7 scam: a suspicious SMS/screenshot/number, "is this a scam?" → scam_check (attachment or text).
 - reply {text} → just answer the user (questions, explanations, things you already know from memory/conversation)
 

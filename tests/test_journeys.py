@@ -87,3 +87,17 @@ def test_reminder_call_needs_approval_and_validates_number(monkeypatch):
     assert store().scan("contacts", kind="reminder") == [] and any("Needs you" in t for t, _ in CARDS)
     with pytest.raises(tools.ToolError, match="not a valid"):
         tools.remind(ME, {"text": "x", "when_iso": (datetime.now(IST) + timedelta(hours=1)).isoformat(), "call_phone": "12345"}, ctx())
+
+
+def test_trip_sorted_by_rating_and_only_real_numbers_callable(monkeypatch):
+    class R:
+        output_text = json.dumps({"title": "Araku 2 days", "itinerary": [{"day": "Day 1", "plan": ["Borra Caves"]}],
+                                  "hotels": [{"name": "A", "rating": 3.9, "phone": "9876543210"}, {"name": "B", "rating": 4.6, "phone": "+91 98490 11111"},
+                                             {"name": "C", "rating": None, "phone": None}],
+                                  "restaurants": [{"name": "R1", "rating": 4.1, "phone": "0891-2345678"}], "sources": ["https://x"]})
+    monkeypatch.setattr("app.brain.client.oai", lambda: type("O", (), {"responses": type("X", (), {"create": staticmethod(lambda **k: R())})()})())
+    monkeypatch.setattr(tools, "map_", lambda *a, **k: {})
+    out = tools.trip_plan(ME, {"destination": "Araku", "days": 2, "people": 4}, ctx())
+    assert [h["name"] for h in out["hotels"]] == ["B", "A", "C"]
+    assert [h["callable"] for h in out["hotels"]] == [True, True, False]
+    assert out["restaurants"][0]["callable"] is False  # landline → shown, but the mobile-only call engine won't dial it
