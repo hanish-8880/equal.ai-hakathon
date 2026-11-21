@@ -164,3 +164,4 @@ class Job(BaseModel):
     estimate: Invoice = Field(default_factory=Invoice)  # pre-visit estimate (photo-based, price list rates)
     timeline: list[Event] = Field(default_factory=list)
     next_action: NextAction | None = None
+    sample: bool = False  # demo sample data (shown with a 'Sample' chip), never a real customer

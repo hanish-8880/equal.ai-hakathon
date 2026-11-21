@@ -49,4 +49,5 @@ def card(job: Job) -> dict[str, Any]:
             "work_order": r.work_order,
             "plumber_windows": [w.label or f"{w.start}–{w.end}" for w in job.appointment.plumber_available],
             "appointment": job.appointment.state,
-            "next_action": job.next_action.model_dump() if job.next_action else None}
+            "next_action": job.next_action.model_dump() if job.next_action else None, "sample": job.sample,
+            "slot": job.appointment.slot.label if job.appointment.slot else None}

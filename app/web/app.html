@@ -91,6 +91,8 @@
   .seg { display:flex; gap:8px; margin:4px 0 14px; overflow-x:auto; scrollbar-width:none; }
   .seg button { background:var(--white); border-radius:999px; padding:8px 14px; font-weight:600; font-size:13px; box-shadow:var(--shadow); white-space:nowrap; }
   .seg button.on { background:#15131F; color:#fff; }
+  .typebar { display:flex; align-items:center; gap:10px; width:100%; margin:16px 0 0; background:var(--white); border-radius:var(--rb);
+             padding:15px 18px; box-shadow:var(--shadow); color:var(--ink2); font-weight:600; text-align:left; }
   .searchbox { display:none; margin:0 0 12px; } .searchbox.on { display:block; }
   .searchbox input { width:100%; border:0; outline:0; background:var(--white); border-radius:var(--rb); padding:13px 18px; font:inherit; color:var(--ink); box-shadow:var(--shadow); }
 
@@ -216,6 +218,9 @@
     <div class="searchbox" id="searchbox"><input id="search" placeholder="Search jobs, sites, customers…" aria-label="Search"></div>
     <div id="hero"></div>
     <div class="week fade" style="--i:2" id="week" role="tablist" aria-label="Week"></div>
+    <button class="typebar press fade" style="--i:3" id="typebar" aria-label="Type or talk to Chinku">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1-5.2A8 8 0 1 1 21 12Z"/></svg>
+      <span>Type or talk to Chinku…</span></button>
     <h2 class="fade" style="--i:3">Your jobs</h2>
     <div class="bento" id="bento"></div>
   </section>
@@ -397,7 +402,8 @@ function jobItem(j, i) {
   const rows = [["Site", j.site], ["Customer", [sc.name, sc.phone].filter(Boolean).join(" · ")], ["Your free time", (j.plumber_windows || []).join(", ")],
                 ["Bill to", j.billing_to], ["Work order", j.work_order]].filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
   const tl = (j.timeline || []).slice().reverse().map(e => `<li><b>${esc(hhmm(e.ts))}</b> · ${esc(e.summary)} ${e.simulated ? chip("Simulated", "dash") : ""}</li>`).join("");
-  return `<article class="item ${jobColor(j)} press fade" style="--i:${i}" data-job="${esc(j.job_id)}"><div class="top"><span class="chip solid">${esc(j.job_id)}</span>${chip(j.status)}${chip(j.appointment)}</div>
+  return `<article class="item ${jobColor(j)} press fade" style="--i:${i}" data-job="${esc(j.job_id)}"><div class="top"><span class="chip solid">${esc(j.job_id)}</span>${chip(j.status)}${chip(j.appointment)}${j.sample ? chip("Sample", "dash") : ""}</div>
+    ${j.slot ? `<p style="margin:6px 0 0"><b>Visit:</b> ${esc(j.slot)}</p>` : ""}
     <h3>${esc(j.issue || "Job")}</h3><dl class="kv">${rows}</dl>
     ${j.next_action ? `<p style="margin:10px 0 0"><b>Next:</b> ${esc(j.next_action.what)}${j.next_action.blocked_by ? " " + chip("Blocked: " + j.next_action.blocked_by) : ""}</p>` : ""}
     ${tl ? `<details><summary>Timeline (${(j.timeline || []).length})</summary><ul class="tl">${tl}</ul></details>` : ""}</article>`;
@@ -457,6 +463,7 @@ function go(v) {
 }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => go(b.dataset.go));
 $("back").onclick = () => go("today");
+$("typebar").onclick = () => { go("chat"); setTimeout(() => $("text").focus(), 60); };
 $("searchbtn").onclick = () => { const sb = $("searchbox"); sb.classList.toggle("on"); if (sb.classList.contains("on")) $("search").focus(); };
 $("search").oninput = e => { jobQuery = e.target.value.trim().toLowerCase(); if (jobQuery) { go("jobs"); } renderJobs(); };
 

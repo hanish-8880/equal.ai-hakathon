@@ -63,7 +63,14 @@ steps.SEND_FILE = send_file
 assistant.CARD = lambda to, text, card: deliver(to, text, None, card)
 from app.jobs import ops as job_ops  # noqa: E402
 job_ops.CARD = assistant.CARD
-job_ops.NOTIFY = lambda to, text, audio=None: notify(to, text, audio)
+def notify_customer(to: str, text: str, audio: bytes | None = None) -> None:
+    """Messages FOR A CUSTOMER always go straight to WhatsApp (never held back by the plumber's app/WhatsApp preference),
+    and are recorded so the plumber can see what the customer received."""
+    whatsapp.send(to if to.startswith("whatsapp:") else f"whatsapp:{to}", text)
+    store().add_event("-", "wa_out_customer", {"to_last4": to[-4:], "text": text[:500]})
+
+
+job_ops.NOTIFY = notify_customer
 
 
 def entry(user: str, text: str, image: dict[str, Any] | None, force_confirm: bool = False, heard: Any = None) -> None:
@@ -259,6 +266,7 @@ def process_inbound_call(parsed: dict[str, Any]) -> None:
     if not said.strip():
         return
     text = f"[Hanish phone call lo cheppadu]\n{said}\n\n[Call summary: {parsed.get('summary') or '-'}]"
+    deliver(owner, f"📞 Call received from {mask_phone(parsed.get('from_number'))} — here's what I understood:")
     from app.brain.schemas import Heard
     entry(owner, text, None, force_confirm=True, heard=Heard(text=said, source="phone", model="omni-live-asr"))
 

@@ -356,3 +356,12 @@ Observed: a syntax error in assistant.plan_lines; pytest failed at collection, b
 (the commit/deploy line was not chained to the test result) → chinku.service crash-looped; HTTPS check failed.
 Fix: syntax fixed; scripts/aws_deploy.py push() now runs the full test suite first and ABORTS on any failure, and after restart polls
 /health and exits non-zero if the server is not healthy.
+
+## [Sat 21:40] Today type bar, caller number on inbound, customer WhatsApp never held back, sample bookings, owner E2E script
+Observed bug: customer messages used deliver(), which skips WhatsApp when the recipient's last message came from the app — so when
+the customer number == the plumber's number (our tests), the customer never got WhatsApp. Fix: notify_customer always sends WhatsApp
+directly and logs wa_out_customer. Inbound call confirmation now starts "📞 Call received from ******3607 — here's what I understood".
+Today screen has a "Type or talk to Chinku…" bar (typing was only in the chat screen). Job.sample flag + "Sample" chip; seed script
+uses the owner's own number for every sample customer (no button can call a stranger). scripts/e2e_owner.py: full flow as the owner,
+real WhatsApp/email/maps/PDF, scripted (simulated, 🧪-marked) call answers; fires the confirmation-call schedule itself so the server
+never rings the phone during the test.
