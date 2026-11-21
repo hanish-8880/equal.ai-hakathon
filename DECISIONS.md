@@ -441,3 +441,8 @@ never rings the phone during the test.
 - **A "yes" answered an older question.** Observed: "yes" to a trip readback sent a complaint email asked 2 messages earlier; "ok" triggered a 25-min-old food cart. Chose: a typed yes/no answers an approval only if it was asked after the user's previous message (message counter — timestamps tied in tests); "yes" right after a Chinku question is planned with the chat; otherwise Chinku says which older card is still open and does nothing. Verified live with the same sequence: email NOT sent.
 - **Voice phantoms.** Observed: silence/noise transcribed as "complaint", "email", "###", our own hint text, and once "మమ్మీకి call చేయు". Measured mean logprob: real speech −0.09…−0.17, phantoms −0.87…−2.73. Chose: reject < −0.7 + hint-echo check; the app never uploads a recording with no voice. Verified live: 12/12 real clips kept (Telugu mix, Hindi, "Call Mummy"), 8/8 silence/noise rejected.
 - **Would change if:** a real noisy phone recording scores below −0.7 — then lower the threshold and rely on the app-side voice check.
+
+## Sun 03:15 — 1Stay hotels (LIVE, search only)
+- **Observed:** `https://mcp.stayker.com/mcp` needs no key. Tools: search_hotels, get_hotel_details, book_hotel (returns a checkout URL, takes no guest/payment data), lookup/cancel. Live: Goa 28–30 Nov, 2 guests → 4 hotels (Fortune Resort Benaulim ₹22,420 total); Hitech City → 6 hotels (Holiday Inn Express ₹7,349).
+- **Chose:** a `hotel` adapter in the same layer as Kiwi; `compare` ranks the total for the stay in code; unknown price ranks last. Search only — no book_hotel tonight.
+- **Gave up:** Duffel / Ticketmaster / Cal.com / Square need keys the owner creates himself (never pasted in chat).

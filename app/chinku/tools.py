@@ -508,7 +508,9 @@ def compare(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str,
             "status": sorted({p.status for p in provs}), "failed": failed, "checked": w.fetched_at, "total_found": len(offers)}
     ctx["card"](f"{ {'flight': '✈️', 'hotel': '🏨'}.get(cat, '🛺') } Recommended ({priority}): {w.item} — "
                 f"{'₹' + format(w.final_payable, ',.0f') if w.currency == 'INR' and w.final_payable is not None else w.final_payable}. "
-                f"Why: {'; '.join(rec.why)}. Booking happens on {w.provider} — Chinku never pays.", card)
+                f"Why: {'; '.join(rec.why)}. "
+                + ("Live prices from 1Stay (search only) — pick one and I can call the hotel, or book it yourself. Chinku never pays."
+                   if cat == "hotel" else f"Booking happens on {w.provider} — Chinku never pays."), card)
     return {"recommended": w.model_dump(), "why": rec.why, "count": len(offers), "priority": priority, "failed": failed}
 
 
