@@ -38,7 +38,7 @@ def open_task(user: str) -> dict[str, Any] | None:
 
 
 # ---------------- inbound ----------------
-def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> None:
+def handle_message(user: str, text: str, image: dict[str, Any] | None, send, force_confirm: bool = False) -> None:
     """Entry point for every WhatsApp message (already perceived). `send(text)` replies to the user."""
     m = CONTACT_CMD.match(text or "")
     if m:
@@ -136,6 +136,7 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> 
             if found:
                 task["inputs"][name] = [{"label": c.get("label") or f"Number {i + 1}", "phone": c.get("phone"),
                                          "role": c.get("role") or c.get("label") or "contact"} for i, c in enumerate(found)]
+    task["force_confirm"] = force_confirm or task.get("force_confirm", False)
     store().add_event(task["task_id"], "routed", {**r.model_dump(), "inputs": {k: ("<media>" if isinstance(v, dict) and v.get("image_type") else v) for k, v in r.inputs.items()}})
     plan(task, r, send)
 
@@ -197,7 +198,16 @@ def plan(task: dict[str, Any], r: RouteResult, send) -> None:
     if "call" in spec.get("confirm_before", []):
         task["status"] = "awaiting_confirm"
         save_task(task)
-        send(_confirm_text(spec, task))
+        prefix = "📞 Call lo ardham ayyindi:\n" if task.get("force_confirm") else ""
+        send(prefix + _confirm_text(spec, task))
+        return
+    if task.get("force_confirm"):  # tasks taken over a phone call always get a WhatsApp yes first
+        task["status"] = "awaiting_confirm"
+        save_task(task)
+        shown = {k: v for k, v in task["inputs"].items()
+                 if not k.startswith("_") and not (isinstance(v, dict) and v.get("image_type")) and v not in (None, "", [])}
+        details = "\n".join(f"• {k}: {v}" for k, v in shown.items())
+        send(f"📞 Call lo ardham ayyindi: {spec['description'].split(';')[0]}\n{details}\nStart cheyyana? (yes / no)")
         return
     start(task, send)
 

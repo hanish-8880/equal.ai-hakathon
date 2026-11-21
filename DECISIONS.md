@@ -195,3 +195,9 @@ Cause 2: no ASR context terms. Fix: asr_context_terms = Chinku, Hanish, WhatsApp
 Cause 3: prompt let the agent repeat garbled words as facts. Fix: inbound prompt — if it sounds wrong, ask again (max 2) then
 "WhatsApp lo type cheyyandi"; never guess names; emails via WhatsApp; explicit capability list; unsupported → say so.
 Not fixable via API: Soniox language order stays [en, te, hi] (outbound has te first). Temperature 0.3 → 0.2.
+
+## [Sat 17:05] Inbound intake safety: WhatsApp "yes" for every call-taken task; router must not force a spec
+Observed: garbled call → router forced "reply to Mr. Casual Mentor" into email_pdf_report (failed harmlessly). Re-transcribing the Omni
+recording with gpt-4o-transcribe showed the caller's voice is almost absent in the recording (only "Yeah. Okay") → weak/faint caller audio,
+not only ASR settings. Chose: every task from an inbound call waits for a WhatsApp yes (shows what Chinku understood); router returns
+null + "can't do that yet" for requests that match no spec. Gave up: re-transcription of recordings as the intake source (caller audio too faint).

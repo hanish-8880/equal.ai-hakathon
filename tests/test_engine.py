@@ -419,3 +419,16 @@ def test_call_from_document_dynamic_questions(fake, monkeypatch):
     assert seen_extract[0][0] == ["policy_status", "premium_due"] and seen_extract[0][1]["premium_due"]["question"]
     t = [x for x in store().scan("tasks") if x["status"] != "cancelled"][0]
     assert t["status"] == "done" and out[-1] == "report"
+
+
+def test_inbound_task_always_needs_whatsapp_yes(monkeypatch):
+    from app.brain.schemas import EmailDraft
+    ran = []
+    monkeypatch.setattr(runner.router, "route", lambda *a, **k: RouteResult(spec="email_pdf_report", inputs={"request": "total", "from_hint": "boss"}))
+    monkeypatch.setattr(steps, "run_fetch_email", lambda *a, **k: ran.append(1) or {"status": "failed"})
+    out = []
+    runner.handle_message("u", "[call] boss pdf total", None, out.append, force_confirm=True)
+    t = store().scan("tasks")[0]
+    assert t["status"] == "awaiting_confirm" and ran == [] and "Call lo ardham ayyindi" in out[-1] and "boss" in out[-1]
+    runner.handle_message("u", "yes", None, out.append)
+    assert ran == [1]

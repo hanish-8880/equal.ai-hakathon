@@ -118,7 +118,7 @@ def process_inbound_call(parsed: dict[str, Any]) -> None:
     if not said.strip():
         return
     text = f"[Hanish phone call lo cheppadu]\n{said}\n\n[Call summary: {parsed.get('summary') or '-'}]"
-    runner.handle_message(owner, text, None, reply_to(owner))
+    runner.handle_message(owner, text, None, reply_to(owner), force_confirm=True)
 
 
 def process_omni(parsed: dict[str, Any]) -> None:
