@@ -119,3 +119,9 @@ Observed 2: explanation call — our brief had correct numbers, but Omni's live 
   Would change if: still wrong → send the explanation as pre-written exact sentences and ask the agent to read them verbatim / rely on the WhatsApp voice note (our TTS, exact).
 Observed 3: voice note for mummy contained an evidence quote and a question for Hanish. Chose: voice-note mode in reply prompt.
 Positive: wait_for + photo from contact + 2nd call + Telugu voice note + report all ran live; mummy's doubt ("passbook number?") was captured; agent refused to invent it.
+
+## [Sat 15:00] Agent voice: Cartesia "Aarti" (female, Indian) — Sarvam rejected
+Observed: Sarvam "kavya" via PUT {"voice":{"provider":"sarvam","voice_id":"kavya"}} worked on a test call (11132645) but sounded slow/laggy
+(user feedback; LLM latency p50 0.97 s was fine → the TTS was the problem). Same test showed gpt-4.1 now speaks 18,500 and 54,882 exactly.
+Chose: Cartesia 9cebb910… "Aarti – Conversationalist" (test call 11132725), user OK'd. tts_cartesia_language stays "en" (not settable via API) → keep romanized call scripts.
+Would change if: native Telugu pronunciation needed → set voice language in Omni dashboard.
