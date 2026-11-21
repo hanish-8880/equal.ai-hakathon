@@ -68,12 +68,12 @@ main { max-width:var(--max); margin:0 auto; padding:8px 16px 170px; }
 .pin { background:var(--blue); color:#fff; border-radius:50%; width:26px !important; height:26px !important; display:grid !important; place-items:center; font-weight:800; font-size:13px; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.3); }
 .card { border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:8px; background:#fff; }
 /* welcome */
-#welcome { text-align:center; padding:9vh 8px 0; }
+#welcome { text-align:center; padding:5vh 4px 0; }
 #welcome .logo { width:56px; height:56px; border-radius:18px; background:var(--ink); color:#fff; display:grid; place-items:center; font-weight:800; font-size:24px; margin:0 auto 14px; }
 #welcome h1 { font-size:26px; margin:0 0 6px; letter-spacing:-.4px; } #welcome p { color:var(--ink2); margin:0 auto 22px; max-width:480px; }
 .sugg { display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left; }
-.sugg button { border:1px solid var(--line); background:#fff; border-radius:16px; padding:12px 14px; min-height:76px; }
-.sugg button b { display:block; font-size:14.5px; } .sugg button span { font-size:13px; color:var(--ink2); }
+.sugg button { border:1px solid var(--line); background:#fff; border-radius:16px; padding:12px 14px; min-height:76px; text-align:left; line-height:1.35; display:flex; flex-direction:column; justify-content:flex-start; }
+.sugg button b { display:block; font-size:14.5px; } .sugg button span { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:13px; color:var(--ink2); margin-top:4px; }
 .sugg button:hover { background:var(--soft); }
 /* composer */
 .dock { position:fixed; left:0; right:0; bottom:0; z-index:30; background:linear-gradient(180deg, rgba(255,255,255,0), #fff 30%); padding:18px 12px calc(12px + env(safe-area-inset-bottom)); }
@@ -133,7 +133,7 @@ body.talk .comp textarea { font-size:18px; }
     <button class="round" id="cmic" type="button" aria-label="Tap to talk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
     <button class="round go hidden" id="chatsend" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
   </form>
-  <div class="hint" data-i18n>Ask anything — type, speak or add a photo. I'll ask before I call, send or book.</div>
+  <div class="hint" data-i18n>Chinku asks you before it calls, sends or books.</div>
 </div></div>
 
 <div class="scrim" id="scrim"></div>
@@ -263,6 +263,7 @@ Object.assign(I, {
   "How many guests?": ["ఎంత మంది?", "कितने लोग?", "Entha mandi?"], "New chat": ["కొత్త చాట్", "नई चैट", "New chat"],
   "Complain on a toll-free line": ["టోల్-ఫ్రీకి ఫిర్యాదు", "टोल-फ़्री पर शिकायत", "Toll-free ki complaint"], "Order food": ["ఫుడ్ ఆర్డర్", "खाना ऑर्डर", "Food order"],
   "How can I help today?": ["ఈ రోజు ఏం చేయమంటారు?", "आज क्या मदद करूँ?", "Ee roju em cheyyamantaru?"],
+  "Chinku asks you before it calls, sends or books.": ["కాల్, పంపడం, బుకింగ్ ముందు Chinku మిమ్మల్ని అడుగుతుంది.", "कॉल, भेजने या बुकिंग से पहले Chinku आपसे पूछता है।", "Call, send, booking mundu Chinku mimmalni adugutundi."],
   "Ask anything — type, speak or add a photo. I'll ask before I call, send or book.": ["ఏదైనా అడగండి — టైప్ చేయండి, మాట్లాడండి లేదా ఫోటో జోడించండి. కాల్, పంపడం, బుకింగ్ ముందు మిమ్మల్ని అడుగుతాను.", "कुछ भी पूछिए — लिखिए, बोलिए या फ़ोटो जोड़िए। कॉल, भेजने या बुकिंग से पहले मैं आपसे पूछूँगा।", "Edaina adagandi — type, voice leda photo. Call, send, booking mundu mimmalni adugutha."],
   "Message Chinku": ["Chinku కి మెసేజ్", "Chinku को संदेश", "Chinku ki message"], "Memory & settings": ["జ్ఞాపకం & సెట్టింగ్స్", "मेमोरी और सेटिंग्स", "Memory & settings"],
 });
