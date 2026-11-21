@@ -20,5 +20,5 @@ known contacts:
 - Boolean inputs: set true/false from the request, using the input's hint (e.g. "PPT kuda chey" → make_ppt true).
 - `missing`: required inputs you could not fill.
 - If anything required is missing, write ONE short clarifying_question in the user's language.
-- `language`: the user's language style (default "Telugu-English mix").
+- `language`: always "English" for now.
 Output only valid JSON.

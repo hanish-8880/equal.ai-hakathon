@@ -227,3 +227,11 @@ Not time-based flip; Twilio sandbox serves stale config for some requests. Messa
 Chose: server polls GET /Messages.json?To=<sandbox> every 10 s and processes inbound messages the webhook missed
 (claim on wa:{MessageSid} → webhook and poller never double-process; on startup only the last 2 min are replayed).
 Cost: up to ~10 s extra latency when Twilio misroutes. Web chat remains the demo fallback.
+
+## [Sat 17:50] English-only for now + voice: Cartesia "Kiara" (Indian-accented English)
+Observed: Telugu speech on calls sounded broken ("buffering") — the Hindi-tuned Aarti voice reading Telugu; Hanish asked for English only.
+Chose: DEFAULT_LANGUAGE=English (config) → call briefs, agent replies, WhatsApp replies, voice notes, router; all fixed engine messages in English.
+Agents always SPEAK English but still UNDERSTAND Telugu/Hindi answers (Soniox te/en/hi kept). Route examples stay Telugu-English (users type that way).
+Voice: Cartesia f8f5f1b2 "Kiara" (tag en, Indian accent) on both agents — best English-Indian option with low latency;
+ElevenLabs is premium with only one Indian (male) voice; agent LLM stays gpt-4.1 (proven on live calls; only gpt-4o is premium above it).
+Would change if: Telugu needed again → set DEFAULT_LANGUAGE and spec language back, choose a Telugu voice.

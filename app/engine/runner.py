@@ -45,7 +45,7 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send, for
         alias, val = m.group(1).lower(), m.group(2)
         phone, mail = VALIDATORS["indian_mobile"](val), VALIDATORS["email"](val)
         if not (phone or mail):
-            send("Number (10 digits) leda email sariga ledu — malli pampandi.")
+            send("That number (10 digits) or email doesn't look right — please send it again.")
             return
         key = f"{user}:{alias}"
         c = store().get("contacts", key) or {"user": user, "alias": alias, "relation": alias}
@@ -60,7 +60,7 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send, for
         task["steps"][sid] = {**task["steps"][sid], "status": "done", "output": {"image": image}}
         task["status"] = "running"
         save_task(task, "wait_input_received")
-        send("Thank you 🙏 photo vachindi. Konchem sepatlo call chesi explain chestanu.")
+        send("Thank you 🙏 I got the photo. I'll call you shortly and explain it.")
         owner = task["user"]
         advance(task["task_id"], lambda msg: steps.NOTIFY(owner, msg, None))
         return
@@ -87,11 +87,11 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send, for
         if NO.match(text or ""):
             pending["status"] = "cancelled"
             save_task(pending)
-            send("Ok, cancel chesa.")
+            send("Okay, cancelled.")
             return
         if gate:  # a started task is never re-planned; show what it is waiting for
             send(steps.email_preview(pending["steps"][gate]) if pending["steps"][gate].get("draft")
-                 else "Mundu 'yes' leda 'no' cheppandi.")
+                 else "Please reply yes or no first.")
             return
 
     # a photo sent alone is remembered for ~15 min and used with the next instruction
@@ -113,7 +113,7 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send, for
         if image and not (text or "").strip():
             f = image.get("fields") or {}
             seen = " ".join(str(f[k]) for k in ("brand", "model", "product_type", "project_name") if f.get(k)) or image.get("image_type", "photo")
-            send(f"Photo chusa 👀 ({seen}). Deeni gurinchi em cheyyali? (voice note / text pampandi)")
+            send(f"Got the photo 👀 ({seen}). What should I do with it? (send a text or voice note)")
             return
         send(r.clarifying_question or "Nenu phone calls tho errands chestanu — e.g. dealers ki call chesi best rate. Em cheyyali?")
         return
@@ -198,7 +198,7 @@ def plan(task: dict[str, Any], r: RouteResult, send) -> None:
     if "call" in spec.get("confirm_before", []):
         task["status"] = "awaiting_confirm"
         save_task(task)
-        prefix = "📞 Call lo ardham ayyindi:\n" if task.get("force_confirm") else ""
+        prefix = "📞 From your call, I understood:\n" if task.get("force_confirm") else ""
         send(prefix + _confirm_text(spec, task))
         return
     if task.get("force_confirm"):  # tasks taken over a phone call always get a WhatsApp yes first
@@ -207,7 +207,7 @@ def plan(task: dict[str, Any], r: RouteResult, send) -> None:
         shown = {k: v for k, v in task["inputs"].items()
                  if not k.startswith("_") and not (isinstance(v, dict) and v.get("image_type")) and v not in (None, "", [])}
         details = "\n".join(f"• {k}: {v}" for k, v in shown.items())
-        send(f"📞 Call lo ardham ayyindi: {spec['description'].split(';')[0]}\n{details}\nStart cheyyana? (yes / no)")
+        send(f"📞 From your call, I understood: {spec['description'].split(';')[0]}\n{details}\nShall I start? (yes / no)")
         return
     start(task, send)
 
@@ -215,8 +215,8 @@ def plan(task: dict[str, Any], r: RouteResult, send) -> None:
 def _problem_question(problems: list[str]) -> str:
     p = problems[0]
     if "phone" in p:
-        return "Phone number sariga kanipinchatledu — number type chesi pampandi (10 digits)."
-    return f"Inka konchem info kavali: {', '.join(x.split(':', 1)[1] for x in problems)}. Cheppandi?"
+        return "I couldn't read the phone number clearly — please type it (10 digits)."
+    return f"I need a bit more info: {', '.join(x.split(':', 1)[1] for x in problems)}. Could you tell me?"
 
 
 def _confirm_text(spec: dict[str, Any], task: dict[str, Any]) -> str:
@@ -229,8 +229,8 @@ def _confirm_text(spec: dict[str, Any], task: dict[str, Any]) -> str:
         _, _, qmap = steps.resolve_collect(first, spec, task)
         goal += "".join(f"\n  ? {q}" for q in qmap.values())
     skipped = [s for k, v in task["inputs"].items() if k.startswith("_skipped_") for s in v]
-    skip = ("\nSkip (call cheyyalenu): " + ", ".join(skipped)) if skipped else ""
-    return f"Plan: {goal}\nCalls:\n{who}{skip}\nCall cheyyana? (yes / no)"
+    skip = ("\nSkipping (can't call): " + ", ".join(skipped)) if skipped else ""
+    return f"Plan: {goal}\nCalls:\n{who}{skip}\nShall I call? (yes / no)"
 
 
 # ---------------- execution ----------------

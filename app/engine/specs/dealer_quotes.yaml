@@ -18,7 +18,7 @@ steps:
     callee: {name: "{item.name}", role: "{inputs.item} dealer"}
     goal: "Get the price per {inputs.unit} for {inputs.quantity} {inputs.unit} of {inputs.item}, delivery time, and any extra charges like transport."
     must_collect: [price_per_unit, delivery_time, transport_charge, payment_terms]
-    language: Telugu-English mix
+    language: English
     max_minutes: 3
     retry_on_no_answer: 1
   - id: report

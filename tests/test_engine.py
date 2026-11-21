@@ -117,7 +117,7 @@ def test_flow_confirm_parallel_calls_dedupe_and_report(fake):
     sent = []
     runner.handle_message("whatsapp:+91me", "50 bags cement, call these", None, sent.append)
     t = store().scan("tasks")[0]
-    assert t["status"] == "awaiting_confirm" and "Call cheyyana" in sent[-1]
+    assert t["status"] == "awaiting_confirm" and "Shall I call" in sent[-1]
     assert t["inputs"]["dealers"][0]["phone"] == "+919876543210"  # validated to E.164
     assert fake == []  # confirmation gate: no call before yes
 
@@ -247,14 +247,14 @@ def test_passbook_flow_wait_for_photo_then_explain_and_voice(fake, monkeypatch):
     # a text from mummy (not an image) does not satisfy the wait; owner's image goes elsewhere
     assert steps.find_waiting(amma, False) is None
     runner.handle_message(amma, "", {"image_type": "passbook", "fields": {"entries": [{"date": "01-11", "credit": 12000}]}}, out.append)
-    assert "photo vachindi" in out[-1] and len(fake) == 2  # explain call dispatched
+    assert "got the photo" in out[-1] and len(fake) == 2  # explain call dispatched
     assert seen_brief_prior[-1]["get_photo"]["image"]["fields"]["entries"][0]["credit"] == 12000
     c2 = [c for c in store().scan("calls") if c["step_id"] == "explain"][0]
     runner.on_call_result({"call_id": c2["omni_call_id"], "transcript": "user: ardham ayyindi"}, lambda u, m: notes.append((u, m, None)))
     t = store().scan("tasks")[0]
     assert t["status"] == "done"
     voice = [n for n in notes if n[2] == b"mp3"]
-    assert len(voice) == 1 and voice[0][0] == amma and "Telugu" in voice[0][1]
+    assert len(voice) == 1 and voice[0][0] == amma and "English" in voice[0][1]
     assert notes[-1][0] == me  # final report to owner
 
 
@@ -318,7 +318,7 @@ def test_schedule_bad_datetime_fails_task():
     task = {"task_id": "t", "steps": {"a": {"output": [{"fields": {"slot_datetime": {"value": "sometime", "status": "tentative"}}}]}}}
     out = []
     r = steps.run_schedule({"id": "s", "at_from": {"step": "a", "field": "slot_datetime"}, "offset_min": -60}, {}, task, out.append)
-    assert r["status"] == "failed" and "Time" in out[0]
+    assert r["status"] == "failed" and "time" in out[0]
 
 
 def test_inr_format():
@@ -409,7 +409,7 @@ def test_call_from_document_dynamic_questions(fake, monkeypatch):
     t = store().scan("tasks")[0]
     assert [x["label"] for x in t["inputs"]["targets"]][:2] == ["LIC customer care", "Agent Ravi"]
     assert len(t["inputs"]["targets"]) == 2 and t["status"] == "awaiting_confirm"  # landline skipped, not blocking
-    assert "Skip" in out[-1] and "040-2345" in out[-1]
+    assert "Skipping" in out[-1] and "040-2345" in out[-1]
     runner.handle_message("u", "yes", None, out.append)
     assert len(fake) == 2 and seen_brief[0]["must_collect"] == ["policy_status", "premium_due"]
     assert seen_brief[0]["field_questions"]["premium_due"] == "When is premium due?"
@@ -429,7 +429,7 @@ def test_inbound_task_always_needs_whatsapp_yes(monkeypatch):
     out = []
     runner.handle_message("u", "[call] boss pdf total", None, out.append, force_confirm=True)
     t = store().scan("tasks")[0]
-    assert t["status"] == "awaiting_confirm" and ran == [] and "Call lo ardham ayyindi" in out[-1] and "boss" in out[-1]
+    assert t["status"] == "awaiting_confirm" and ran == [] and "From your call" in out[-1] and "boss" in out[-1]
     runner.handle_message("u", "yes", None, out.append)
     assert ran == [1]
 

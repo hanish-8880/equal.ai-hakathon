@@ -145,7 +145,7 @@ def process_message(user: str, text: str, media: list[tuple[bytes, str]]) -> Non
         runner.handle_message(user, text, image, reply_to(user))
     except Exception as e:  # noqa: BLE001
         store().add_event("-", "error", {"where": "message", "error": str(e)[:500]})
-        deliver(user, "Sorry, oka problem vachindi. Malli try cheyandi.")
+        deliver(user, "Sorry, something went wrong. Please try again.")
 
 
 @app.post("/webhooks/whatsapp")

@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     email_demo_override: bool = True  # deliver every email to SMTP_USER inbox (demo safety)
     demo_reminder_seconds: int = 0  # >0: schedule steps fire after N s (SIMULATED time, for demo)
     user_name: str = "Hanish"
+    default_language: str = "English"  # calls, replies, voice notes (Telugu off for now)
     user_whatsapp: str = ""
     chat_key: str = ""  # secret for the /chat web page
     test_phone: str = ""

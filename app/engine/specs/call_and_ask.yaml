@@ -18,7 +18,7 @@ steps:
     goal: "{inputs.purpose}"
     plan_text: "{inputs.purpose}"
     must_collect_from: inputs.questions
-    language: Telugu-English mix
+    language: English
     max_minutes: 3
     retry_on_no_answer: 1
   - id: report

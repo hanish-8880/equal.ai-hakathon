@@ -1,5 +1,5 @@
 name: passbook_explain
-description: "A family member (e.g. mummy) does not understand her bank passbook; call her, get a photo of the passbook on WhatsApp, then call back and explain it simply in Telugu"
+description: "A family member (e.g. mummy) does not understand her bank passbook; call her, get a photo of the passbook on WhatsApp, then call back and explain it simply"
 route_examples:
   - "Mummy ki passbook ardham kaavatledu, explain chey"
   - "explain amma's bank passbook to her"
@@ -14,7 +14,7 @@ steps:
     callee: {name: "{inputs.person_name}", role: "my mother"}
     goal: "Ask {inputs.person_name} to send a clear photo of the latest passbook page on WhatsApp to the Chinku WhatsApp number (the same chat where Hanish talks to Chinku). Tell her Chinku will call back and explain it."
     must_collect: [agreed_to_send_photo]
-    language: Telugu
+    language: English
     max_minutes: 2
     retry_on_no_answer: 1
   - id: get_photo
@@ -22,24 +22,24 @@ steps:
     from: "{inputs.person_phone}"
     kind: image
     timeout_min: 120
-    remind_text: "Amma, passbook photo WhatsApp lo pampandi 🙏 — Chinku"
+    remind_text: "Amma, please send the passbook photo on WhatsApp 🙏 — Chinku"
   - id: explain
     type: call
     to: "{inputs.person_phone}"
     callee: {name: "{inputs.person_name}", role: "my mother"}
-    goal: "Explain the passbook entries to {inputs.person_name} in simple Telugu: who paid or withdrew, how much, which date, and the current balance. Then ask if she has any doubt."
+    goal: "Explain the passbook entries to {inputs.person_name} in simple words: who paid or withdrew, how much, which date, and the current balance. Then ask if she has any doubt."
     must_collect: [understood, doubts]
-    language: Telugu
+    language: English
     max_minutes: 4
     retry_on_no_answer: 1
   - id: voice_note
     type: reply
     to: "{inputs.person_phone}"
     voice: true
-    template_hint: "A warm, slow Telugu voice note for {inputs.person_name} (in Telugu script) repeating the passbook explanation: max 5 entries, most important first, then current balance. Round spoken numbers. Under 60 words."
+    template_hint: "A warm, slow, simple-English voice note for {inputs.person_name} repeating the passbook explanation: max 5 entries, most important first, then current balance. Round spoken numbers. Under 60 words."
   - id: report
     type: reply
-    template_hint: "Tell Hanish: mummy ki passbook explain chesam — key entries and balance, whether she understood, and any doubts she raised."
+    template_hint: "Tell Hanish: I explained the passbook to his mother — key entries and balance, whether she understood, and any doubts she raised."
 result_schema:
   agreed_to_send_photo: {type: boolean}
   understood:           {type: boolean}

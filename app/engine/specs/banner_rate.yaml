@@ -16,7 +16,7 @@ steps:
     callee: {name: null, role: "builder / sales office of {inputs.project_name}"}
     goal: "Find the final negotiable price for {inputs.unit_type} at {inputs.project_name}, what is included, and current offers."
     must_collect: [final_price, negotiable, inclusions, offers, site_visit_slot]
-    language: Telugu-English mix
+    language: English
     max_minutes: 3
     retry_on_no_answer: 1
   - id: report

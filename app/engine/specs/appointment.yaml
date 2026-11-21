@@ -20,7 +20,7 @@ steps:
     goal: "Book an appointment for {inputs.person_name} with a {inputs.doctor_or_specialty} on {inputs.preferred_day}. Get the exact date and time slot, the doctor's name, and the consultation fee. Patient name is {inputs.person_name}."
     must_collect: [slot_datetime, doctor_name, consultation_fee]
     shareable: [person_name]
-    language: Telugu-English mix
+    language: English
     max_minutes: 3
     retry_on_no_answer: 1
   - id: tell_person
@@ -29,7 +29,7 @@ steps:
     callee: {name: "{inputs.person_name}", role: "my mother"}
     goal: "Tell {inputs.person_name} her doctor appointment details from prior_results (date, time, doctor, fee) slowly, twice, and say Chinku will call again one hour before. Ask if the time is OK for her."
     must_collect: [time_ok]
-    language: Telugu
+    language: English
     max_minutes: 2
     retry_on_no_answer: 1
   - id: report
@@ -45,7 +45,7 @@ steps:
     callee: {name: "{inputs.person_name}", role: "my mother"}
     goal: "Reminder: {inputs.person_name}'s doctor appointment is in about one hour (details in prior_results). Remind her to leave on time and carry old prescriptions."
     must_collect: [acknowledged]
-    language: Telugu
+    language: English
     max_minutes: 2
     retry_on_no_answer: 1
   - id: reminder_done

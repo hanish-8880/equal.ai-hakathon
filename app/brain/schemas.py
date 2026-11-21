@@ -43,7 +43,7 @@ class RouteResult(BaseModel):
     inputs: dict[str, Any] = Field(default_factory=dict)
     missing: list[str] = Field(default_factory=list)
     clarifying_question: str | None = None
-    language: str = "Telugu-English mix"
+    language: str = "English"
 
 
 # ---------- brief writer (CLAUDE.md 8.2) ----------

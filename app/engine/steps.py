@@ -244,7 +244,7 @@ def run_reply(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
                    step.get("rank_label", "score")) if step.get("rank_by") else None
     ctx = tctx(task)
     hint = render(step.get("template_hint", ""), ctx)
-    lang = "Telugu (Telugu script)" if step.get("voice") else task.get("language", "Telugu-English mix")
+    lang = settings().default_language
     text = decider.compose_reply(hint, task["inputs"], results, ranking, lang, task["task_id"])
     to = render(step["to"], ctx) if step.get("to") else None
     if to:  # message for someone other than the task owner
@@ -290,7 +290,7 @@ def _wait_timeout(task_id: str, step: dict[str, Any]) -> None:
         t["status"] = "failed"
         store().put("tasks", task_id, t)
         store().add_event(task_id, "wait_timeout", {})
-        NOTIFY(t["user"], f"Photo raaledu ({step.get('timeout_min', 120)} min). Task aapesanu — malli try cheyyala?", None)
+        NOTIFY(t["user"], f"No photo came in {step.get('timeout_min', 120)} min, so I stopped the task. Shall I try again?", None)
 
 
 def find_waiting(sender: str, has_image: bool) -> tuple[dict[str, Any], str] | None:
@@ -343,7 +343,7 @@ def run_fetch_email(step: dict[str, Any], spec: dict[str, Any], task: dict[str, 
     found = inbox.find_latest_pdf(frm, subj, int(step.get("days", 7)))
     if not found:
         who = f" from {frm}" if frm else ""
-        send(f"Last {step.get('days', 7)} days lo{who} PDF unna mail dorakaledu. Sender peru / subject cheppandi?")
+        send(f"I couldn't find an email{who} with a PDF in the last {step.get('days', 7)} days. Can you tell me the sender's name or the subject?")
         return {"status": "failed", "error": "no matching mail"}
     doc = perceive.read_document(found["pdf"], found["filename"], task["task_id"]).model_dump()
     meta = {k: found[k] for k in ("from", "from_email", "subject", "date", "filename")}
@@ -396,7 +396,7 @@ def run_schedule(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any
         if at.tzinfo is None:
             at = at.replace(tzinfo=IST)
     except (TypeError, ValueError):
-        send(f"Time sariga ardham kaaledu ({raw!r}) — reminder set cheyyalekapoyanu.")
+        send(f"I couldn't understand the time ({raw!r}), so I couldn't set the reminder.")
         return {"status": "failed", "error": f"bad datetime {raw!r}"}
     real_fire = at.timestamp() + int(step.get("offset_min", 0)) * 60
     demo = settings().demo_reminder_seconds
@@ -432,17 +432,17 @@ def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) 
 # ---------------- email ----------------
 def email_preview(state: dict[str, Any]) -> str:
     d = state["draft"]
-    to = state.get("to") or "❓ (support email dorakaledu — email address type cheyandi)"
+    to = state.get("to") or "❓ (couldn't find the support email — please type the address)"
     src = f"\n(source: {state['source']})" if state.get("source") else ""
-    demo = "\n[Demo mode: mail mee inbox ki vastundi]" if settings().email_demo_override else ""
-    return f"📧 Draft mail\nTo: {to}{src}\nSubject: {d['subject']}\n\n{d['body']}\n{demo}\nPampana? (yes / no / correct email type cheyandi)"
+    demo = "\n[Demo mode: the mail goes to your own inbox]" if settings().email_demo_override else ""
+    return f"📧 Draft mail\nTo: {to}{src}\nSubject: {d['subject']}\n\n{d['body']}\n{demo}\nShall I send it? (yes / no / type the correct email)"
 
 
 def run_email(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
     state = task["steps"].get(step["id"], {})
     if state.get("status") == "confirmed":
         if not state.get("to"):
-            send("Email address ledu — address type cheyandi.")
+            send("I don't have an email address — please type it.")
             return {**state, "status": "awaiting_confirm"}
         used = email_action.send(state["to"], state["draft"]["subject"], state["draft"]["body"])
         store().add_event(task["task_id"], "email_sent", {"to": state["to"], "delivered_to": used})
