@@ -60,3 +60,13 @@ Observed: ngrok needs an account token; cloudflared quick tunnel needs none. URL
 Omni agent 286768 webhook set via PUT /agents/{id} post_call_actions.webhook → post_call_config 455762 points at {URL}/webhooks/omni.
 Gave up: stable URL — it changes on every tunnel restart (then: update .env, re-PUT Omni webhook, update Twilio sandbox URL).
 Would change if: tunnel drops during demo → deploy to AWS (stable URL).
+
+## [Sat 13:40] First LIVE loop: WA → route → clarify → confirm → Omni call → webhook → extract → WA reply (delivered)
+Observed: task t_7b780cba. Router asked quantity (clarifying Q), confirm gate held, brief → call 11128566 → webhook arrived via tunnel.
+Webhook payload VERIFIED: top-level call_id, call_request_id (INT = requestId), call_status, call_duration, hangup_reason,
+call_report.{full_conversation ("LLM: ..\n" lines), summary, interactions[], extracted_variables}. NO custom_variables → correlate on call_request_id.
+Both calls had zero user speech (idle timeout; retry cut_off after greeting). Extractor → no_answer / cut_off correctly; retry fired once after 5 min; reply delivered.
+Root cause suspect: agent ASR = deepgram nova-3 language "en" (English-only); clinic agent that works = Soniox [te,en].
+Chose: PUT {"transcriber":{"provider":"soniox",...}} → asr_service Soniox [en,te,hi] (VERIFIED in agent config). Flat asr_* keys are ignored by PUT.
+Also: reply prompt must not invent evidence when no data; router fixes item typos ("cents"→cement) and names unnamed dealers.
+Would change if: next live call still captures no user speech → check phone audio / Omni test call from dashboard.
