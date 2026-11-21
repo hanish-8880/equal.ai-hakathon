@@ -130,8 +130,13 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> 
                 "inputs": r.inputs, "language": r.language, "step_idx": 0, "steps": {}, "created_at": now()}
     # media inputs are filled deterministically from what was perceived (the router never copies documents)
     for name, cfg in load_specs()[task["spec"]]["inputs"].items():
-        if cfg.get("media") and image and image.get("image_type") == cfg["media"]:
+        if cfg.get("media") and image and cfg["media"] in (image.get("image_type"), "any"):
             task["inputs"][name] = image
+        if cfg.get("source") == "media_contacts" and image:
+            found = (image.get("fields") or {}).get("contacts") or image.get("contacts") or []
+            if found:
+                task["inputs"][name] = [{"label": c.get("label") or f"Number {i + 1}", "phone": c.get("phone"),
+                                         "role": c.get("role") or c.get("label") or "contact"} for i, c in enumerate(found)]
     store().add_event(task["task_id"], "routed", {**r.model_dump(), "inputs": {k: ("<media>" if isinstance(v, dict) and v.get("image_type") else v) for k, v in r.inputs.items()}})
     plan(task, r, send)
 
@@ -153,16 +158,25 @@ def normalise_inputs(spec: dict[str, Any], inputs: dict[str, Any]) -> tuple[dict
             else:
                 out[name] = ok
         if cfg.get("validate_item") and isinstance(v, list):
-            clean = []
+            clean, skipped = [], []
             for it in v:
                 it = dict(it)
+                bad = False
                 for f, val_name in cfg["validate_item"].items():
                     ok = VALIDATORS[val_name](it.get(f))
                     if ok is None:
-                        problems.append(f"invalid:{name}.{f}:{it.get('name') or it.get(f)}")
+                        bad = True
+                        label = it.get("name") or it.get("label") or it.get(f)
+                        (skipped if cfg.get("source") == "media_contacts" else problems).append(
+                            f"{label} ({it.get(f)})" if cfg.get("source") == "media_contacts" else f"invalid:{name}.{f}:{label}")
                     it[f] = ok
-                clean.append(it)
+                if not (bad and cfg.get("source") == "media_contacts"):
+                    clean.append(it)
             out[name] = clean
+            if skipped:  # numbers read from a document that cannot be called (landline, partial) are skipped, not blocking
+                out[f"_skipped_{name}"] = skipped
+            if cfg.get("required") and not clean:
+                problems.append(f"missing:{name}")
         if cfg.get("type") == "number" and isinstance(out.get(name), str):
             try:
                 out[name] = float(re.sub(r"[^\d.]", "", out[name]))
@@ -201,8 +215,13 @@ def _confirm_text(spec: dict[str, Any], task: dict[str, Any]) -> str:
     who = "\n".join(f"• {t['callee'].get('name') or t['callee'].get('role')} ({mask_phone(t['to'])})" for t in targets)
     first = next(s for s in spec["steps"] if s["type"] == "call")
     from app.engine.specs_loader import render
-    goal = render(first["goal"], {"inputs": task["inputs"]})
-    return f"Plan: {goal}\nCalls:\n{who}\nCall cheyyana? (yes / no)"
+    goal = render(first.get("plan_text") or first["goal"], {"inputs": task["inputs"]})
+    if first.get("must_collect_from"):
+        _, _, qmap = steps.resolve_collect(first, spec, task)
+        goal += "".join(f"\n  ? {q}" for q in qmap.values())
+    skipped = [s for k, v in task["inputs"].items() if k.startswith("_skipped_") for s in v]
+    skip = ("\nSkip (call cheyyalenu): " + ", ".join(skipped)) if skipped else ""
+    return f"Plan: {goal}\nCalls:\n{who}{skip}\nCall cheyyana? (yes / no)"
 
 
 # ---------------- execution ----------------

@@ -6,6 +6,7 @@ Rules:
 - Goal: one clear sentence. Only the goal of THIS step.
 - must_collect: exactly the fields given. For each, write the natural question the caller should
   ask, in the target language, in everyday words.
+- If field_questions is given, ask exactly those questions (in natural words) for those fields.
 - Questions must be OPEN, never leading: ask "What is included in this price?" — never list
   possible answers ("does it include parking, GST, ...?"). The callee must say the facts themselves.
 - If the task covers several unit types, ask about the one in task_inputs.unit_type only.

@@ -65,13 +65,27 @@ def _prior_results(task: dict[str, Any]) -> dict[str, Any]:
     return {k: v.get("output") for k, v in task.get("steps", {}).items() if v.get("status") == "done"}
 
 
+def resolve_collect(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any]) -> tuple[list[str], dict[str, Any], dict[str, str]]:
+    """(must_collect fields, result schema for them, field -> question). Static from the spec, or dynamic from task inputs."""
+    if step.get("must_collect_from"):
+        from app.engine.specs_loader import _lookup
+        qs = _lookup(tctx(task), step["must_collect_from"]) or []
+        qmap = {q["field"]: q["question"] for q in qs if isinstance(q, dict) and q.get("field")}
+        return list(qmap), {f: {"type": "string", "question": q} for f, q in qmap.items()}, qmap
+    fields = list(step["must_collect"])
+    return fields, {k: spec.get("result_schema", {}).get(k, {}) for k in fields}, {}
+
+
 def dispatch_one(task: dict[str, Any], step: dict[str, Any], target: dict[str, Any], attempt: int = 0) -> dict[str, Any]:
     cid = "c_" + uuid.uuid4().hex[:10]
     call = {"call_id": cid, "task_id": task["task_id"], "step_id": step["id"], "to_number": target["to"],
             "callee": target["callee"], "attempt": attempt, "status": "queued", "created_at": time.time()}
     store().put("calls", cid, call)
     try:
-        brief = brief_writer.write_brief(step, task["inputs"], target["callee"], _prior_results(task), task["task_id"])
+        from app.engine.specs_loader import load_specs
+        fields, _, qmap = resolve_collect(step, load_specs()[task["spec"]], task)
+        bstep = {**step, "must_collect": fields, "field_questions": qmap}
+        brief = brief_writer.write_brief(bstep, task["inputs"], target["callee"], _prior_results(task), task["task_id"])
         call["brief"] = brief.model_dump()
         ctx = {**{k: (v if isinstance(v, (str, int, float)) else str(v)) for k, v in brief.model_dump().items()
                   if k in ("on_behalf_of", "language", "max_minutes", "call_script", "callee_role")},
@@ -156,8 +170,8 @@ def record_call_result(parsed: dict[str, Any]) -> dict[str, Any] | None:
     if not transcript.strip() or parsed.get("status") in ("no-answer", "busy", "failed", "no_answer"):
         call["status"], call["outcome"] = "no_answer", "no_answer"
     else:
-        ex = extractor.extract(transcript, step["must_collect"],
-                               {k: spec["result_schema"][k] for k in step["must_collect"]}, task["task_id"])
+        fields, schema, _ = resolve_collect(step, spec, task)
+        ex = extractor.extract(transcript, fields, schema, task["task_id"])
         call["extracted"] = ex.model_dump()
         call["outcome"] = ex.call_outcome
         call["status"] = "no_answer" if ex.call_outcome == "no_answer" else "completed"

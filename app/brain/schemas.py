@@ -25,6 +25,8 @@ class DocRead(BaseModel):
     parties: list[str] = Field(default_factory=list)
     line_items: list[LineItem] = Field(default_factory=list)
     stated_total: float | None = None
+    contacts: list[dict[str, Any]] = Field(default_factory=list)
+    summary: str | None = None
     currency: str = "INR"
     notes: str | None = None
     unreadable: list[str] = Field(default_factory=list)

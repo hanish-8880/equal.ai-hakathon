@@ -1,0 +1,28 @@
+name: call_from_document
+description: "User sent a photo or PDF (poster, insurance paper, notice, brochure, letter...) that shows one or more phone numbers, and wants Chinku to call those numbers and ask about something. Use banner_rate instead for property banners asking the final price."
+route_examples:
+  - "ee insurance paper lo number ki call chesi policy details adugu"
+  - "call the numbers on this poster and ask about admission fees"
+  - "ee PDF lo unna numbers anniki call chesi details kanukko"
+inputs:
+  document:  {source: media, media: any, required: true}
+  targets:   {source: media_contacts, required: true, type: list, item_fields: [label, phone, role], validate_item: {phone: indian_mobile}}
+  purpose:   {source: text, required: true}
+  questions: {source: text, required: true, type: list, item_fields: [field, question]}
+confirm_before: [call]
+steps:
+  - id: ask_numbers
+    type: call
+    for_each: targets
+    to: "{item.phone}"
+    callee: {name: "{item.label}", role: "{item.role}"}
+    goal: "{inputs.purpose}. Context from the document Hanish has: see task_inputs.document (share only the reference details needed, e.g. policy/reference number, never personal bank data)."
+    plan_text: "{inputs.purpose}"
+    must_collect_from: inputs.questions
+    language: Telugu-English mix
+    max_minutes: 3
+    retry_on_no_answer: 1
+  - id: report
+    type: reply
+    template_hint: "For each number called: who it was (label), each question with the answer and status, quote their words for key facts. Then one clear next step question."
+result_schema: {}

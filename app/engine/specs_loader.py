@@ -28,10 +28,15 @@ def _check(spec: dict[str, Any], fname: str) -> dict[str, Any]:
             raise SpecError(f"{fname}: duplicate step id {st['id']}")
         ids.add(st["id"])
         if st["type"] == "call":
-            for k in ("to", "goal", "must_collect"):
+            for k in ("to", "goal"):
                 if k not in st:
                     raise SpecError(f"{fname}: call step {st['id']} missing '{k}'")
-            missing = [f for f in st["must_collect"] if f not in spec.get("result_schema", {})]
+            if "must_collect" not in st and "must_collect_from" not in st:
+                raise SpecError(f"{fname}: call step {st['id']} needs must_collect or must_collect_from")
+            for k in ():
+                if k not in st:
+                    raise SpecError(f"{fname}: call step {st['id']} missing '{k}'")
+            missing = [f for f in st.get("must_collect", []) if f not in spec.get("result_schema", {})]
             if missing:
                 raise SpecError(f"{fname}: must_collect not in result_schema: {missing}")
     return spec

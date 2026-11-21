@@ -386,3 +386,36 @@ def test_message_during_gate_does_not_replan(monkeypatch):
     runner.handle_message("u", "mixer broken mail pettu", None, out.append)
     runner.handle_message("u", "inka emaina?", None, out.append)
     assert len(calls) == 1 and "Draft mail" in out[-1] and store().scan("tasks")[0]["status"] == "awaiting_confirm"
+
+
+def test_call_from_document_dynamic_questions(fake, monkeypatch):
+    seen_extract, seen_brief = [], []
+    qs = [{"field": "policy_status", "question": "Is policy active?"}, {"field": "premium_due", "question": "When is premium due?"}]
+    monkeypatch.setattr(runner.router, "route", lambda msg, image, catalog, contacts, tid=None: RouteResult(
+        spec="call_from_document", inputs={"purpose": "Get policy details", "questions": qs}) if msg.strip() else RouteResult(spec=None))
+    orig_brief = steps.brief_writer.write_brief
+    monkeypatch.setattr(steps.brief_writer, "write_brief", lambda step, *a, **k: seen_brief.append(step) or orig_brief(step, *a, **k))
+    monkeypatch.setattr(steps.extractor, "extract", lambda tr, must, schema, tid=None: seen_extract.append((must, schema)) or Extraction(
+        call_outcome="completed", follow_up_needed=False,
+        fields=[ExtractedField(name=m, value="x", status="confirmed", evidence_quote="x") for m in must]))
+    monkeypatch.setattr(steps.decider, "compose_reply", lambda *a, **k: "report")
+    paper = {"image_type": "other", "fields": {"contacts": [
+        {"label": "LIC customer care", "phone": "98480 12345", "role": "insurance helpline"},
+        {"label": "Agent Ravi", "phone": "9000012345", "role": "insurance agent"},
+        {"label": "Landline", "phone": "040-2345", "role": "office"}]}}
+    out = []
+    runner.handle_message("u", "", paper, out.append)
+    runner.handle_message("u", "ee paper lo numbers ki call chesi policy details adugu", None, out.append)
+    t = store().scan("tasks")[0]
+    assert [x["label"] for x in t["inputs"]["targets"]][:2] == ["LIC customer care", "Agent Ravi"]
+    assert len(t["inputs"]["targets"]) == 2 and t["status"] == "awaiting_confirm"  # landline skipped, not blocking
+    assert "Skip" in out[-1] and "040-2345" in out[-1]
+    runner.handle_message("u", "yes", None, out.append)
+    assert len(fake) == 2 and seen_brief[0]["must_collect"] == ["policy_status", "premium_due"]
+    assert seen_brief[0]["field_questions"]["premium_due"] == "When is premium due?"
+    for _ in range(2):
+        [c] = [c for c in store().scan("calls") if c["status"] == "dispatched"][:1]
+        runner.on_call_result({"call_id": c["omni_call_id"], "transcript": "user: active, due 5 Dec"}, lambda u, m: out.append(m))
+    assert seen_extract[0][0] == ["policy_status", "premium_due"] and seen_extract[0][1]["premium_due"]["question"]
+    t = [x for x in store().scan("tasks") if x["status"] != "cancelled"][0]
+    assert t["status"] == "done" and out[-1] == "report"

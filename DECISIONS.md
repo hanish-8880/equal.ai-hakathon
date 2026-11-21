@@ -162,3 +162,12 @@ Server .env has 0 AWS keys; STORE_BACKEND=dynamo; DynamoStore write via role OK.
 Both Omni agents' webhooks → https://16-145-161-18.sslip.io/webhooks/omni. Local server + Cloudflare tunnel retired.
 Note: local JSON data (old tasks, contacts) was NOT migrated — contacts must be re-added on WhatsApp.
 Deploy after each commit: git push && python -m scripts.aws_deploy push
+
+## [Sat 16:30] Feature A: call_from_document (call every number on a poster / insurance paper / PDF)
+Chose (Hanish approved order: A now, eval next, B=Gmail→analyze→PPT after eval):
+- Perception lists every phone number with its label (image fields.contacts / DocRead.contacts); code copies them into `targets` (router never retypes digits).
+- Router writes 2-5 questions {field, question} + purpose from the user's words.
+- Generic engine change: call step may use `must_collect_from: inputs.questions` (dynamic fields → brief + extraction schema); `plan_text` for the confirm message.
+- Numbers that fail validation (landlines, partial) are SKIPPED and listed in the plan, not blocking.
+Observed (live vision + router, simulated calls): mock insurance letter → 3 numbers with labels; landline skipped; questions: cover, premium payment, claim process.
+Gave up: calling landlines (indian_mobile validation only).
