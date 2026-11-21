@@ -153,6 +153,8 @@ body.talk .comp textarea { font-size:18px; }
 <div class="sheet" id="setsheet" role="dialog" aria-label="Settings"><div class="in">
   <div style="display:flex;align-items:center"><h2 style="margin:0;font-size:20px;flex:1" data-i18n>Settings</h2><button class="ib" id="setclose" aria-label="Close">✕</button></div>
   <h3 data-i18n>Language</h3><div class="langs" id="langs2"></div>
+  <h3 data-i18n>Swiggy account</h3><div class="langs" id="swaccts"></div>
+  <p class="empty" data-i18n>Each account logs in once with its own phone + OTP. Use it for a real second person — not to get around Swiggy's limits.</p>
   <h3 data-i18n>What I remember</h3><p class="empty" data-i18n>Never stored: OTPs, passwords, card or bank numbers, ID numbers.</p><div id="memlist"></div>
 </div></div>
 <div class="toast" id="toast" role="status"></div>
@@ -260,7 +262,10 @@ Object.assign(I, {
   "Paid deals (book in Swiggy)": ["చెల్లింపు డీల్స్ (Swiggy లో బుక్ చేయండి)", "पेड डील (Swiggy में बुक करें)", "Paid deals (Swiggy lo book cheyyandi)"],
   "Book table": ["టేబుల్ బుక్ చేయి", "टेबल बुक करो", "Table book cheyyi"], "Not confirmed": ["ఖరారు కాలేదు", "पक्का नहीं हुआ", "Confirm kaledu"],
   "Booking ID": ["బుకింగ్ ID", "बुकिंग ID", "Booking ID"], "Which day and time? (e.g. tomorrow 8 pm)": ["ఏ రోజు, ఏ సమయం? (ఉదా: రేపు రాత్రి 8)", "कौन सा दिन और समय? (जैसे: कल रात 8)", "Ye roju, ye time? (eg: repu 8 pm)"],
-  "Already decided": ["ఇప్పటికే నిర్ణయించారు", "पहले ही तय हो चुका", "Already decide chesaru"], "Working on it…": ["చేస్తున్నా…", "कर रहा हूँ…", "Chestunna…"], "How many guests?": ["ఎంత మంది?", "कितने लोग?", "Entha mandi?"], "New chat": ["కొత్త చాట్", "नई चैट", "New chat"],
+  "Already decided": ["ఇప్పటికే నిర్ణయించారు", "पहले ही तय हो चुका", "Already decide chesaru"],   "Swiggy account": ["Swiggy ఖాతా", "Swiggy खाता", "Swiggy account"], "Active": ["వాడుతున్నది", "चालू", "Active"], "Tap to use": ["వాడటానికి నొక్కండి", "चुनने के लिए दबाएँ", "Use cheyyadaniki nokkandi"],
+  "No Swiggy account connected yet.": ["ఇంకా Swiggy ఖాతా కలపలేదు.", "अभी कोई Swiggy खाता नहीं जुड़ा।", "Inka Swiggy account connect cheyyaledu."],
+  "Each account logs in once with its own phone + OTP. Use it for a real second person — not to get around Swiggy's limits.": ["ప్రతి ఖాతా దాని ఫోన్ + OTP తో ఒక్కసారి లాగిన్ అవుతుంది. నిజమైన ఇంకో వ్యక్తి కోసం వాడండి — Swiggy పరిమితులను తప్పించుకోవడానికి కాదు.", "हर खाता अपने फ़ोन + OTP से एक बार लॉगिन होता है। इसे असली दूसरे व्यक्ति के लिए इस्तेमाल करें — Swiggy की सीमा से बचने के लिए नहीं।", "Prathi account daani phone + OTP tho okkasari login avutundi. Nijamaina inko person kosam vaadandi — Swiggy limits tappinchukovadaniki kadu."],
+  "Working on it…": ["చేస్తున్నా…", "कर रहा हूँ…", "Chestunna…"], "How many guests?": ["ఎంత మంది?", "कितने लोग?", "Entha mandi?"], "New chat": ["కొత్త చాట్", "नई चैट", "New chat"],
   "Complain on a toll-free line": ["టోల్-ఫ్రీకి ఫిర్యాదు", "टोल-फ़्री पर शिकायत", "Toll-free ki complaint"], "Order food": ["ఫుడ్ ఆర్డర్", "खाना ऑर्डर", "Food order"],
   "How can I help today?": ["ఈ రోజు ఏం చేయమంటారు?", "आज क्या मदद करूँ?", "Ee roju em cheyyamantaru?"],
   "Chinku asks you before it calls, sends or books.": ["కాల్, పంపడం, బుకింగ్ ముందు Chinku మిమ్మల్ని అడుగుతుంది.", "कॉल, भेजने या बुकिंग से पहले Chinku आपसे पूछता है।", "Call, send, booking mundu Chinku mimmalni adugutundi."],
@@ -281,6 +286,12 @@ $("langskip").onclick = () => { $("langsheet").classList.remove("on"); ls.set("c
 $("langbtn").onclick = () => { pick = LANG; langCards($("langs"), c => { saveLang(c); setTimeout(() => $("langsheet").classList.remove("on"), 250); }); $("langsheet").classList.add("on"); };
 async function openSettings() { closeDrawer();
   pick = LANG; langCards($("langs2"), c => saveLang(c)); $("setsheet").classList.add("on");
+  try { const a = await (await api("/api/swiggy/accounts")).json();
+    $("swaccts").innerHTML = (a.accounts || []).length ? a.accounts.map(n => `<button class="lang ${n === a.active ? "on" : ""}" data-acct="${esc(n)}" aria-pressed="${n === a.active}"><b>🛵 ${esc(n)}</b><span>${n === a.active ? L("Active") : L("Tap to use")}</span></button>`).join("")
+      : `<p class="empty">${L("No Swiggy account connected yet.")}</p>`;
+    $("swaccts").querySelectorAll("[data-acct]").forEach(b => b.onclick = async () => { const r = await post("/api/swiggy/active", {name: b.dataset.acct});
+      toast(r.ok ? "✓ Swiggy: " + b.dataset.acct : L("No connection — try again")); openSettings(); });
+  } catch (e) {}
   try { const m = await (await api("/api/memory")).json();
     $("memlist").innerHTML = m.length ? m.map(r => `<div class="memrow"><div class="t"><b>${esc(r.key)}</b><span>${esc(typeof r.value === "string" ? r.value : JSON.stringify(r.value))}</span></div><button class="btn sm" data-k="${esc(r.key)}">${L("Forget")}</button></div>`).join("")
       : `<p class="empty">${L("Nothing remembered yet. Say “remember …”.")}</p>`;

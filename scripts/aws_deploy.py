@@ -173,14 +173,22 @@ def push() -> None:
                            f"ubuntu@{st['ip']}:/home/ubuntu/chinku/.env"])
     tmp.unlink()
     caddy = f"{st['host']} {{\\n  reverse_proxy 127.0.0.1:8000\\n}}\\n"
-    ssh("cd ~/chinku && git pull -q && .venv/bin/pip install -q -r requirements.txt && "
+    # sync EXACTLY to GitHub: files the server generated (eval results) can never block the update (Sun 01:40: a silent
+    # `git pull` failure left the old code running while the deploy said OK). .env, media and data are untracked → untouched.
+    ssh("cd ~/chinku && git fetch -q origin && git reset -q --hard origin/main && .venv/bin/pip install -q -r requirements.txt && "
         f"printf '{caddy}' | sudo tee /etc/caddy/Caddyfile >/dev/null && sudo systemctl reload-or-restart caddy && "
         "sudo systemctl enable -q chinku && sudo systemctl restart chinku && sleep 3 && curl -s 127.0.0.1:8000/health", st)
+    local = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    remote = subprocess.run(["ssh", "-i", str(KEY_FILE), f"ubuntu@{st['ip']}", "cd ~/chinku && git rev-parse HEAD"],
+                            capture_output=True, text=True).stdout.strip()
+    if remote != local:
+        print(f"\n!!! DEPLOY FAILED: server is on {remote[:7] or '?'}, laptop is on {local[:7]} — did you `git push`?")
+        sys.exit(3)
     import httpx
     for _ in range(10):
         try:
             if httpx.get(f"{url}/health", timeout=10).status_code == 200:
-                print("\nPUBLIC URL:", url, "— health OK")
+                print("\nPUBLIC URL:", url, f"— health OK — running {local[:7]}")
                 return
         except httpx.HTTPError:
             pass
