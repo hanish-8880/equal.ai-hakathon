@@ -1,374 +1,341 @@
-CLAUDE.md — Chinku (Equal AI Builders Hackathon 2026)
+# CLAUDE.md — Chinku for Plumbers (Equal AI Builders Hackathon 2026)
 
-You are my senior product, design and engineering partner. I am Hanish, building solo at the Equal AI × OpenAI Builders Hackathon, Equal HQ Hyderabad, Sat 21 – Sun 22 Nov 2026. Code freeze: Sunday 2:00 PM IST. Push to GitHub by 12:00 PM Sunday.
+You are my senior product, design and engineering partner. I am **Hanish**, building **solo** at the
+Equal AI × OpenAI Builders Hackathon, Equal HQ Hyderabad.
+**Code freeze: Sunday 22 Nov, 2:00 PM IST. Push to GitHub by 12:00 PM Sunday.**
 
-Read this whole file before every work session. It is the source of truth. If something here conflicts with what you observe in the code or APIs, tell me, propose the fix, and update this file.
+This file replaces the previous CLAUDE.md. Read it fully before every session. It is the source of truth.
+If code or APIs disagree with it, tell me, propose the fix, and update this file.
 
-0. How you work with me
-Stages. I will say DISCOVER, DESIGN, BUILD, REVIEW or PITCH, or just ask normally.
-BUILD = inspect the current code → implement the next working increment → run it → report what you observed.
-REVIEW = test the product, find the single most important weakness, propose the cut or fix.
-PITCH = turn verified evidence into demo script and judge answers. Never claim unverified results.
-Verify before depending. Before relying on any API behaviour (OmniDimension variables, webhook payload shape, OpenAI model names, Twilio media URLs), run the smallest real test and record the result in DECISIONS.md.
-When a test fails: isolate the cause, fix, re-run, report. If you cannot execute, give me the exact check and mark the result UNVERIFIED.
-Label everything as LIVE, SIMULATED or NOT BUILT. Keep HONEST_NOTE.md current (section 14).
-Consequential decisions: state what we observed, what we chose, why, what we gave up, what would change our mind. Append to DECISIONS.md.
-Scope protection. If a feature is not working by its checkpoint (section 13), stop, tell me, and move on. Never break the engine or Feature 1 to add something new.
-Be concise. Short reports, concrete next action. No long explanations unless I ask.
-1. Organizer requirements (from the official submission page — do not change)
+---
 
-Solo build. Equal AI reviews every build, shortlists 10, those 10 demo live to the jury. The submission must include:
+## 0. How you work with me
 
-A working demo that runs end to end on fresh input — not slides, not a mock-up.
-Source code in a repository the judges can open.
-Evidence of results — e.g. accuracy vs a baseline, outputs on new data, proof that data persists.
-A short honest note: what I built myself, what I reused, what is simulated. Use only data I have permission to access.
+- **Reuse first.** The existing Chinku repo already has: the spec engine, state machine, Omni generic caller
+  (`call_context` injection verified), OpenAI brain (perceive / route / brief / extract / decide), Twilio WhatsApp,
+  SMTP email, PDF reading, DynamoDB store on AWS, dashboard, web chat at `/chat?key=...`, inbound-call agent,
+  31 passing tests. **Inspect first, list what works, then extend.** Add specs and step types; do not rewrite the engine.
+- **Stages:** DISCOVER / DESIGN / BUILD / REVIEW / PITCH, or normal requests.
+  BUILD = implement the next working increment → run it → report what you observed.
+- **Verify before depending** on any API behaviour. Record results in `DECISIONS.md`.
+- **Label everything** LIVE / SIMULATED / NOT BUILT. Keep `HONEST_NOTE.md` current.
+- **Never claim a result you did not observe.** If you cannot run something, mark it UNVERIFIED.
+- **Scope protection:** follow section 13. Never break the demo job to add a feature.
+- **Deploy after each verified increment:** `git push` + `python -m scripts.aws_deploy push`.
+- **Be concise.** Short reports with the next concrete action.
 
-Resources given: OpenAI credits, AWS credits. Questions → Sai or Bala from Equal AI.
+---
 
-Context on the host: Equal AI is India's AI call assistant (screens and answers calls for users) and is expanding into messaging and lifestyle/concierge services. Chinku is the outbound, task-completing side of that vision.
+## 1. Organizer requirements (fixed)
 
-2. Product — Chinku
+Solo build. Equal AI reviews every build, shortlists 10, those 10 demo live. Submission must include:
+1. A working demo that runs end to end on fresh input — not slides or mock-ups.
+2. Source code in a repo judges can open.
+3. Evidence of results (accuracy vs baseline, outputs on new data, proof data persists).
+4. A short honest note: built / reused / simulated. Only data we have permission to use.
 
-One line: Chinku is a WhatsApp + phone assistant that finishes errands by calling people for you. You send a text, voice note or photo on WhatsApp → Chinku plans the task → calls the right people → reports the result back on WhatsApp.
+Track: **Build Creative** — personal context into everyday AI products; show a working journey from raw input to a useful outcome.
 
-Problem I can repeat from memory: Indian families waste hours on small phone errands — chasing quotes, booking slots, explaining things to parents — and an assistant that only summarises calls still leaves the work to you. Chinku does the calls and closes the task.
+---
 
-Signature 20 seconds (the demo): I send a banner photo or a dealer list on WhatsApp → the judge's phone rings → the judge plays the builder/dealer and quotes any price → the result appears on WhatsApp and on the dashboard, with the exact quote from the call as evidence.
+## 2. Product
 
-Features (each is ONE spec file; the engine never changes per feature)
-#	Spec	User says (example)	Flow
-1	dealer_quotes	"Chinku, 50 bags cement, ee 3 dealers ki call chesi best rate kanukko" (+ list)	parallel calls → extract price/delivery/terms → compare → "Best: X, confirm?"
-2	banner_rate	banner photo + "ee builder ki call chesi final rate adugu"	vision reads number/project/listed price → I confirm → call → listed vs final price
-3	warranty_email	product photo + voice note "mixer pani cheyatledu, warranty mail pettu"	vision reads brand/model → find support email → draft → I confirm → send
-4	passbook_explain	"Mummy ki passbook ardham kaavatledu, explain chey"	call mummy: "send passbook photo on WhatsApp" → wait for photo → read entries → second call explaining in Telugu + Telugu voice note
-5	appointment	"Repu mummy ki doctor appointment book chey, slot cheppu, 1 hr mundu gurthu chey"	call clinic → get slot → call mummy with slot → reminder call 1 hr before
+**Chinku is the AI office assistant for independent plumbers and small plumbing contractors.**
+The plumber talks to Chinku (voice or text, Telugu / English / mixed) and gets back to work.
+Chinku does the coordination around each job: calls the client, books the visit, calls shops for a missing part,
+gets approval for extra charges, and turns a closing voice note into a correct company invoice.
 
-Voice notes are an input type, not a feature: every voice note is transcribed and routed.
+**Problem in one line:** a plumber's day is lost to phone calls and paperwork — chasing clients, ringing shops for
+parts, waiting for supervisor approvals, writing bills — and every mistake (wrong slot, wrong part, wrong amount)
+costs a trip or money.
 
-Rule: no photo/document is exchanged during a live call. Anything that needs new input = call ends → task waits in waiting_input → input arrives on WhatsApp → next call.
+**Demo moment to protect (section 12):** a judge plays the shopkeeper and changes "exact model available today" to
+"different model, available tomorrow". Chinku explains what changed, keeps the visit pending, and asks the plumber.
+Then one closing voice note becomes an accurate ₹1,400 invoice.
 
-3. Who owns what (strict boundaries)
-Layer	Owner	Responsibility
-Phone number, voice, live conversation	OmniDimension	Dispatch call, run conversation, post-call webhook with transcript
-All intelligence	OpenAI	Transcribe voice notes, read images, route, write the call prompt, extract results, decide, compose replies
-Chat channel	Twilio WhatsApp sandbox (WhatsApp ONLY — never used for calls)	Receive text/voice/photo, send text/voice replies. Every phone that chats with Chinku (me, mummy, judges) sends the sandbox join code once.
-State, schedule, hosting	AWS	DynamoDB (state + logs), EventBridge Scheduler (reminders), hosting for webhooks
-Orchestration	My code (FastAPI)	Spec runner, state machine, validation, idempotency, dashboard
+---
 
-OmniDimension is a dumb, reliable voice executor. It never decides what the task is. OpenAI decides everything.
+## 3. Interfaces (priority order — overrides any earlier plan)
 
-Channel split (fixed): all phone calls = OmniDimension's number. All WhatsApp = Twilio sandbox. OmniDimension is NOT used for WhatsApp. Twilio is NOT used for calls.
+1. **Primary — Chinku App (chat-style web app, mobile first).** The plumber talks or types to Chinku here.
+   Replaces the current `/chat` page (keep the key protection). Design in section 9.
+2. **Primary — Phone.** The plumber can call Chinku's inbound Omni number and speak the same instructions.
+   Same router, same job state.
+3. **Secondary — WhatsApp (Twilio sandbox).**
+   - The plumber may also message Chinku on WhatsApp (same router, same jobs).
+   - Chinku **sends** messages to clients, approvers and the billing company on WhatsApp when that recipient has
+     joined the sandbox. Otherwise use a **phone call** (any number) or **email** (invoices).
+   - Every outbound message records its channel and delivery status; the dashboard shows it.
+   - The sandbox only reaches numbers that sent the join code. Do not pretend otherwise.
 
-4. How the OpenAI-written prompt reaches OmniDimension (the core mechanism)
+Channel rule: **one router, one job store, many channels.** Channel adapters only convert input/output.
 
-Design: one generic Omni agent + a per-call brief written by OpenAI.
+---
 
-In the OmniDimension dashboard, create one agent: chinku-caller. Its system prompt is the Base Agent Prompt (section 8.1). It contains no task-specific logic — only rules plus placeholders for the brief.
-For every call, OpenAI's Brief Writer (section 8.2) produces a validated CallBrief JSON.
-My code dispatches the call: POST /api/v1/calls/dispatch with agent_id, to_number (E.164, leading +), from_number_id if required, and call_context = the flattened CallBrief (including call_script, the full prompt for this call).
-Omni injects call_context into the agent's prompt → the agent runs this call exactly as briefed.
-Omni's post-call webhook hits POST /webhooks/omni with call id, transcript (and any extracted variables).
-OpenAI's Extractor (section 8.3) turns the transcript into the spec's result schema with evidence quotes.
-The engine advances the task.
+## 4. Stack and ownership (verify what is configured; do not assume)
 
-FIRST-HOUR VERIFICATION (blocking): dispatch one test call to my own phone with a call_context containing call_script = "Say only: Chinku test number 4 7 2, then end the call." Confirm the agent says it.
+| Layer | Owner | Notes |
+|---|---|---|
+| Phone calls (out + in), voice | OmniDimension | One generic outbound agent `chinku-caller` + inbound agent. Per-call brief via `call_context`. |
+| All understanding | OpenAI | Transcribe, vision (part photos, labels), route, write briefs, extract facts, compose replies, TTS |
+| Exactness | **Code** | Arithmetic, totals, availability / slot locking, approval rules, invoice numbering, dedupe |
+| Messages | Twilio WhatsApp sandbox | Secondary channel, client notifications where joined |
+| Email | SMTP (Gmail app password) | Invoice delivery |
+| State + scheduling | AWS (EC2 us-west-2, DynamoDB via instance role, scheduler) | Stable https at the sslip.io address |
+| App + API | FastAPI | Chat app, dashboard, webhooks |
 
-Record the exact placeholder syntax the Omni prompt needs (e.g. {{call_script}}) and the real webhook payload in DECISIONS.md.
-Fallback if context injection does not work: per task, create/update a dedicated Omni agent via the agents API with the full OpenAI-written prompt, then dispatch. Slower and not safe for parallel calls with different scripts → use one agent per call in that case and clean up after. Record whichever we use.
+---
 
-Why this design: one agent = fewer moving parts; new features need zero Omni changes; every call is unique to the conversation; all intelligence stays in code we can test.
+## 5. Domain model (one persistent job ID)
 
-5. Architecture
-WhatsApp (Twilio) ──► POST /webhooks/whatsapp
-                         │  (idempotent on MessageSid)
-                         ▼
-                  perceive  (OpenAI: transcribe voice / read image)
-                         ▼
-                  route     (OpenAI: pick spec + fill inputs, or ask 1 question)
-                         ▼
-                  ENGINE (state machine, runs spec steps) ──► DynamoDB (tasks, steps, calls, contacts, events)
-                   │      │        │         │
-                 call   email   schedule   reply
-                   │      │        │         └─► Twilio send (text / Telugu voice note via OpenAI TTS)
-                   │      │        └─► EventBridge Scheduler ──► POST /internal/fire/{task_id}/{step}
-                   │      └─► Gmail/SMTP (only after user confirms)
-                   └─► brief_writer (OpenAI) ──► Omni dispatch ──► phone rings
-                                                     │
-                       POST /webhooks/omni ◄─────────┘  (idempotent on call_id)
-                                 ▼
-                       extract (OpenAI) ──► decide/compare (OpenAI) ──► next step
-Dashboard: GET /  (FastAPI-served HTML) — tasks, steps, calls, transcripts, evidence quotes, eval results
-Folder structure
-chinku/
-  CLAUDE.md  DECISIONS.md  HONEST_NOTE.md  README.md  .env.example
-  app/
-    main.py                 # FastAPI app, routes only
-    config.py               # env + model names (never hardcode models elsewhere)
-    channels/whatsapp.py    # Twilio in/out, media download, voice-note send
-    voice/omni.py           # dispatch_call(), parse_webhook()  — the ONLY Omni code
-    brain/
-      client.py             # one OpenAI wrapper: retries, timeouts, JSON-schema output, logging
-      perceive.py           # transcribe(), read_image()
-      router.py             # route()
-      brief_writer.py       # write_brief()
-      extractor.py          # extract()
-      decider.py            # decide(), compose_reply()
-      prompts/              # all prompts as .md files, versioned
-      schemas.py            # Pydantic models for every brain input/output
-    engine/
-      runner.py             # runs spec steps, state transitions
-      steps.py              # call | wait_for | email | schedule | reply  (the ONLY step types)
-      specs/*.yaml          # one file per feature
-      validate.py           # phone (+91, 10 digits, starts 6-9), email, required inputs
-    store/dynamo.py         # tables + in-memory fallback for local tests
-    actions/email.py  actions/scheduler.py
-    web/dashboard.html
-  eval/
-    calls/                  # labelled test transcripts + expected JSON
-    run_eval.py             # Chinku extractor vs baseline → eval/results.md
-  tests/                    # pytest: engine, validation, idempotency, spec loading
-6. Task spec format (the only thing that changes per feature)
-yaml
-name: banner_rate
-description: "Photo of a property/ad banner; user wants the real final price"
-route_examples:
-  - "ee banner builder ki call chesi final rate adugu"
-inputs:
-  phone:        {source: image, required: true, validate: indian_mobile}
-  project_name: {source: image}
-  listed_price: {source: image}
-  unit_type:    {source: image_or_text, default: "2BHK"}
-confirm_before: [call]            # engine pauses for user "yes"
-steps:
-  - id: ask_builder
-    type: call
-    to: "{phone}"
-    goal: "Find the final negotiable price for {unit_type} at {project_name}, what is included, and current offers."
-    must_collect: [final_price, negotiable, inclusions, offers, site_visit_slot]
-    language: te-en
-    max_minutes: 3
-    retry_on_no_answer: 1
-  - id: report
-    type: reply
-    template_hint: "Compare listed_price vs final_price; list inclusions; ask if I should book a site visit."
-result_schema:
-  final_price:     {type: number, unit: INR}
-  negotiable:      {type: boolean}
-  inclusions:      {type: list}
-  offers:          {type: string}
-  site_visit_slot: {type: string}
+```
+Job
+  job_id ("J24"), plumber_id, status, created_at
+  issue, site_address, flat, access_notes, photos[]
+  roles:
+    site_contact   (person who gives access)
+    approver       (who may approve extra charges)
+    billing_to     (company/person receiving invoice; email/whatsapp)
+    work_order     ("WO-117", optional)
+  appointment:     {requested_by_client, plumber_available, confirmed_both, slot, state, history[]}
+  parts_needed:    [{part_id, description, brand, model, size, qty, max_unit_price?}]
+  shop_offers:     [Offer]
+  dependencies:    [{type: "part_ready_before_visit", part_id, condition, state}]
+  extra_work:      [ApprovalRequest]
+  invoice:         Invoice
+  timeline:        [Event]   # every fact links to the call/message/approval that produced it
+  next_action:     {what, owner, blocked_by}
 
-Step types (fixed set): call, wait_for (WhatsApp input from a contact, with timeout), email, schedule, reply. A new feature = new YAML + route examples + eval cases. No new Python per feature. If a feature seems to need new Python, the step type is missing — discuss with me first.
+Person: name, phone(E.164), email?, whatsapp_joined: bool, language, roles across jobs
+Offer:  shop, exact_model_quoted, matches_requested: exact|different_model|unknown,
+        stock: usually_stocked|available_now|tomorrow|none, units_available,
+        unit_price, mrp?, tax_included: yes|no|unknown, delivery_charge: number|unknown,
+        condition ("₹300 each if 10+"), condition_met: bool,
+        hold: none|offered|confirmed, hold_until?, pickup_address, earliest_pickup,
+        source_call_id, evidence_quote, checked_at, superseded_by?
+ApprovalRequest: id, scope, amount, reason, sent_to, channel, version,
+        response: approved|rejected|question|pending, responder, responder_is_designated: bool,
+        approved_scope, approved_amount, at, evidence
+Invoice: number, date, lines[{item, qty, unit_rate, amount, source}], labour, tax_config, total,
+        state: draft|awaiting_plumber|approved|sent|delivery_failed|paid, send_attempts[], idempotency_key
+Event:  ts, kind, actor, channel, summary, payload_ref, simulated: bool
+```
 
-7. The brain — OpenAI components
+Keep distinct, never merged: **supplier cost**, **approved customer charge**, **completed work**.
+Keep distinct: **client requested**, **plumber available**, **both confirmed**.
+Keep distinct: **usually stocked**, **available now**, **hold offered**, **reservation confirmed**.
 
-All calls go through brain/client.py: structured JSON output validated by Pydantic, 1 retry on invalid JSON, timeout, and every request/response logged to events (trimmed). Model names come from env: OPENAI_MODEL_BRAIN (best available reasoning+vision model on our credits), OPENAI_MODEL_FAST (routing), OPENAI_MODEL_TRANSCRIBE, OPENAI_MODEL_TTS. Verify availability in hour 1.
+---
 
-Component	Input	Output (schema)
-perceive.transcribe	voice note audio	text + detected language
-perceive.read_image	photo	{image_type: banner/passbook/product/list/other, fields: {...}, confidence, unreadable: [...]}
-router.route	message + recent task + contacts + spec catalog	{spec, inputs, missing, clarifying_question?}
-brief_writer.write_brief	spec step + inputs + contact + prior results	CallBrief (8.2)
-extractor.extract	transcript + must_collect + result_schema	{fields: {name: {value, status, evidence_quote}}, call_outcome, follow_up_needed}
-decider.decide	task state + all results	{next_step, reason} and comparisons (e.g. best quote)
-decider.compose_reply	results + user language	WhatsApp text (Telugu-English, short)
+## 6. Workflow (build one complete job; see section 13 for order)
 
-Deterministic code, not the LLM, does: validation, comparison arithmetic (cheapest total price), state transitions, idempotency, scheduling times. The LLM never computes money totals.
+### 6.1 Create job + contacts
+Input example: "Chinku, call this customer 98xxxxxx21. Kitchen tap repair at Flat 304. I can visit tomorrow
+11–1 or after 4. Send the final invoice to the maintenance company under WO-117."
+- Extract everything known; ask **only** for what the next step needs.
+- Multiple numbers in one message → ask which to call. Multiple open jobs → ask which job before changing anything.
+- One person may hold several roles.
 
-8. Prompts (store in app/brain/prompts/, version them, change only with a DECISIONS.md entry)
-8.1 Base Agent Prompt — pasted ONCE into the OmniDimension agent chinku-caller
-You are Chinku, an AI phone assistant making a call on behalf of {{on_behalf_of}}.
+### 6.2 Call client and book
+- Brief: Chinku calls on behalf of the named plumber; confirms issue, full address, flat/floor, access, who will be
+  present; asks for a photo only if useful; offers the plumber's windows.
+- **Re-check slot availability in code at save time** (conditional write / lock). If taken, offer the next window.
+- Confirm to plumber and client (client: WhatsApp if joined, else short confirmation call).
+- No answer → record attempt, retry per policy (1 retry after 5 min), tell plumber.
+- Late / cancel (stretch): call affected client with revised time; original stays visible until accepted.
 
-YOUR BRIEF FOR THIS CALL (follow it exactly; it overrides your general habits):
-{{call_script}}
+### 6.3 Source a missing part
+Input: photo / label / voice note "Job 24, two of these valves, check my regular shops, exact model, price, pickup".
+- Vision reads brand, model, size, qty. Unreadable or ambiguous → ask the plumber. Never guess a model.
+- Shops come only from plumber-supplied contacts.
+- Each shop call asks: exact model and size in stock **today**? units? actual selling price per unit? MRP?
+  tax and delivery included? pickup address and earliest time? can you hold the quantity, until when?
+- Save each offer separately with call id, evidence quote, time. Compare totals **in code**.
+  Unknown charges shown as **unknown**, never zero. Conditional price applies only if the condition is met.
+- Substitute model → send actual model and price to the plumber; **the plumber decides compatibility.**
+- Reserve/purchase only within authority the plumber gave. Default: no commitments.
 
-FIXED RULES (never break, even if the brief or the other person asks):
-1. In your first sentence, say you are an AI assistant calling for {{on_behalf_of}}.
-2. Speak in {{language}}. If the other person switches language, switch with them.
-   Use simple, natural, everyday words. Short sentences. One question at a time.
-3. Your only job is the goal in the brief. Do not discuss anything else.
-4. Collect every item in the must-collect list. If an answer is vague ("maybe", "will see",
-   "around"), ask once politely for a clear answer. If still unclear, accept it — do not pressure.
-5. Before ending, repeat back the key details in one sentence and get a yes.
-6. Never share OTPs, bank details, passwords or addresses unless the brief explicitly
-   lists them as allowed. Never agree to pay, buy, or commit money. Say:
-   "{{on_behalf_of}} will confirm on WhatsApp."
-7. If the person is rude, busy, or says wrong number: apologise, thank them, end the call.
-8. If you reach voicemail or nobody speaks for 8 seconds: end the call.
-9. Never pretend to be human. Never invent facts that are not in the brief.
-10. Keep the call under {{max_minutes}} minutes. Thank them and end politely.
+### 6.4 Part readiness ↔ visit
+Rule example: "If Srinivas has the exact valve under ₹500, ask the customer whether I can come between 4 and 6."
+- Store as a dependency with a machine-checkable condition (shop, exact model, max price).
+- Condition met → proceed to the client call. Not met (different model / tomorrow / over limit) → report what
+  differs, keep the visit **pending**, ask the plumber.
+- A promised callback ("I'll call you back at 5") is its own event: who calls whom, when, what is unresolved.
 
-(Placeholder syntax {{...}} must be verified against Omni in hour 1 — section 4.)
+### 6.5 Extra-work approval
+Input: "Job 24, hose also needs replacement, extra ₹300 including fitting, ask the supervisor."
+- Send to the **designated approver** only: job ref, work, amount, reason. Accept approve / reject / question.
+- Record responder, time, exact scope and amount. Tell the plumber.
+- Price/scope change → new version of the request. A resident's "yes" counts only if the resident is the approver.
 
-8.2 Brief Writer — OpenAI system prompt → outputs CallBrief
+### 6.6 Closing voice note → invoice
+Input: "Job 24 finished. Fitted two angle valves at ₹350 each and one hose at ₹300. Labour ₹400.
+The third valve was unused and returned. Send the bill to the company."
+- Extract fitted items, qty, rates, labour, adjustments. Returned/unused parts are **excluded**.
+- Reconcile with the job: approvals, quoted parts. Flag discrepancies (e.g. hose ₹300 approved? yes/no).
+- If a spoken total conflicts with line items, read back the difference and ask.
+- Tax only per configured business settings (default: none).
+- Readback: "Job 24: two valves ₹700, hose ₹300, labour ₹400. Total ₹1,400. Send to the maintenance company
+  against WO-117?" — expected total **₹1,400**.
+- Voice corrections supported. After "yes": generate PDF (business details, invoice no., date, recipient, site,
+  job ID, WO, lines, qty, rates, labour, tax, total) → send to billing contact via configured channel.
+- Idempotent send (one invoice number, retries never duplicate). States: draft → awaiting_plumber → approved → sent
+  / delivery_failed → paid (only when the plumber confirms payment).
 
-CallBrief schema:
+---
 
-on_behalf_of: str            # "Hanish"
-callee_name: str | null
-callee_role: str             # "cement dealer", "builder", "my mother", "clinic receptionist"
-language: str                # "Telugu-English mix", "Telugu", "Hindi", "English"
-max_minutes: int
-opening_line: str            # first sentence, includes AI disclosure
-goal: str                    # one sentence
-must_collect: [ {field, question_to_ask, acceptable_answer_example} ]
-context_facts: [str]         # only facts the callee may hear
-do_not_share: [str]
-closing_line: str
-call_script: str             # the full natural-language brief, built from the fields above
+## 7. Accuracy (top priority — how we get it)
 
-System prompt:
+1. **Structured outputs only.** Every OpenAI call returns JSON validated by Pydantic. Invalid → one retry → ask the user.
+2. **Evidence per fact.** Every extracted field carries `value`, `status`
+   (confirmed / tentative / refused / not_mentioned / conflicting) and an exact `evidence_quote`.
+   No quote → not confirmed. Never fill a value without a quote.
+3. **Open questions, not leading ones.** Briefs ask "What is the price per unit?" not "Is it ₹350?".
+   A bare "yes" to a listed question = tentative.
+4. **Numbers.** Normalise spoken Telugu/English/Hindi numbers ("moodu vandala yabhai" = 350, "padhihenu" = 15,
+   "lakh", "per piece" vs "total") with a dedicated normaliser + unit tests. Keep the unit the speaker used.
+   The voice agent repeats numbers exactly as heard and reads back key numbers before ending the call.
+5. **Code owns arithmetic and rules.** Totals, comparisons, conditions, slot conflicts, approval validity, invoice
+   totals — all deterministic Python with tests. The LLM never adds numbers.
+6. **Two-pass for money.** Pass 1: LLM extracts line items. Pass 2: code reconciles against job state
+   (approvals, offers, returned parts) and lists discrepancies. Anything unreconciled → ask the plumber.
+7. **Readback before any consequential action** (book slot, send approval request, send invoice, commit to a shop).
+8. **Model choice.** Best available model for extraction and invoices (`OPENAI_MODEL_BRAIN`); a cheaper model only
+   for routing small talk. Already observed: the cheaper model misread a Telugu number (885 vs 390) — keep it out of
+   extraction.
+9. **Ask, don't guess.** Ambiguous job, number, model or size → one short clarifying question.
+10. **Eval set** (section 11) decides prompt changes. Never tune on the fresh hold-out set.
 
-You write call briefs for Chinku, an AI phone assistant that calls people on behalf of {on_behalf_of}.
-A voice agent will follow your brief live on a phone call. Write so that a polite, sensible caller
-could complete the task in one short call.
+---
 
-Rules:
-- Goal: one clear sentence. Only the goal of THIS step.
-- must_collect: exactly the fields given. For each, write the natural question the caller should
-  ask, in the target language, in everyday words.
-- context_facts: include only what the callee needs (quantity, product, project name, date).
-  Never include private data unless the step lists it as shareable.
-- Tone by callee_role: business (dealer/builder/clinic) = polite, efficient, firm about getting
-  a number. Family (mother/father) = warm, slow, patient, very simple words, repeat key info twice.
-- For family explanations (e.g. passbook), write the explanation itself into the script as
-  short spoken sentences: who paid or withdrew, how much, on which date, current balance.
-  Use round, spoken numbers ("pannendu velu" style if Telugu). Max 6 items, most important first.
-- opening_line must disclose that Chinku is an AI assistant calling for {on_behalf_of}.
-- Never instruct the caller to promise payment, share OTPs, or commit on the user's behalf.
-- call_script: assemble everything into a short brief (under 200 words): who you are calling,
-  why, the opening line, the questions in order, what to confirm back, and the closing line.
-- Output only valid JSON matching the CallBrief schema.
-8.3 Extractor — OpenAI system prompt
-You read a phone-call transcript made by Chinku and fill the result fields.
+## 8. Brain prompts (store in `app/brain/prompts/`, versioned)
 
-For EVERY field return: value, status, evidence_quote.
-- status: "confirmed" (clearly stated and agreed), "tentative" (maybe / will confirm / around /
-  conditional), "refused" (declined to say), "not_mentioned".
-- evidence_quote: the exact words from the transcript that support the value. If none, null
-  and status "not_mentioned". Never guess a value without a quote.
-- Numbers: normalise to digits and INR ("pannendu velu" = 12000, "65 lakhs" = 6500000).
-  Keep the unit the person used (per bag / total / per sq ft) in a separate unit field.
-- call_outcome: completed | no_answer | wrong_number | callback_requested | refused | cut_off.
-- follow_up_needed: true if any must_collect field is tentative, refused or not_mentioned.
-Output only valid JSON matching the given schema.
-8.4 Router — OpenAI system prompt (outline)
+Reuse existing: Base Agent Prompt (Omni), Brief Writer, Extractor, Router, Reply composer. Changes:
+- **Brief Writer:** add caller persona "calling on behalf of plumber {plumber_name}"; role-specific question sets
+  for `client_booking`, `shop_part_check`, `approval_request`, `client_reschedule`; always end with a numeric readback.
+- **Extractor:** add schemas for `Offer`, `BookingResult`, `ApprovalResponse`, `InvoiceDraft`; add `conflicting` status.
+- **Router:** output `{intent, job_ref | "new" | "ambiguous", entities, missing, clarifying_question}`.
+  Intents: create_job, book_visit, source_part, set_dependency, request_approval, approval_response,
+  close_job_invoice, correct_detail, report_delay, cancel, status_query, small_talk.
+- **Reply composer:** plumber-facing, short, Telugu-English by default, lead with the answer, mark tentative items,
+  end with one clear action ("Send cheyyala?").
 
-Given the user message (text/transcript/image JSON), the spec catalog (name, description, route_examples, inputs) and known contacts: choose exactly one spec or none; fill inputs from the message, image and contacts ("mummy" → contact); list missing required inputs; if anything required is missing, write ONE short clarifying question in the user's language. Never invent phone numbers or emails.
+---
 
-8.5 Reply composer (outline)
+## 9. Chinku App — chat-style UI (primary interface)
 
-Short WhatsApp message in the user's language (default Telugu-English). Lead with the answer ("Best rate: Ravi Traders ₹385/bag, delivery tomorrow"). Mark tentative items as "(not confirmed)". End with one clear next action question ("Confirm cheyyala?").
+Goal: feels like WhatsApp/ChatGPT, built for a plumber on a phone with dirty hands.
 
-9. State machine and reliability (non-negotiable)
+**Mobile layout (default):**
+- Top bar: "Chinku" + active job chip ("J24 · Flat 304 · Kitchen tap") → tap to switch jobs.
+- Chat stream: plumber bubbles right, Chinku bubbles left. Chinku bubbles can contain **cards**:
+  - Job card (next action, owner, blocker).
+  - Live call card: "Calling Srinivas Hardware… ringing → on call → reading result" with a simulated/live label.
+  - Shop comparison card: one row per shop — exact model ✓/✗, stock state chip, unit price, total, hold, address;
+    unknown values shown as "unknown"; tap a row → evidence quote.
+  - Approval card: scope, amount, approver, status chip.
+  - Invoice card: lines, total, [Send] [Correct] buttons, PDF preview link.
+- Status chips: **Tentative** (amber), **Confirmed** (green), **Pending/Blocked** (grey), **Failed** (red),
+  **Simulated** (dashed outline). Meaning never by colour alone — always text.
+- Bottom: big **hold-to-talk mic** (primary), text box, 📎 photo/PDF. While recording: waveform + "Release to send".
+  After send: show transcript in the bubble so the plumber can see what Chinku heard; tap to correct.
+- Chinku replies also play as short TTS audio (toggle).
+- Quick actions under the last card: "Yes, send", "Change", "Call again", "Show job".
 
-Task states: planned → awaiting_confirm → running → waiting_input → done | failed | cancelled Call states: queued → dispatched → completed | no_answer | failed
+**Desktop / dispatcher + demo view (`/dashboard`):** three columns — jobs list · chat · job detail
+(appointment, roles, shop offers table, approvals, invoice, **timeline** with links to the call/message/approval
+that produced each fact). When a shop corrects its price, only that cell and the total update (highlight briefly).
 
-Persist after every transition. On restart, resume from DynamoDB.
-Idempotency: dedupe Twilio on MessageSid, Omni on call_id. A duplicate webhook must never trigger a second call.
-Correlation: put task_id and step_id in Omni call_context/metadata so the webhook maps back to the task.
-Timeouts: call webhook not received in 10 min → poll Omni call logs once → mark failed. wait_for has a timeout (default 2 h) → remind once → fail.
-Retries: no answer → 1 retry after 5 min, then report to user.
-Parallel calls (dealer_quotes): dispatch all, aggregate when all are terminal or timed out; report partial results clearly.
-Confirmation gate: new number, email send, or anything on behalf of family → wait for user "yes".
-Validation before acting: E.164 phone (+91, 10 digits, starts 6–9), valid email, required inputs present.
-Corrections: "No, call 98xxx instead" while awaiting_confirm → update input, re-confirm.
-Webhooks return 200 fast; heavy work runs in a background task.
-10. Data model (DynamoDB, on-demand)
-tasks: task_id, user, spec, status, inputs, created_at, updated_at
-steps: task_id, step_id, type, status, output
-calls: call_id, task_id, step_id, to_number, brief (full CallBrief), transcript, extracted, outcome, duration
-contacts: user, alias ("mummy", "ravi traders"), phone, language, relation
-events: task_id, ts, kind, payload (the full audit log — this is the "data persists" proof)
+Tech: keep it simple — server-rendered HTML + small vanilla JS or a single-file React via CDN; SSE or polling for
+live updates; MediaRecorder for audio. Must work on a phone browser over https. Keep the `?key=` protection.
 
-Local dev uses the in-memory store with the same interface.
+---
 
-11. Safety, consent and data rules
-Only call numbers whose owners agreed: my phone, family who agreed, judges/participants who volunteer. The banner demo uses a mock banner with a volunteer's number.
-Every call discloses it is an AI on behalf of Hanish.
-Passbook demo uses my own or a mock passbook. Never store raw bank images longer than the task; store only extracted entries.
-Never request or relay OTPs, card numbers or passwords. Never commit money.
-Mask phone numbers in the dashboard except the last 4 digits.
-12. Evidence of results (what we show judges)
-Extraction accuracy vs baseline. eval/calls/ holds ~20 labelled transcripts from real test calls (friends/family role-playing dealers, builders, clinic, mother), including Telugu-English mix.
-Baseline: one plain prompt "Summarise this call and list the price and details."
-Chinku: the extractor with schema + status + evidence.
-Metrics: field accuracy (main), and wrong-confirmed rate (tentative or missing info reported as confirmed — the companion metric that exposes shortcuts). Report counts, not just %.
-Include a fresh set (5 calls) never used while tuning prompts.
-Near-identical pairs (must be in eval and tests):
-"Delivery tomorrow pakka" vs "Delivery tomorrow, I'll confirm in the evening" → status confirmed vs tentative; price unchanged.
-"₹385 per bag" vs "₹385 per bag, transport extra ₹2000" → same unit price, different total; comparison changes winner.
-Banner number readable vs blurred → call vs ask user to type the number.
-Failure cases exercised: no answer, wrong number, call cut off mid-way, duplicate webhook, mother never sends photo.
-Persistence: restart the server mid-task → dashboard still shows the task and it resumes.
-Live: judge's phone is the dealer/builder; any price they say appears with its quote.
+## 10. Reliability rules (keep existing, add these)
 
-eval/results.md is generated by run_eval.py — never hand-edit numbers.
+- Idempotency on Twilio `MessageSid`, Omni `call_id`, invoice `idempotency_key`. Duplicate or out-of-order webhooks
+  must not double-book, double-approve or double-send.
+- Slot booking uses a conditional write so two clients cannot take one slot.
+- State persists in DynamoDB; restart mid-job → resumes.
+- Every outbound action logs channel + status; failures retry with backoff and are reported to the plumber.
+- Confirmation gate before: calling a new number, sending approval request, booking, sending invoice, any commitment.
+- Any error → Chinku tells the plumber in plain words; never silence.
 
-13. Checkpoints (IST)
-By	Evidence we must have
-Sat 1:00 PM	Engine: WhatsApp in → route → brief → Omni call to my phone → webhook → extract → WhatsApp reply. Omni variable injection verified.
-Sat 4:00 PM	F1 dealer_quotes (parallel, compare) + F2 banner_rate working end to end
-Sat 6:00 PM	F3 warranty_email (with confirm)
-Sat 9:00 PM	F4 passbook_explain (call → wait_for photo → callback + Telugu voice note)
-Sun 12:00 AM	F5 appointment + EventBridge reminder
-Sun 4:00 AM	Eval set recorded, baseline vs Chinku results generated, failure cases exercised
-Sun 9:00 AM	Someone used it without coaching; first obstacle fixed; dashboard polished
-Sun 12:00 PM	README, HONEST_NOTE, demo rehearsed (90 s + fallback recording), pushed to GitHub
-Sun 2:00 PM	Code freeze. Submit.
+---
 
-If time slips, cut in this order: F5 → F3 → F4. Never cut: engine, F1, F2, eval, honest note.
+## 11. Evidence for judges
 
-14. HONEST_NOTE.md (keep current)
-Component	Status
-Orchestration engine, specs, state machine, dashboard, eval harness	BUILT by me
-Brain prompts, schemas, router/brief/extractor/decider logic	BUILT by me (on OpenAI models)
-Phone number, voice, live call execution	REUSED — OmniDimension
-WhatsApp transport	REUSED — Twilio sandbox
-Transcription, vision, TTS	REUSED — OpenAI APIs
-Storage, scheduler	REUSED — AWS DynamoDB, EventBridge
-Test calls / mock banner / mock passbook	SIMULATED inputs, played by consenting people
-15. DECISIONS.md format
-## [time] Decision title
-Observed: ...
-Chose: ...  because ...
-Gave up: ...
-Would change if: ...
-16. Environment variables (.env.example)
-OPENAI_API_KEY=
-OPENAI_MODEL_BRAIN=
-OPENAI_MODEL_FAST=
-OPENAI_MODEL_TRANSCRIBE=
-OPENAI_MODEL_TTS=
-OMNIDIM_API_KEY=
-OMNIDIM_AGENT_ID=
-OMNIDIM_FROM_NUMBER_ID=
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
-AWS_REGION=ap-south-1
-DDB_TABLE_PREFIX=chinku_
-SCHEDULER_ROLE_ARN=
-PUBLIC_BASE_URL=          # ngrok in dev, AWS URL in prod
-SMTP_USER=
-SMTP_APP_PASSWORD=
-USER_NAME=Hanish
-USER_WHATSAPP=
-17. Coding rules
-Python 3.11, FastAPI, Pydantic v2, boto3, httpx. Type hints everywhere.
-Schema first: define the Pydantic model before writing the prompt or the code that uses it.
-All Omni code in voice/omni.py; all OpenAI code via brain/client.py; all Twilio code in channels/whatsapp.py.
-No per-feature if spec == ... logic in the engine. Ever.
-Every external call: timeout, one retry, logged to events.
-Secrets only from env. Never commit .env.
-Tests for: spec loading, validation, state transitions, idempotency, comparison arithmetic. Run pytest before every commit.
-Small commits with clear messages.
-18. Judge questions — keep answers ready (update with real evidence)
-Why this problem? Phone errands are everyday pain for Indian families; summaries don't finish tasks.
-Why this approach? One engine + spec files; OpenAI writes a unique brief per call; deterministic code for money and state.
-What did Hanish build? Engine, brain prompts and schemas, specs, eval harness, dashboard (see HONEST_NOTE).
-Where does it fail? (fill from eval: e.g. heavy-accent Telugu numbers, callers who give ranges)
-What evidence shows it helps? (fill from eval/results.md)
+1. **Accuracy vs baseline** on labelled real call transcripts (shop calls, client bookings, approvals) and
+   closing voice notes:
+   - Baseline: one plain prompt "summarise this call / make an invoice".
+   - Chinku: schema + statuses + evidence + code reconciliation.
+   - Main metric: field accuracy. Companion metric: **wrong-confirmed rate** (tentative/missing reported as
+     confirmed) and **invoice total errors**. Report counts. Keep a fresh hold-out set (≥5) never used for tuning.
+2. **Focused checks (automated tests + at least one live where possible):**
+   - Client requests a slot another booking just took.
+   - Same brand, different model.
+   - Price applies only to a larger quantity.
+   - Stock tomorrow / reservation expired.
+   - Resident says yes but only the supervisor can approve.
+   - Unused part returned; invoice corrected by voice.
+   - Duplicate webhook; invoice send retried (no duplicate).
+3. **Persistence:** restart the server mid-job; the job resumes on the dashboard.
+4. `eval/results.md` is generated by script, never hand-edited.
 
-90-second demo: open in the user's situation (banner photo on WhatsApp) → confirm → judge's phone rings → judge quotes a price → WhatsApp result with evidence quote → dashboard shows the task log → one eval number → one honest limitation.  
+---
+
+## 12. Demo (90 seconds) — protect this
+
+1. Plumber (me) holds the mic: "Chinku, Job 24 ki rendu angle valves kavali, Srinivas and Ravi shops ki call chesi
+   exact model, price, pickup kanukko. Srinivas daggara 500 lopu unte customer ni 4 to 6 adugu."
+2. Judge's phone rings — judge plays Srinivas: "Different model undi, exact one repu vastundi."
+3. Chinku App shows: offer card "Different model · Tomorrow", dependency **not met**, visit **pending**, and asks:
+   "Srinivas has model X, not Y, and exact model only tomorrow. Wait, take X, or check Ravi?"
+4. Plumber: "Ravi ni check chey." → second shop call (or cached simulated, clearly labelled).
+5. Closing voice note → readback "Total ₹1,400 … send?" → "Yes" → PDF invoice delivered; dashboard timeline shows
+   every fact linked to its call/approval.
+6. Close with one measured accuracy number and one honest limitation.
+
+Fallback: a recorded replay of the same run, labelled as a recording.
+
+---
+
+## 13. Build order and checkpoints (IST)
+
+| By | Must be working (observed) |
+|---|---|
+| Sat 9:00 PM | Job model + roles + router intents; create job from voice in Chinku App; job card shows |
+| Sat 11:30 PM | Client booking call with slot re-check and confirmations |
+| Sun 2:00 AM | Part sourcing: 2 shop calls, offers, comparison, different-model/tomorrow handling, dependency rule |
+| Sun 4:00 AM | Extra-work approval with designated-approver rule |
+| Sun 6:00 AM | Closing note → reconciliation → readback → PDF → idempotent send (₹1,400 case passes) |
+| Sun 8:00 AM | Chat UI polish (cards, chips, mic, transcript), dashboard timeline |
+| Sun 10:00 AM | Eval vs baseline generated; focused checks pass; restart test |
+| Sun 12:00 PM | README, HONEST_NOTE, demo rehearsed + fallback recording, pushed + deployed |
+| Sun 2:00 PM | Code freeze |
+
+Cut order if late: delay/reschedule → WhatsApp client notifications (use calls) → second shop live (simulate,
+labelled) → UI polish. **Never cut:** the demo moment, invoice accuracy, evidence, honest note.
+
+Old features (dealer quotes, banner, passbook, appointment, warranty) stay in the repo and keep passing tests, but
+are not in the demo or README headline.
+
+---
+
+## 14. Safety, consent, honesty
+
+- Call only numbers whose owners agreed (me, friends, judges who volunteer). Mock shops and clients for testing.
+- Every call says it is an AI assistant calling for the named plumber.
+- No payments, no purchases, no reservations beyond the plumber's stated authority.
+- Mask phone numbers in the UI except last 4 digits. Keep the chat key out of the repo and submission.
+- HONEST_NOTE: built by me (engine, specs, brain prompts, schemas, reconciliation, UI, eval); reused (OmniDimension,
+  Twilio sandbox, OpenAI, AWS, SMTP); simulated (test shops/clients played by consenting people, mock part photos,
+  any replayed calls); limits (sandbox WhatsApp only reaches joined numbers; Omni plan = 1 concurrent call, so shops
+  are called one after another).
+
+---
+
+## 15. Final report format (when I ask, and at the end)
+
+Run commands · features actually verified (with observed evidence) · test results (counts) · remaining integration
+gaps · 90-second demo script · next 3 actions. Use observed results only.  
