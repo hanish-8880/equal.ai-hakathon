@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chinku Chat</title>
+<style>
+  :root { --bg:#efeae2; --panel:#f0f2f5; --me:#d9fdd3; --bot:#ffffff; --ink:#111b21; --mut:#667781; --acc:#008069; --line:#e9edef; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0b141a; --panel:#202c33; --me:#005c4b; --bot:#202c33; --ink:#e9edef; --mut:#8696a0; --acc:#00a884; --line:#2a3942; } }
+  * { box-sizing:border-box; }
+  body { margin:0; height:100dvh; display:flex; flex-direction:column; background:var(--bg); color:var(--ink);
+         font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  header { background:var(--acc); color:#fff; padding:12px 16px; display:flex; align-items:center; gap:10px; }
+  header b { font-size:17px; } header span { opacity:.85; font-size:13px; }
+  #log { flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:6px; }
+  .msg { max-width:min(80%,560px); padding:7px 10px 18px; border-radius:8px; position:relative; white-space:pre-wrap; word-wrap:break-word;
+         box-shadow:0 1px .5px rgba(0,0,0,.13); }
+  .in { align-self:flex-end; background:var(--me); } .out { align-self:flex-start; background:var(--bot); }
+  .t { position:absolute; right:8px; bottom:3px; font-size:11px; color:var(--mut); }
+  .msg img { max-width:100%; border-radius:6px; display:block; margin-top:6px; }
+  .msg audio { width:100%; margin-top:6px; }
+  .file { display:inline-block; margin-top:6px; padding:8px 10px; border-radius:6px; background:var(--panel); color:var(--acc); text-decoration:none; font-weight:600; }
+  form { display:flex; gap:8px; padding:8px 12px; background:var(--panel); align-items:center; }
+  #text { flex:1; padding:10px 14px; border-radius:20px; border:1px solid var(--line); background:var(--bot); color:var(--ink); font:inherit; min-width:0; }
+  button, label.att { border:0; border-radius:50%; width:42px; height:42px; background:var(--acc); color:#fff; font-size:18px; cursor:pointer; display:grid; place-items:center; flex:none; }
+  label.att { background:transparent; color:var(--mut); font-size:22px; }
+  #fname { font-size:12px; color:var(--mut); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hint { align-self:center; font-size:12px; color:var(--mut); background:var(--panel); padding:4px 10px; border-radius:8px; text-align:center; }
+</style>
+</head>
+<body>
+<header><b>Chinku</b><span>web chat · same engine as WhatsApp · real calls</span></header>
+<div id="log"><div class="hint">Type a task, or attach a photo / PDF. Replies, voice notes and PPTs appear here.</div></div>
+<form id="f">
+  <label class="att" title="Attach photo or PDF">📎<input id="file" type="file" accept="image/*,application/pdf" hidden></label>
+  <span id="fname"></span>
+  <input id="text" placeholder="Message Chinku…" autocomplete="off">
+  <button title="Send">➤</button>
+</form>
+<script>
+const key = new URLSearchParams(location.search).get("key") || "";
+const log = document.getElementById("log"), fileIn = document.getElementById("file"), fname = document.getElementById("fname");
+let since = 0;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function media(url) {
+  if (!url) return "";
+  const u = esc(url), low = url.toLowerCase();
+  if (/\.(png|jpe?g|webp)$/.test(low)) return `<img src="${u}" alt="">`;
+  if (/\.mp3$/.test(low)) return `<audio controls src="${u}"></audio>`;
+  const name = esc(url.split("/").pop());
+  return `<a class="file" href="${u}" target="_blank" rel="noopener">${low.endsWith(".pptx") ? "📊" : "📄"} ${name}</a>`;
+}
+function add(m) {
+  const d = document.createElement("div");
+  d.className = "msg " + (m.dir === "in" ? "in" : "out");
+  const t = new Date(m.ts * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+  d.innerHTML = esc(m.text) + media(m.media_url) + `<span class="t">${t}</span>`;
+  log.appendChild(d);
+}
+async function poll() {
+  try {
+    const r = await fetch(`/api/chat/messages?key=${encodeURIComponent(key)}&since=${since}`);
+    if (r.ok) {
+      const rows = await r.json();
+      const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+      rows.forEach(m => { add(m); since = Math.max(since, m.ts); });
+      if (rows.length && atBottom) log.scrollTop = log.scrollHeight;
+    }
+  } catch (e) {}
+}
+fileIn.onchange = () => { fname.textContent = fileIn.files[0] ? fileIn.files[0].name : ""; };
+document.getElementById("f").onsubmit = async ev => {
+  ev.preventDefault();
+  const text = document.getElementById("text").value.trim();
+  if (!text && !fileIn.files[0]) return;
+  const fd = new FormData();
+  fd.append("key", key); fd.append("text", text);
+  if (fileIn.files[0]) fd.append("file", fileIn.files[0]);
+  document.getElementById("text").value = ""; fileIn.value = ""; fname.textContent = "";
+  await fetch("/api/chat", {method: "POST", body: fd});
+  poll(); log.scrollTop = log.scrollHeight;
+};
+poll().then(() => log.scrollTop = log.scrollHeight);
+setInterval(poll, 2000);
+</script>
+</body>
+</html>

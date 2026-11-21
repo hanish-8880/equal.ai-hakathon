@@ -20,11 +20,32 @@ from app.voice import omni
 app = FastAPI(title="Chinku")
 
 
+# ---------------- delivery: WhatsApp and/or web chat ----------------
+def chat_log(user: str, kind: str, text: str, media_url: str | None = None) -> None:
+    store().add_event(f"chat:{user}", kind, {"text": text, "media_url": media_url})
+
+
+def _web_preferred(user: str) -> bool:
+    c = store().get("contacts", f"chan:{user}")
+    return bool(c and c.get("channel") == "web")
+
+
+def deliver(to: str, text: str, media_url: str | None = None) -> None:
+    """Every message is mirrored into the web chat; WhatsApp only if the user's last message came from WhatsApp."""
+    chat_log(to, "chat_out", text, media_url)
+    if not _web_preferred(to):
+        whatsapp.send(to, text, media_url)
+
+
 def notify(to: str, text: str, audio: bytes | None = None) -> None:
     if audio:
-        whatsapp.send_voice(to, audio, text)  # one message: voice note + caption (saves WhatsApp quota)
+        whatsapp.MEDIA_DIR.mkdir(exist_ok=True)
+        import uuid
+        name = f"{uuid.uuid4().hex}.mp3"
+        (whatsapp.MEDIA_DIR / name).write_bytes(audio)
+        deliver(to, text, f"{settings().public_base_url}/media/{name}")  # one message: voice note + caption
         return
-    whatsapp.send(to, text)
+    deliver(to, text)
 
 
 steps.NOTIFY = notify
@@ -33,7 +54,7 @@ steps.NOTIFY = notify
 def send_file(to: str, data: bytes, filename: str, caption: str) -> None:
     whatsapp.MEDIA_DIR.mkdir(exist_ok=True)
     (whatsapp.MEDIA_DIR / filename).write_bytes(data)
-    whatsapp.send(to, caption, f"{settings().public_base_url}/media/{filename}")
+    deliver(to, caption, f"{settings().public_base_url}/media/{filename}")
 
 
 steps.SEND_FILE = send_file
@@ -64,16 +85,34 @@ EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response></Response>'
 
 
 def reply_to(user: str):
-    return lambda text: whatsapp.send(user, text)
+    return lambda text: deliver(user, text)
+
+
+def set_channel(user: str, channel: str) -> None:
+    store().put("contacts", f"chan:{user}", {"owner": user, "kind": "channel", "channel": channel})
 
 
 def process_whatsapp(msg: dict[str, Any]) -> None:
-    user, text, image = msg["from"], msg["body"], None
-    store().add_event("-", "wa_in", {"from_last4": user[-4:] if user else None, "body": text[:500],
+    user = msg["from"]
+    store().add_event("-", "wa_in", {"from_last4": user[-4:] if user else None, "body": msg["body"][:500],
                                      "media": [m["type"] for m in msg["media"]]})
+    set_channel(user, "whatsapp")
+    chat_log(user, "chat_in", msg["body"] or "(media)")
+    media = []
     try:
         for m in msg["media"]:
-            data = whatsapp.download(m["url"])
+            media.append((whatsapp.download(m["url"]), m["type"]))
+    except Exception as e:  # noqa: BLE001
+        store().add_event("-", "error", {"where": "wa_media", "error": str(e)[:300]})
+    process_message(user, msg["body"], media)
+
+
+def process_message(user: str, text: str, media: list[tuple[bytes, str]]) -> None:
+    """Shared by WhatsApp and the web chat: perceive media, then run the engine."""
+    image = None
+    try:
+        for data, mtype in media:
+            m = {"type": mtype}
             if m["type"].startswith("audio"):
                 tr = perceive.transcribe(data, "voice." + (m["type"].split("/")[-1] or "ogg"))
                 text = f"{text}\n{tr.text}".strip()
@@ -81,14 +120,14 @@ def process_whatsapp(msg: dict[str, Any]) -> None:
             elif m["type"].startswith("image"):
                 image = perceive.read_image(data, m["type"]).model_dump()
                 store().add_event("-", "image_read", image)
-            elif m["type"] == "application/pdf":
+            elif m["type"] == "application/pdf" or m["type"].endswith("/pdf"):
                 image = perceive.read_document(data, "document.pdf").model_dump()
                 store().add_event("-", "document_read", {k: image.get(k) for k in ("doc_type", "title", "stated_total")}
                                   | {"items": len(image.get("line_items", []))})
         runner.handle_message(user, text, image, reply_to(user))
     except Exception as e:  # noqa: BLE001
-        store().add_event("-", "error", {"where": "whatsapp", "error": str(e)[:500]})
-        whatsapp.send(user, "Sorry, oka problem vachindi. Malli try cheyandi.")
+        store().add_event("-", "error", {"where": "message", "error": str(e)[:500]})
+        deliver(user, "Sorry, oka problem vachindi. Malli try cheyandi.")
 
 
 @app.post("/webhooks/whatsapp")
@@ -127,7 +166,7 @@ def process_omni(parsed: dict[str, Any]) -> None:
         if parsed.get("direction") == "inbound" or (inbound_id and parsed.get("bot_id") == inbound_id):
             process_inbound_call(parsed)
             return
-        runner.on_call_result(parsed, lambda user, text: whatsapp.send(user, text))
+        runner.on_call_result(parsed, lambda user, text: deliver(user, text))
     except Exception as e:  # noqa: BLE001
         store().add_event(parsed.get("task_id") or "-", "error", {"where": "omni", "error": str(e)[:500]})
 
@@ -164,6 +203,47 @@ def api_state() -> dict[str, Any]:
 @app.get("/", response_class=HTMLResponse)
 def dashboard() -> str:
     return (Path(__file__).parent / "web" / "dashboard.html").read_text(encoding="utf-8")
+
+
+# ---------------- web chat (fallback channel; same engine, same owner identity) ----------------
+def _chat_ok(key: str | None) -> bool:
+    k = settings().chat_key
+    return bool(k) and key == k
+
+
+@app.get("/chat", response_class=HTMLResponse)
+def chat_page(key: str = "") -> Response:
+    if not _chat_ok(key):
+        return HTMLResponse("Forbidden", status_code=403)
+    return HTMLResponse((Path(__file__).parent / "web" / "chat.html").read_text(encoding="utf-8"))
+
+
+@app.post("/api/chat")
+async def chat_send(request: Request, bg: BackgroundTasks) -> JSONResponse:
+    form = await request.form()
+    if not _chat_ok(form.get("key")):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    owner = settings().user_whatsapp
+    text = (form.get("text") or "").strip()
+    media = []
+    f = form.get("file")
+    if f is not None and getattr(f, "filename", ""):
+        data = await f.read()
+        mtype = f.content_type or ("application/pdf" if f.filename.lower().endswith(".pdf") else "image/jpeg")
+        media.append((data, mtype))
+    set_channel(owner, "web")
+    chat_log(owner, "chat_in", text or f"(file: {getattr(f, 'filename', '')})")
+    bg.add_task(process_message, owner, text, media)
+    return JSONResponse({"ok": True})
+
+
+@app.get("/api/chat/messages")
+def chat_messages(key: str = "", since: float = 0) -> JSONResponse:
+    if not _chat_ok(key):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    owner = settings().user_whatsapp
+    ev = [e for e in store().events(f"chat:{owner}") if e["ts"] > since]
+    return JSONResponse([{"ts": e["ts"], "dir": "in" if e["kind"] == "chat_in" else "out", **e["payload"]} for e in ev])
 
 
 @app.get("/health")

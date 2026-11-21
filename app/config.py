@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     demo_reminder_seconds: int = 0  # >0: schedule steps fire after N s (SIMULATED time, for demo)
     user_name: str = "Hanish"
     user_whatsapp: str = ""
+    chat_key: str = ""  # secret for the /chat web page
     test_phone: str = ""
 
 

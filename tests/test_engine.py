@@ -432,3 +432,23 @@ def test_inbound_task_always_needs_whatsapp_yes(monkeypatch):
     assert t["status"] == "awaiting_confirm" and ran == [] and "Call lo ardham ayyindi" in out[-1] and "boss" in out[-1]
     runner.handle_message("u", "yes", None, out.append)
     assert ran == [1]
+
+
+def test_web_chat_key_and_delivery(monkeypatch):
+    import app.main as m
+    from fastapi.testclient import TestClient
+    monkeypatch.setattr(m.settings(), "chat_key", "k123")
+    monkeypatch.setattr(m.settings(), "user_whatsapp", "whatsapp:+919989683607")
+    wa = []
+    monkeypatch.setattr(m.whatsapp, "send", lambda to, body, media=None: wa.append(body))
+    monkeypatch.setattr(m, "process_message", lambda user, text, media: m.deliver(user, f"echo {text}"))
+    c = TestClient(m.app)
+    assert c.get("/chat?key=wrong").status_code == 403
+    assert c.post("/api/chat", data={"key": "bad", "text": "x"}).status_code == 403
+    assert c.post("/api/chat", data={"key": "k123", "text": "hi"}).status_code == 200
+    rows = c.get("/api/chat/messages?key=k123").json()
+    assert [r["dir"] for r in rows] == ["in", "out"] and rows[1]["text"] == "echo hi"
+    assert wa == []  # last message came from web → no WhatsApp send
+    m.set_channel("whatsapp:+919989683607", "whatsapp")
+    m.deliver("whatsapp:+919989683607", "x")
+    assert wa == ["x"]  # WhatsApp user → mirrored to web AND sent on WhatsApp

@@ -211,3 +211,12 @@ Chose: rule matches on ACTION (choose the spec, ask for missing details; null on
 (default unit "piece"); new generic spec call_and_ask (call given numbers/contacts, questions from the request); router model → gpt-5.5.
 Observed (LIVE): 10/10 routing cases correct incl. both refusals for unsupported (reply to mail, book cab); avg 4.7 s per route.
 Gave up: ~3 s per message vs gpt-5.4-mini. Would change if: latency complaints → few-shot examples on the fast model.
+
+## [Sat 17:40] Twilio sandbox URL keeps flipping back → web chat fallback channel
+Observed: sandbox inbound URL reverts to the old trycloudflare address ~5-15 min after each save (3:45✅→3:59❌, 5:09✅→5:13❌, 5:18❌).
+Checked: no process on the laptop (no python/uvicorn/cloudflared/ngrok); no code in the repo or git history writes Twilio config (Twilio has
+no sandbox-URL API anyway); PUBLIC_BASE_URL = AWS in local + server .env. → Twilio-side behaviour, not ours.
+Chose: /chat web page (secret CHAT_KEY in URL) on the same engine and the SAME owner identity (contacts, pending tasks, confirmations shared).
+Every outgoing message is mirrored into the web chat; WhatsApp is sent only if the owner's last message came from WhatsApp.
+Photos/PDFs upload in the page; voice notes and PPTs render inline. Calls are unchanged (real Omni calls).
+Gave up: nothing on WhatsApp — it still works whenever Twilio routes correctly.
