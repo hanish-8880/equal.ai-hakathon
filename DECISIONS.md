@@ -96,3 +96,15 @@ Chose: EMAIL_DEMO_OVERRIDE=true by default — every mail is delivered to the us
   because sending fake complaints to real companies is not OK. Gave up: proof that the brand receives it.
 Chose: a photo sent alone is remembered 15 min and attached to the next instruction (WhatsApp sends photo and voice note separately).
 Would change if: user wants a real warranty claim sent → set EMAIL_DEMO_OVERRIDE=false for that one task.
+
+## [Sat 14:45] F4 passbook_explain — BUILT, mocked flow tested, brain parts LIVE-tested
+Chose: new generic step type `wait_for` (from / kind / timeout_min / remind_text): task → waiting_input; an image from that phone completes the step;
+remind at timeout/2, fail at timeout (in-process timers — lost on restart, honest limit).
+Chose: reply step may target another contact (`to`) and send a TTS voice note (`voice: true`, Telugu script via gpt-4o-mini-tts).
+Chose: contacts saved by a deterministic command "contact <alias> <phone>" (router then maps "mummy" → phone; router never invents numbers).
+Observed (live): mock passbook (gpt-image-2) → vision read all 6 rows exactly (0.99). Brief for explain call: warm, all entries, spoken numbers, balance repeated.
+Observed: Omni PUT cannot change tts_cartesia_language (stays "en" after 4 payload variants) → Telugu SCRIPT would be unreadable by the phone voice.
+Chose: brief_writer must write all call text in English letters (romanized Telugu). Gave up: native Telugu voice on calls.
+Would change if: Omni dashboard lets us set the agent voice language to Telugu.
+Privacy: raw passbook image is never stored; only extracted entries go into task state.
+Also: removed uvicorn --reload — a reload killed an in-flight WhatsApp request (14:11 voice note lost after transcription).

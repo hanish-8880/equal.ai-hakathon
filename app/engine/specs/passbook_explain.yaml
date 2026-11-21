@@ -1,0 +1,46 @@
+name: passbook_explain
+description: "A family member (e.g. mummy) does not understand her bank passbook; call her, get a photo of the passbook on WhatsApp, then call back and explain it simply in Telugu"
+route_examples:
+  - "Mummy ki passbook ardham kaavatledu, explain chey"
+  - "explain amma's bank passbook to her"
+inputs:
+  person_name:  {source: text, default: "Amma"}
+  person_phone: {source: contacts, required: true, validate: indian_mobile}
+confirm_before: [call]
+steps:
+  - id: ask_photo
+    type: call
+    to: "{inputs.person_phone}"
+    callee: {name: "{inputs.person_name}", role: "my mother"}
+    goal: "Ask {inputs.person_name} to send a clear photo of the latest passbook page on WhatsApp to the Chinku WhatsApp number (the same chat where Hanish talks to Chinku). Tell her Chinku will call back and explain it."
+    must_collect: [agreed_to_send_photo]
+    language: Telugu
+    max_minutes: 2
+    retry_on_no_answer: 1
+  - id: get_photo
+    type: wait_for
+    from: "{inputs.person_phone}"
+    kind: image
+    timeout_min: 120
+    remind_text: "Amma, passbook photo WhatsApp lo pampandi 🙏 — Chinku"
+  - id: explain
+    type: call
+    to: "{inputs.person_phone}"
+    callee: {name: "{inputs.person_name}", role: "my mother"}
+    goal: "Explain the passbook entries to {inputs.person_name} in simple Telugu: who paid or withdrew, how much, which date, and the current balance. Then ask if she has any doubt."
+    must_collect: [understood, doubts]
+    language: Telugu
+    max_minutes: 4
+    retry_on_no_answer: 1
+  - id: voice_note
+    type: reply
+    to: "{inputs.person_phone}"
+    voice: true
+    template_hint: "A warm, slow Telugu voice note for {inputs.person_name} (in Telugu script) repeating the passbook explanation: max 5 entries, most important first, then current balance. Round spoken numbers. Under 60 words."
+  - id: report
+    type: reply
+    template_hint: "Tell Hanish: mummy ki passbook explain chesam — key entries and balance, whether she understood, and any doubts she raised."
+result_schema:
+  agreed_to_send_photo: {type: boolean}
+  understood:           {type: boolean}
+  doubts:               {type: string}

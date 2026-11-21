@@ -217,3 +217,42 @@ def test_photo_alone_remembered_for_next_message(monkeypatch):
     assert seen[1] == {"image_type": "product", "fields": {"brand": "Bajaj"}}
     runner.handle_message("u", "another msg", None, lambda m: None)
     assert seen[2] is None  # used once only
+
+
+def test_passbook_flow_wait_for_photo_then_explain_and_voice(fake, monkeypatch):
+    notes = []
+    monkeypatch.setattr(steps, "NOTIFY", lambda to, text, audio=None: notes.append((to, text, audio)))
+    monkeypatch.setattr(steps.perceive, "tts", lambda text: b"mp3")
+    monkeypatch.setattr(steps.threading, "Timer", lambda d, fn, args: type("T", (), {"start": lambda s: None})())
+    monkeypatch.setattr(steps.decider, "compose_reply", lambda hint, i, res, rank, lang, tid=None: f"[{lang}] {hint[:20]}")
+    seen_brief_prior = []
+    orig_brief = steps.brief_writer.write_brief
+    monkeypatch.setattr(steps.brief_writer, "write_brief", lambda step, inputs, callee, prior, tid=None: seen_brief_prior.append(prior) or orig_brief(step, inputs, callee, prior, tid))
+    monkeypatch.setattr(runner.router, "route", lambda msg, image, catalog, contacts, tid=None: RouteResult(
+        spec="passbook_explain", inputs={"person_name": "Amma", "person_phone": contacts[0]["phone"]}))
+    monkeypatch.setattr(steps.extractor, "extract", lambda tr, must, schema, tid=None: Extraction(
+        call_outcome="completed", follow_up_needed=False,
+        fields=[ExtractedField(name=m, value=True, status="confirmed", evidence_quote="sare") for m in must]))
+    me, amma = "whatsapp:+919000000001", "whatsapp:+919876543210"
+    out = []
+    runner.handle_message(me, "contact mummy 98765 43210", None, out.append)
+    assert "Saved" in out[-1] and store().get("contacts", f"{me}:mummy")["phone"] == "+919876543210"
+    runner.handle_message(me, "Mummy ki passbook ardham kaavatledu, explain chey", None, out.append)
+    runner.handle_message(me, "yes", None, out.append)
+    assert len(fake) == 1 and fake[0][0] == "+919876543210"
+    c1 = store().scan("calls")[0]
+    runner.on_call_result({"call_id": c1["omni_call_id"], "transcript": "user: sare pampista"}, lambda u, m: None)
+    t = store().scan("tasks")[0]
+    assert t["status"] == "waiting_input" and t["steps"]["get_photo"]["status"] == "waiting"
+    # a text from mummy (not an image) does not satisfy the wait; owner's image goes elsewhere
+    assert steps.find_waiting(amma, False) is None
+    runner.handle_message(amma, "", {"image_type": "passbook", "fields": {"entries": [{"date": "01-11", "credit": 12000}]}}, out.append)
+    assert "photo vachindi" in out[-1] and len(fake) == 2  # explain call dispatched
+    assert seen_brief_prior[-1]["get_photo"]["image"]["fields"]["entries"][0]["credit"] == 12000
+    c2 = [c for c in store().scan("calls") if c["step_id"] == "explain"][0]
+    runner.on_call_result({"call_id": c2["omni_call_id"], "transcript": "user: ardham ayyindi"}, lambda u, m: notes.append((u, m, None)))
+    t = store().scan("tasks")[0]
+    assert t["status"] == "done"
+    voice = [n for n in notes if n[2] == b"mp3"]
+    assert len(voice) == 1 and voice[0][0] == amma and "Telugu" in voice[0][1]
+    assert notes[-1][0] == me  # final report to owner

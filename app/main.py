@@ -8,12 +8,21 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 
 from app.brain import perceive
 from app.channels import whatsapp
-from app.engine import runner
+from app.engine import runner, steps
 from app.engine.validate import mask_phone
 from app.store.dynamo import store
 from app.voice import omni
 
 app = FastAPI(title="Chinku")
+
+
+def notify(to: str, text: str, audio: bytes | None = None) -> None:
+    if audio:
+        whatsapp.send_voice(to, audio, "")
+    whatsapp.send(to, text)
+
+
+steps.NOTIFY = notify
 EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response></Response>'
 
 

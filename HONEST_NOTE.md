@@ -9,7 +9,8 @@
 | Dashboard (tasks, calls, briefs, transcripts, evidence) | BUILT — basic |
 | Eval harness | NOT BUILT |
 | Specs: warranty_email | BUILT — LIVE via script (vision, web-search lookup, draft, confirm, Gmail send). Emails are delivered to my own inbox in demo mode (SIMULATED recipient) |
-| passbook_explain, appointment | NOT BUILT |
+| Specs: passbook_explain | BUILT — engine flow tested with mocks; vision + brief LIVE-tested on a mock passbook (fictional bank); live phone run pending |
+| Specs: appointment | NOT BUILT |
 | Phone number, voice, live call execution | REUSED — OmniDimension (one generic agent, per-call brief injected) |
 | WhatsApp transport | REUSED — Twilio sandbox |
 | Transcription, vision, TTS | REUSED — OpenAI APIs |

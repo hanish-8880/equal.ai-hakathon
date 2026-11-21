@@ -5,7 +5,7 @@ import uuid
 from typing import Any
 
 from app.actions import email as email_action
-from app.brain import brief_writer, decider, extractor, lookup
+from app.brain import brief_writer, decider, extractor, lookup, perceive
 from app.config import settings
 from app.engine import validate
 from app.engine.specs_loader import arith, render
@@ -15,6 +15,8 @@ from app.voice import omni
 TERMINAL = {"completed", "no_answer", "failed"}
 RETRY_DELAY_S = 300
 DISPATCH = omni.dispatch_call  # swapped in tests
+# NOTIFY(to_whatsapp, text, mp3_bytes_or_None): message anyone (owner or contact). Set by main.py.
+NOTIFY = lambda to, text, audio=None: store().add_event("-", "notify_unwired", {"to_last4": to[-4:], "text": text[:200]})
 
 
 def call_targets(spec: dict[str, Any], task: dict[str, Any], step: dict[str, Any] | None = None) -> list[dict[str, Any]]:
@@ -174,10 +176,72 @@ def run_reply(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
     results += [{"step": k, "output": out} for k, out in prior.items() if isinstance(out, dict)]
     ranking = rank(results, step["rank_by"], task["inputs"], spec.get("result_schema", {}),
                    step.get("rank_label", "score")) if step.get("rank_by") else None
-    text = decider.compose_reply(step.get("template_hint", ""), task["inputs"], results, ranking,
-                                 task.get("language", "Telugu-English mix"), task["task_id"])
-    send(text)
-    return {"status": "done", "output": {"text": text, "ranking": ranking}}
+    ctx = {"inputs": task["inputs"]}
+    hint = render(step.get("template_hint", ""), ctx)
+    lang = "Telugu (Telugu script)" if step.get("voice") else task.get("language", "Telugu-English mix")
+    text = decider.compose_reply(hint, task["inputs"], results, ranking, lang, task["task_id"])
+    to = render(step["to"], ctx) if step.get("to") else None
+    if to:  # message for someone other than the task owner
+        wa_to = to if to.startswith("whatsapp:") else f"whatsapp:{to}"
+        NOTIFY(wa_to, text, perceive.tts(text) if step.get("voice") else None)
+        store().add_event(task["task_id"], "reply_to_contact", {"to_last4": to[-4:], "voice": bool(step.get("voice"))})
+    else:
+        send(text)
+    return {"status": "done", "output": {"text": text, "ranking": ranking, "to_last4": to[-4:] if to else None}}
+
+
+# ---------------- wait_for ----------------
+def _same_phone(a: str | None, b: str | None) -> bool:
+    return bool(a and b) and validate.indian_mobile(a.replace("whatsapp:", "")) == validate.indian_mobile(b.replace("whatsapp:", ""))
+
+
+def run_wait_for(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+    timeout_s = int(step.get("timeout_min", 120)) * 60
+    frm = render(step["from"], {"inputs": task["inputs"]})
+    state = {"status": "waiting", "from": frm, "kind": step.get("kind", "image"), "deadline": time.time() + timeout_s}
+    threading.Timer(timeout_s / 2, _wait_remind, args=(task["task_id"], step)).start()
+    threading.Timer(timeout_s, _wait_timeout, args=(task["task_id"], step)).start()
+    store().add_event(task["task_id"], "waiting_for", {"from_last4": frm[-4:], "kind": state["kind"]})
+    return state
+
+
+def _wait_state(task_id: str, step_id: str) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    t = store().get("tasks", task_id)
+    return t, (t or {}).get("steps", {}).get(step_id, {})
+
+
+def _wait_remind(task_id: str, step: dict[str, Any]) -> None:
+    t, st = _wait_state(task_id, step["id"])
+    if t and st.get("status") == "waiting" and step.get("remind_text"):
+        NOTIFY(f"whatsapp:{st['from']}", step["remind_text"], None)
+        store().add_event(task_id, "wait_reminded", {})
+
+
+def _wait_timeout(task_id: str, step: dict[str, Any]) -> None:
+    t, st = _wait_state(task_id, step["id"])
+    if t and st.get("status") == "waiting":
+        t["steps"][step["id"]] = {**st, "status": "failed"}
+        t["status"] = "failed"
+        store().put("tasks", task_id, t)
+        store().add_event(task_id, "wait_timeout", {})
+        NOTIFY(t["user"], f"Photo raaledu ({step.get('timeout_min', 120)} min). Task aapesanu — malli try cheyyala?", None)
+
+
+def find_waiting(sender: str, has_image: bool) -> tuple[dict[str, Any], str] | None:
+    """A task waiting for input from this sender (wait_for step)."""
+    for t in store().scan("tasks", status="waiting_input"):
+        for sid, st in t["steps"].items():
+            if st.get("status") == "waiting" and _same_phone(st.get("from"), sender):
+                if st.get("kind") == "image" and not has_image:
+                    continue
+                return t, sid
+    return None
+
+
+def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+    if step["type"] == "wait_for":
+        return run_wait_for(step, spec, task, send)
+    return _run(step, spec, task, send)
 
 
 # ---------------- email ----------------
@@ -212,7 +276,7 @@ def run_email(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
     return new
 
 
-def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+def _run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
     if step["type"] == "call":
         return run_call(step, spec, task)
     if step["type"] == "reply":

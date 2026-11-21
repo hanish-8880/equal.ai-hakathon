@@ -19,6 +19,7 @@ YES = re.compile(r"^\s*(yes|y|ok|okay|avunu|haa|ha|sare|cheyyi|confirm|go|done|�
 NO = re.compile(r"^\s*(no|vaddu|cancel|stop|ledu)\b", re.I)
 OPEN = ("planned", "awaiting_confirm", "running", "waiting_input")
 EMAIL_IN_TEXT = re.compile(r"[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}")
+CONTACT_CMD = re.compile(r"^\s*(?:save\s+)?contact\s+([A-Za-zఀ-౿]+)\s+([+\d][\d\s-]{9,})\s*$", re.I)
 
 
 def now() -> float:
@@ -38,6 +39,28 @@ def open_task(user: str) -> dict[str, Any] | None:
 # ---------------- inbound ----------------
 def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> None:
     """Entry point for every WhatsApp message (already perceived). `send(text)` replies to the user."""
+    m = CONTACT_CMD.match(text or "")
+    if m:
+        phone = VALIDATORS["indian_mobile"](m.group(2))
+        if not phone:
+            send("Number sariga ledu — 10 digits pampandi.")
+            return
+        alias = m.group(1).lower()
+        store().put("contacts", f"{user}:{alias}", {"user": user, "alias": alias, "phone": phone, "relation": alias})
+        send(f"Saved ✅ {alias} ({mask_phone(phone)})")
+        return
+
+    waiting = steps.find_waiting(user, bool(image))
+    if waiting and image:  # a contact sent the input a wait_for step needs
+        task, sid = waiting
+        task["steps"][sid] = {**task["steps"][sid], "status": "done", "output": {"image": image}}
+        task["status"] = "running"
+        save_task(task, "wait_input_received")
+        send("Thank you 🙏 photo vachindi. Konchem sepatlo call chesi explain chestanu.")
+        owner = task["user"]
+        advance(task["task_id"], lambda msg: steps.NOTIFY(owner, msg, None))
+        return
+
     pending = open_task(user)
     if pending and pending["status"] == "awaiting_confirm" and not image:
         gate = next((sid for sid, st in pending["steps"].items() if st.get("status") == "awaiting_confirm"), None)
@@ -189,13 +212,15 @@ def advance(task_id: str, send) -> None:
             task["step_idx"] += 1
             save_task(task)
             continue
-        if state in ("running", "awaiting_confirm"):
-            return  # waiting on webhooks / user
+        if state in ("running", "awaiting_confirm", "waiting"):
+            return  # waiting on webhooks / user / a contact's WhatsApp input
         result = steps.run(step, spec, task, send)
         task = store().get("tasks", task_id)  # step may have written
         task["steps"][step["id"]] = result
         if result["status"] == "awaiting_confirm":
             task["status"] = "awaiting_confirm"
+        if result["status"] == "waiting":
+            task["status"] = "waiting_input"
         save_task(task, f"step_{result['status']}")
         if result["status"] != "done":
             return
