@@ -110,3 +110,16 @@ def test_trip_sorted_by_rating_and_only_real_numbers_callable(monkeypatch):
     assert [h["name"] for h in out["hotels"]] == ["B", "A", "C"]
     assert [h["callable"] for h in out["hotels"]] == [True, True, False]
     assert out["restaurants"][0]["callable"] is False  # landline → shown, but the mobile-only call engine won't dial it
+
+
+def test_quiet_hours_block_unknown_numbers_only(monkeypatch):
+    from app.config import settings
+    from app.chinku import memory
+    monkeypatch.setattr(settings(), "user_whatsapp", ME)
+    assert tools.quiet_hours(datetime(2026, 11, 22, 2, 40, tzinfo=IST)) == "02:40 AM".lstrip("0")
+    assert tools.quiet_hours(datetime(2026, 11, 22, 11, 0, tzinfo=IST)) is None
+    monkeypatch.setattr(tools, "quiet_hours", lambda now=None: "2:40 AM")
+    with pytest.raises(tools.ToolError, match="too late"):
+        tools.call(ME, {"targets": [{"name": "Ushodaya Resort", "phone": "+919441196111"}], "purpose": "book"}, ctx())
+    memory.remember(ME, "Ravi phone", "98480 22222", "contact")
+    assert "+919848022222" in tools.known_numbers(ME) and "+919989683607" in tools.known_numbers(ME)

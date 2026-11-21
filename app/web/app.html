@@ -125,6 +125,12 @@ h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(-
 .lang { min-height:76px; border-radius:18px; border:1.5px solid var(--line); background:var(--card); text-align:left; padding:12px 14px; }
 .lang b { display:block; font-size:19px; } .lang span { color:var(--ink2); font-size:13px; }
 .lang.on { border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-l); }
+body.talk { font-size:19px; }
+body.talk .bub { font-size:19px; } body.talk .btn, body.talk .chip { min-height:56px; font-size:18px; }
+body.talk .ask h1 { font-size:34px; } body.talk .bigmic { width:104px; height:104px; } body.talk .bigmic svg { width:44px; height:44px; }
+body.talk .mic, body.talk .send, body.talk .clip { width:60px; height:60px; } body.talk #chattext { font-size:18px; }
+body.talk #quick .btn { min-width:120px; font-size:20px; }
+#talkbtn.on { background:var(--blue); color:#fff !important; }
 .seg { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:5px; }
 .seg button { min-height:44px; border:0; border-radius:12px; background:transparent; font-weight:700; font-size:14.5px; color:var(--ink2); }
 .seg button.on { background:var(--blue); color:#fff; }
@@ -152,7 +158,7 @@ h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(-
     <div class="askrow">
       <button class="bigmic" id="bigmic" aria-label="Hold to talk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
       <div class="askside">
-        <div class="pill" id="holdhint" aria-hidden="true"><span data-i18n>Hold the blue button and talk</span></div>
+        <div class="pill" id="holdhint" aria-hidden="true"><span data-i18n>Tap the blue button and talk</span></div>
         <label class="pill" style="cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="12" cy="12" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg><span data-i18n>Add photo</span>
           <input type="file" id="homefile" accept="image/*,application/pdf" multiple hidden></label>
       </div>
@@ -164,6 +170,7 @@ h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(-
     </form>
     <div class="recbar hidden" id="homerec" aria-live="assertive"><span>●</span><span id="homerectime">0:00</span><canvas id="homewave"></canvas><span data-i18n>Release to send</span></div>
   </section>
+  <div class="chips"><button class="chip" id="talkbtn" aria-pressed="false" style="border-color:var(--blue);color:var(--blue)">🎙️ Talk mode</button></div>
   <div class="chips" id="examples" aria-label="Examples"></div>
   <div id="needs"></div>
   <div id="active"></div>
@@ -226,7 +233,7 @@ let LANG = ls.get("chinku_lang") || "en";
 const I = {
   "What do you need?": ["మీకు ఏం కావాలి?", "आपको क्या चाहिए?", "Meeku em kavali?"],
   "Type or speak in your language — or show a photo.": ["మీ భాషలో టైప్ చేయండి లేదా మాట్లాడండి — లేదా ఫోటో చూపించండి.", "अपनी भाषा में लिखें या बोलें — या फ़ोटो दिखाएँ।", "Mee language lo type cheyyandi leda matladandi — leda photo chupinchandi."],
-  "Hold the blue button and talk": ["నీలి బటన్ నొక్కి పట్టి మాట్లాడండి", "नीला बटन दबाकर बोलिए", "Blue button nokki patti matladandi"],
+  "Tap the blue button and talk": ["నీలి బటన్ నొక్కి మాట్లాడండి", "नीला बटन दबाकर बोलिए", "Blue button nokki matladandi"],
   "Add photo": ["ఫోటో జోడించండి", "फ़ोटो जोड़ें", "Photo add cheyyandi"],
   "e.g. Email me a copy of this": ["ఉదా: దీని కాపీ నాకు ఇమెయిల్ చేయి", "जैसे: इसकी कॉपी मुझे ईमेल करो", "eg: Idi naaku email cheyyi"],
   "Release to send": ["వదిలితే పంపుతాను", "छोड़ें तो भेजूँ", "Vadilithe pamputha"],
@@ -284,6 +291,9 @@ const I = {
   "Add to Swiggy cart": ["Swiggy కార్ట్‌లో వేయి", "Swiggy कार्ट में डालो", "Swiggy cart lo veyyi"], "Added to your Swiggy cart": ["మీ Swiggy కార్ట్‌లో వేశాను", "आपकी Swiggy कार्ट में डाल दिया", "Mee Swiggy cart lo vesanu"],
   "To pay": ["చెల్లించాల్సింది", "देना है", "To pay"], "Open Swiggy to pay": ["చెల్లించడానికి Swiggy తెరువు", "भुगतान के लिए Swiggy खोलें", "Pay cheyyadaniki Swiggy open cheyyi"],
   "Chinku never checks out or pays.": ["Chinku ఎప్పుడూ ఆర్డర్ చేయదు, డబ్బు చెల్లించదు.", "Chinku कभी ऑर्डर या भुगतान नहीं करता।", "Chinku eppudu order cheyadu, pay cheyadu."],
+  "Talk mode": ["మాట్లాడే మోడ్", "बोलने वाला मोड", "Talk mode"], "Talk mode: on": ["మాట్లాడే మోడ్: ఆన్", "बोलने वाला मोड: चालू", "Talk mode: on"],
+  "Tap the mic and speak": ["మైక్ నొక్కి మాట్లాడండి", "माइक दबाकर बोलिए", "Mic nokki matladandi"],
+  "I didn't hear anything — tap and speak": ["నాకు ఏమీ వినిపించలేదు — నొక్కి మాట్లాడండి", "मुझे कुछ सुनाई नहीं दिया — दबाकर बोलिए", "Emi vinipinchaledu — nokki matladandi"],
   "Recommended": ["సిఫార్సు", "सुझाव", "Recommended"], "Why": ["ఎందుకు", "क्यों", "Enduku"], "Open booking link": ["బుకింగ్ లింక్ తెరువు", "बुकिंग लिंक खोलें", "Booking link open cheyyi"],
   "See all": ["అన్నీ చూడు", "सभी देखें", "Anni chudu"], "Checked": ["చూశాను", "जाँचे", "Check chesa"], "Not shown": ["చూపలేదు", "नहीं दिखाए", "Chupaledu"],
   "options": ["ఎంపికలు", "विकल्प", "options"], "unknown": ["తెలియదు", "पता नहीं", "teliyadu"], "Demo data": ["డెమో డేటా", "डेमो डेटा", "Demo data"],
@@ -526,7 +536,8 @@ function schedChat(ms) { clearTimeout(ctimer); ctimer = setTimeout(pollChat, ms)
 async function pollChat() {
   try { const r = await api(`/api/chat/messages?since=${since}`); if (r.ok) { const rows = await r.json(); const near = (document.body.scrollHeight - window.scrollY - innerHeight) < 260 || first; let last = null;
       for (const m of rows) { since = Math.max(since, m.ts); hideTyping(); $("thread").appendChild(row(m)); if (m.dir === "out") last = m; }
-      if (last) { waiting = false; setQuick(last); loadHome(); } else if (waiting) showTyping(L("Thinking…"));
+      if (last) { waiting = false; setQuick(last); loadHome();
+        if (talk && !first && last.text && last.text.trim()) { const lb = [...document.querySelectorAll("[data-listen]")].pop(); if (lb) listen(last.text, lb); } } else if (waiting) showTyping(L("Thinking…"));
       if (rows.length && near) setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 30); first = false; } } catch (e) {}
   schedChat(waiting ? 900 : (!$("chat").classList.contains("hidden") ? 2500 : 7000));
 }
@@ -536,33 +547,55 @@ $("newchat").onclick = async () => { if (!confirm(L("Start a new conversation? Y
 /* ---------- voice: hold to talk (both mics) ---------- */
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 function holdToTalk(btn, bar, timeEl, canvas, onBefore) {
+  /* J10: TAP to talk (stops by itself after ~1.5 s of silence, or on a second tap) — or press and HOLD, release to send. */
   let rec = null, chunks = [], stream = null, t0 = 0, tick = null, maxT = null, raf = null, actx = null;
-  async function start(e) { e.preventDefault(); if (!navigator.mediaDevices || !window.MediaRecorder) { toast(L("Allow the microphone to talk")); return; }
-    try { stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); } catch (err) { toast(L("Allow the microphone to talk")); return; }
+  let pressAt = 0, tapMode = false, spoke = false, lastVoice = 0, busy = false;
+  async function start() { if (busy) return; busy = true;
+    if (!navigator.mediaDevices || !window.MediaRecorder) { busy = false; toast(L("Allow the microphone to talk")); return; }
+    try { stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}); } catch (err) { busy = false; toast(L("Allow the microphone to talk")); return; }
+    if (audio) { try { audio.pause(); } catch (e) {} }
     const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
     rec = new MediaRecorder(stream, mime ? {mimeType: mime} : undefined); chunks = []; rec.ondataavailable = ev => ev.data.size && chunks.push(ev.data); rec.onstop = stop2;
-    rec.start(250); t0 = Date.now(); vib(20); btn.classList.add("rec"); bar.classList.remove("hidden");
+    rec.start(250); t0 = Date.now(); spoke = false; lastVoice = Date.now(); vib(20); btn.classList.add("rec"); bar.classList.remove("hidden");
     tick = setInterval(() => timeEl.textContent = fmt((Date.now() - t0) / 1000), 200); maxT = setTimeout(end, 90000); wave(); }
   function wave() { try { actx = new (window.AudioContext || window.webkitAudioContext)(); const an = actx.createAnalyser(); an.fftSize = 256; actx.createMediaStreamSource(stream).connect(an);
     const g = canvas.getContext("2d"), d = new Uint8Array(an.frequencyBinCount), bars = [];
     const loop = () => { const w = canvas.clientWidth, h = canvas.clientHeight, r = devicePixelRatio || 1; if (canvas.width !== w * r) { canvas.width = w * r; canvas.height = h * r; }
-      an.getByteTimeDomainData(d); let pk = 0; for (const v of d) pk = Math.max(pk, Math.abs(v - 128)); bars.push(Math.min(1, pk / 64)); while (bars.length > Math.floor(w / 5)) bars.shift();
+      an.getByteTimeDomainData(d); let pk = 0; for (const v of d) pk = Math.max(pk, Math.abs(v - 128));
+      if (pk > 9) { spoke = true; lastVoice = Date.now(); }
+      if (tapMode && spoke && Date.now() - lastVoice > 1500) { end(); return; }          // silence after speech → send
+      if (tapMode && !spoke && Date.now() - t0 > 8000) { cancelled = true; end(); return; } // nothing said for 8 s
+      bars.push(Math.min(1, pk / 64)); while (bars.length > Math.floor(w / 5)) bars.shift();
       g.clearRect(0, 0, canvas.width, canvas.height); g.fillStyle = "#C2362B"; bars.forEach((b, i) => { const bh = Math.max(2, b * h) * r; g.fillRect(i * 5 * r, (h * r - bh) / 2, 3 * r, bh); });
       raf = requestAnimationFrame(loop); }; loop(); } catch (e) {} }
-  function end(e) { if (e) e.preventDefault(); if (rec && rec.state === "recording") rec.stop(); }
+  let cancelled = false;
+  function end() { if (rec && rec.state === "recording") rec.stop(); }
   function stop2() { clearInterval(tick); clearTimeout(maxT); cancelAnimationFrame(raf); try { actx && actx.close(); } catch (e) {} stream && stream.getTracks().forEach(t => t.stop());
-    btn.classList.remove("rec"); bar.classList.add("hidden"); timeEl.textContent = "0:00"; const secs = (Date.now() - t0) / 1000; vib(15);
-    if (secs < 0.7) { toast(L("Hold the button and speak")); return; }
-    const type = rec.mimeType || "audio/webm"; onBefore && onBefore(); sendMsg("", [], new File([new Blob(chunks, {type})], `voice.${type.includes("mp4") ? "m4a" : "webm"}`, {type})); }
-  btn.addEventListener("pointerdown", e => { btn.setPointerCapture && btn.setPointerCapture(e.pointerId); start(e); });
-  btn.addEventListener("pointerup", end); btn.addEventListener("pointercancel", end); btn.addEventListener("contextmenu", e => e.preventDefault());
+    btn.classList.remove("rec"); bar.classList.add("hidden"); timeEl.textContent = "0:00"; busy = false; tapMode = false; const secs = (Date.now() - t0) / 1000; vib(15);
+    if (cancelled) { cancelled = false; toast(L("I didn't hear anything — tap and speak")); return; }
+    if (secs < 0.7) { toast(L("Tap the mic and speak")); return; }
+    const type = rec.mimeType || "audio/webm"; onBefore && onBefore(); voiceUsed();
+    sendMsg("", [], new File([new Blob(chunks, {type})], `voice.${type.includes("mp4") ? "m4a" : "webm"}`, {type})); }
+  btn.addEventListener("pointerdown", e => { e.preventDefault(); btn.setPointerCapture && btn.setPointerCapture(e.pointerId);
+    if (rec && rec.state === "recording") { end(); return; }                // second tap → send now
+    pressAt = Date.now(); start(); });
+  btn.addEventListener("pointerup", e => { e.preventDefault(); if (!rec || rec.state !== "recording") { if (Date.now() - pressAt < 450) tapMode = true; return; }
+    if (Date.now() - pressAt < 450) { tapMode = true; return; }             // quick tap → keep listening until silence
+    if (!tapMode) end(); });                                                // long press released → send
+  btn.addEventListener("pointercancel", () => { if (!tapMode) end(); }); btn.addEventListener("contextmenu", e => e.preventDefault());
 }
+/* ---------- J10 Talk mode: bigger UI, replies spoken aloud automatically ---------- */
+let talk = ls.get("chinku_talk") === "1";
+function setTalk(on) { talk = !!on; ls.set("chinku_talk", talk ? "1" : "0"); document.body.classList.toggle("talk", talk);
+  const b = $("talkbtn"); if (b) { b.classList.toggle("on", talk); b.setAttribute("aria-pressed", talk); b.textContent = "🎙️ " + L(talk ? "Talk mode: on" : "Talk mode"); } }
+function voiceUsed() { if (ls.get("chinku_talk") === null) setTalk(true); }       // first message by voice → talk mode on by itself
 holdToTalk($("bigmic"), $("homerec"), $("homerectime"), $("homewave"), () => show("chat"));
 holdToTalk($("chatmic"), $("chatrec"), $("chatrectime"), $("chatwave"));
 
 /* ---------- start ---------- */
 (async () => {
-  applyStatic(); renderExamples(); renderSeg(); syncHome(); syncChat();
+  applyStatic(); renderExamples(); renderSeg(); syncHome(); syncChat(); setTalk(talk);
+  $("talkbtn").onclick = () => { setTalk(!talk); toast(L(talk ? "Talk mode: on" : "Talk mode")); };
   const start = (location.hash || "#home").slice(1); show(start === "chat" ? "chat" : "home");
   try { const r = await api("/api/me"); if (r.status === 403) { toast("Wrong or missing key in the link"); return; }
     const me = await r.json(); const ql = new URLSearchParams(location.search).get("lang"); if (ql || me.language) setLang(ql || me.language);

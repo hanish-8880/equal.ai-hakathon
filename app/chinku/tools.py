@@ -364,6 +364,35 @@ def reply(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, A
     return {"text": inputs.get("text")}
 
 
+def quiet_hours(now: datetime | None = None) -> str | None:
+    """21:00–08:00 IST: no calls to numbers the user hasn't saved (CLAUDE.md §10: call only people who agreed)."""
+    now = now or datetime.now(IST)
+    return now.strftime("%I:%M %p").lstrip("0") if (now.hour >= 21 or now.hour < 8) else None
+
+
+def known_numbers(user: str) -> set[str]:
+    """Numbers the user saved in memory (family, friends, volunteers who agreed) + the user's own phone."""
+    from app.engine.validate import indian_mobile
+    out = {indian_mobile(settings().user_whatsapp.replace("whatsapp:", ""))}
+    for r in memory.recall(user):
+        for m in re.findall(r"(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}", str(r["value"])):
+            out.add(indian_mobile(m))
+    return {x for x in out if x}
+
+
+def check_call_hours(user: str, targets: list[dict[str, Any]]) -> None:
+    from app.engine.validate import indian_mobile
+    late = quiet_hours()
+    if not late:
+        return
+    known = known_numbers(user)
+    strangers = [t for t in targets if indian_mobile(str(t.get("phone") or "")) not in known]
+    if strangers:
+        names = ", ".join(str(t.get("label") or t.get("name") or t.get("phone")) for t in strangers)
+        raise ToolError(f"It's {late} — too late to call {names} (businesses and people who haven't agreed to calls). "
+                        f"Say “call them at 10 AM” and I'll set a reminder, or save their number first if they agreed.")
+
+
 # ---------------- call (reuses the proven call engine) ----------------
 def call(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
     from app.engine import runner
@@ -376,6 +405,7 @@ def call(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, An
         targets.append({"label": t.get("name") or "the person", "phone": ph, "role": t.get("role") or "contact"})
     if not targets:
         raise ToolError("Whom should I call? I need a phone number.")
+    check_call_hours(user, targets)
     qs = [{"field": re.sub(r"[^a-z0-9]+", "_", (q if isinstance(q, str) else q.get("question", "")).lower())[:40] or f"q{i}",
            "question": q if isinstance(q, str) else q.get("question")} for i, q in enumerate(inputs.get("questions") or [])]
     lang = inputs.get("language") or "English"

@@ -140,6 +140,14 @@ def run(t: Task, send: Send, card: Card) -> Task:
             save(t)
             continue
         needs = s.needs_approval or s.tool in tools.ALWAYS_APPROVE or (s.tool == "remind" and bool(inputs.get("call_phone")))
+        if needs and not st.output.get("approved") and s.tool == "call":  # never ask approval for a call that would be refused
+            try:
+                tools.check_call_hours(t.user, [x for x in inputs.get("targets") or [] if isinstance(x, dict)])
+            except tools.ToolError as e:
+                st.status, st.error = "failed", str(e)
+                send(f"🌙 {e}")
+                save(t)
+                continue
         if needs and not st.output.get("approved"):
             st.status, st.preview = "waiting", _preview(s.tool, inputs)
             t.status = "waiting"
