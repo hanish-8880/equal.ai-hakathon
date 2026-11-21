@@ -137,7 +137,10 @@ def _():
         assistant.handle(U, "yes", None, out.append)
     assert dispatched, f"no booking call dispatched; last reply: {out[-1] if out else cards[-1][0]}"
     w2 = job.appointment.plumber_available[1]
-    call = [c for c in store().scan("calls", status="dispatched") if c["to_number"] == "+919848012321"][-1]
+    def my_call(spec_name):  # the dispatched call of THIS run's task (never an older run's call to the same number)
+        tids = {t["task_id"] for t in store().scan("tasks", user=U) if t["spec"] == spec_name}
+        return [c for c in store().scan("calls", status="dispatched") if c["task_id"] in tids][-1]
+    call = my_call("book_visit")
     runner.on_call_result({"call_id": call["omni_call_id"], "transcript":
         f"assistant: Which time suits you, 11 to 1 or 4 to 7 {tomorrow}?\nuser: 4 to 7 is fine. Flat 304, third floor, watchman will open."
         f"\nassistant: So {tomorrow} 4 to 7, Flat 304, watchman opens — right?\nuser: Yes."}, lambda u, m: out.append(m))
@@ -147,7 +150,7 @@ def _():
     # 3) parts with the plumber's rule (real part extraction; simulated shop answer: different model, tomorrow)
     r = sourcing.start_sourcing(U, job, f"{job.job_id} ki rendu Jaquar angle valves ALD-0517 half inch kavali. Srinivas ki call chesi price kanukko. "
                                         "Srinivas daggara 500 lopu exact model unte customer ni 4 to 6 adugu.", None, out.append)
-    shop_call = [c for c in store().scan("calls", status="dispatched") if c["to_number"] == "+919000000001"][-1]
+    shop_call = my_call("part_sourcing")
     runner.on_call_result({"call_id": shop_call["omni_call_id"], "transcript":
         "assistant: Do you have Jaquar ALD-0517 half inch, 2 pieces, today?\nuser: Exact one comes tomorrow. Today I have ALD-0520.\n"
         "assistant: Price per piece?\nuser: 280 for the 0520. MRP 350.\nassistant: Pickup?\nuser: Kondapur main road shop, from 10 am."}, lambda u, m: out.append(m))
