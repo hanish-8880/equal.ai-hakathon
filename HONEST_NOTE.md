@@ -28,6 +28,7 @@ OpenStreetMap + Leaflet, Twilio WhatsApp sandbox (optional, not in the demo).
 | J11 trip planner (itinerary + rated hotels/restaurants → pick → calls) | **LIVE** search/ranking; the hotel calls NOT yet run (real hotels are only called with consent, never at night) |
 | J5 "Connect me now" live transfer | NOT BUILT — fallback "Talk to them now" one-tap call card |
 | Toll-free / landline calling (complaints) | Built + tested in code (number kinds, night rule exempts 1800 helplines). Live: Bajaj's official number is a landline → correctly not called at 1 AM. Real helpline call NOT yet made; IVR keypad menus are a known limit |
+| Chinku App — ChatGPT-style chat; approvals (Call now / Send / Add to cart / Book table) are buttons in the chat; drawer for Needs you, reminders, recent work, memory | **LIVE** at /app?key=… (screenshots checked at 390×844); voice mic NOT yet tested on a real phone |
 | J6 language bridge | Kannada + Tamil enabled on the voice agent (settings read back); a Kannada call is NOT yet verified |
 | J8 group ask | NOT BUILT (the call engine can call several people one after another) |
 | Languages (UI + every message in te / hi / te-en) | **LIVE** — translation that changes a number is rejected → English shown |
