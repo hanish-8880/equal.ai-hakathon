@@ -129,7 +129,10 @@ def _():
     assert em.get("to") and "@" in em["to"], em
     answer(False)
     out, cards = run("call them")
-    cp = next(c for c in cards if c.get("type") == "call_plan")
+    cp = next((c for c in cards if c.get("type") == "call_plan"), None)
+    if cp is None:  # a mobile/landline support number at night: the night rule must block it BEFORE approval
+        assert any("too late to call" in o for o in out), out
+        return f"{sup['email']} · {sup['phone']} · email to {em['to']} (declined) · call blocked by the night rule (correct)"
     answer(False)
     return f"{sup['email']} · {sup['phone']} · email to {em['to']} · call card {(cp.get('targets') or [{}])[0].get('phone')} · both declined"
 
