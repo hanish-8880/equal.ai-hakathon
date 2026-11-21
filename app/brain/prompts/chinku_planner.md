@@ -48,6 +48,14 @@ J3 complaint (broken product photo / problem screenshot / "raise a complaint"): 
   problem, model, what they want (repair/replace/refund), ask for a ticket number, attach: true} → send_email (approval).
   If the user says "call them" instead: call {targets: [{name: "<brand> support", phone: "{s2.phone}"}], questions:
   ["What is the complaint/ticket number?", "When will it be fixed or when will you call back?"]}.
+  FOLLOW-UP AFTER find_support (latest_result == "find_support", or the conversation just showed a support contact):
+  "mail them" / "email them" / "send the complaint" / "complain by mail" → draft_email {to: "{last.find_support.email}",
+  mode: write, purpose: complaint — brand, product/model and problem from the conversation, ask for a ticket number}
+  → send_email (approval). "call them" / "call the helpline" → call {targets: [{name: "<brand> customer care", phone:
+  "{last.find_support.phone}"}], purpose: register a complaint, questions: ["What is the complaint / ticket number?",
+  "When will a technician visit or call back?"]}. "both" → the email steps and the call. NEVER ask "who?" or "which
+  draft?" here — "them" is the support contact just found. If that contact has no email (or no phone), say so in
+  cannot_do and offer the other one.
   If the user tells you a promise ("they said callback by 4 PM") → promise. "follow up in N minutes (demo)" → demo_minutes.
 J2 appointment ("book a dermatologist for Mummy tomorrow evening near Kukatpally"): search {query: "<specialist> clinic
   or hospital near <area> Hyderabad with phone number"} → map {items: "{s1.items}"} and STOP (the user picks one).

@@ -19,12 +19,21 @@ def conversation(user: str, n: int = 12) -> list[dict[str, str]]:
 
 
 def last_outputs(user: str) -> dict[str, Any]:
+    """Earlier results, NEWEST FIRST (so "mail them" / "call them" means the latest one)."""
     d = store().get("contacts", f"ilast:{user}") or {}
+    outs = d.get("outputs") or {}
+    order = [n for n in d.get("recent") or [] if n in outs] + [n for n in outs if n not in (d.get("recent") or [])]
     out = {}
-    for k, v in (d.get("outputs") or {}).items():
-        s = json.dumps(v, ensure_ascii=False)
-        out[k] = s[:300] + ("…" if len(s) > 300 else "")
+    for i, k in enumerate(order):
+        s = json.dumps(outs[k], ensure_ascii=False)
+        lim = 700 if i < 2 else 300
+        out[k] = s[:lim] + ("…" if len(s) > lim else "")
     return out
+
+
+def latest(user: str) -> str | None:
+    d = store().get("contacts", f"ilast:{user}") or {}
+    return next(iter(d.get("recent") or []), None)
 
 
 def active(user: str) -> list[dict[str, Any]]:
@@ -42,7 +51,7 @@ def plan(user: str, request: str, attachments: list[dict[str, Any]], analysis: d
         "request": request or "(no instruction — only an attachment)",
         "attachments": [{"id": a["id"], "type": "pdf" if a["mime"].endswith("pdf") else "photo", "name": a["name"]} for a in attachments],
         "attachment_analysis": analysis, "memory": memory.recall(user), "conversation": conversation(user),
-        "last_outputs": last_outputs(user), "active_tasks": active(user),
+        "last_outputs": last_outputs(user), "latest_result": latest(user), "active_tasks": active(user),
     }
     sysmsg = prompt("chinku_planner").replace("{user_name}", s.user_name).replace("{language}", lang)
     p = json_call(s.openai_model_brain, sysmsg, json.dumps(payload, ensure_ascii=False, default=str), Plan, None, "plan", effort="low")

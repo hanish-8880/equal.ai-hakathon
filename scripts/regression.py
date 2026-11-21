@@ -39,7 +39,10 @@ def att(name: str) -> list[dict]:
 
 def run(text: str, attachments: list | None = None) -> tuple[list[str], list[dict]]:
     n_out, n_cards = len(OUT), len(CARDS)
+    store().add_event(f"chat:{U}", "chat_in", {"text": text})  # same chat log the app keeps → real follow-ups
     executor.handle(U, text, attachments or [], send, card)
+    for o in OUT[n_out:]:
+        store().add_event(f"chat:{U}", "chat_out", {"text": o})
     return OUT[n_out:], [c for _, c in CARDS[n_cards:]]
 
 
@@ -113,6 +116,22 @@ def _():
     assert em and em.get("task_id"), f"no complaint email card: {out[-2:]}"
     answer(False)
     return f"official {sup['email']} ({sup['source_url'][:40]}) · complaint drafted · declined"
+
+
+@case("J3 by text: fan model → number + email → 'mail them' → 'call them' (both → no)")
+def _():
+    out, cards = run("Crompton ceiling fan, model HS Plus 1200 mm, bought 8 months ago. It makes a loud noise and the "
+                     "speed is very slow. Find their support number and email.")
+    sup = next(c for c in cards if c.get("type") == "support")
+    assert sup.get("email") and sup.get("phone"), sup
+    out, cards = run("mail them")
+    em = next(c for c in cards if c.get("type") == "email")
+    assert em.get("to") and "@" in em["to"], em
+    answer(False)
+    out, cards = run("call them")
+    cp = next(c for c in cards if c.get("type") == "call_plan")
+    answer(False)
+    return f"{sup['email']} · {sup['phone']} · email to {em['to']} · call card {cp.get('phone') or cp.get('targets')} · both declined"
 
 
 @case("Toll-free call: approval card (night rule allows 1800) → no")

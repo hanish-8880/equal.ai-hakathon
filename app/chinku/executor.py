@@ -41,6 +41,7 @@ def load(task_id: str) -> Task | None:
 def _remember_output(user: str, name: str, value: Any) -> None:
     d = store().get("contacts", f"ilast:{user}") or {"kind": "ilast", "outputs": {}}
     d["outputs"][name] = value
+    d["recent"] = [name] + [n for n in d.get("recent") or [] if n != name][:15]  # newest first → "them" = the latest
     store().put("contacts", f"ilast:{user}", d)
 
 
