@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, field_validator, Field
 
 from app.brain.client import image_part, json_call, prompt
 from app.config import settings
@@ -794,6 +794,27 @@ def scam_check(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[s
 
 
 # ---------------- J11: trip planner — itinerary + rated hotels/restaurants → user picks → Chinku calls to book ----------------
+def _txt(v: Any) -> Any:
+    """Web answers vary: 1200 → "1200"; {"mode": "bus", "time": "4 h"} → "bus · 4 h"; [] → None."""
+    if v is None or isinstance(v, str):
+        return v
+    if isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, dict):
+        return " · ".join(str(x) for x in v.values() if x not in (None, ""))
+    if isinstance(v, list):
+        return ", ".join(str(_txt(x)) for x in v if x not in (None, "")) or None
+    return str(v)
+
+
+def _rating(v: Any) -> float | None:
+    """"4.3/5", "4.3 ★", 4 → 4.3 / 4.0; anything else → None (never invented)."""
+    if v is None or isinstance(v, (int, float)):
+        return float(v) if v is not None and 0 <= float(v) <= 5 else None
+    m = re.search(r"\d+(?:\.\d+)?", str(v))
+    return float(m.group(0)) if m and 0 <= float(m.group(0)) <= 5 else None
+
+
 class TripPlace(BaseModel):
     name: str
     rating: float | None = None          # e.g. 4.3 (out of 5) as listed publicly
@@ -804,11 +825,31 @@ class TripPlace(BaseModel):
     cuisine: str | None = None
     url: str | None = None
 
+    @field_validator("reviews", "price_hint", "phone", "address", "cuisine", "url", mode="before")
+    @classmethod
+    def _t(cls, v: Any) -> Any:
+        return _txt(v)
+
+    @field_validator("rating", mode="before")
+    @classmethod
+    def _r(cls, v: Any) -> Any:
+        return _rating(v)
+
 
 class TripDay(BaseModel):
     day: str
     plan: list[str] = Field(default_factory=list)
     travel_note: str | None = None
+
+    @field_validator("day", "travel_note", mode="before")
+    @classmethod
+    def _t(cls, v: Any) -> Any:
+        return _txt(v)
+
+    @field_validator("plan", mode="before")
+    @classmethod
+    def _p(cls, v: Any) -> Any:
+        return [_txt(x) for x in v] if isinstance(v, list) else [_txt(v)] if v else []
 
 
 class Trip(BaseModel):
@@ -819,6 +860,26 @@ class Trip(BaseModel):
     restaurants: list[TripPlace] = Field(default_factory=list)
     budget_note: str | None = None
     sources: list[str] = Field(default_factory=list)
+
+    @field_validator("title", "budget_note", mode="before")
+    @classmethod
+    def _t(cls, v: Any) -> Any:
+        return _txt(v) or ("" if v is None else v)
+
+    @field_validator("getting_there", "sources", mode="before")
+    @classmethod
+    def _l(cls, v: Any) -> Any:
+        return [_txt(x) for x in v if x] if isinstance(v, list) else [_txt(v)] if v else []
+
+    @field_validator("hotels", "restaurants", mode="before")
+    @classmethod
+    def _named(cls, v: Any) -> Any:
+        return [x for x in v if isinstance(x, dict) and x.get("name")] if isinstance(v, list) else []
+
+
+def _trip_json(text: str) -> "Trip":
+    m = re.search(r"\{.*\}", text or "", re.S)
+    return Trip.model_validate(json.loads(m.group(0))) if m else Trip()
 
 
 def trip_plan(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
@@ -838,11 +899,18 @@ def trip_plan(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[st
         "\"price_hint\" (as listed), \"phone\" (the hotel's real contact number, null if not found), \"address\", \"url\"}], \"restaurants\": "
         "[up to 6 {\"name\", \"rating\", \"reviews\", \"price_hint\", \"cuisine\", \"phone\", \"address\", \"url\"}], \"budget_note\", \"sources\": "
         "[urls]}. Never invent a phone number, rating or price — null if not found."))
-    m = re.search(r"\{.*\}", r.output_text or "", re.S)
     try:
-        t = Trip.model_validate(json.loads(m.group(0))) if m else Trip()
-    except Exception as e:  # noqa: BLE001
-        raise ToolError("I couldn't put the trip plan together — please try again.") from e
+        t = _trip_json(r.output_text)
+    except Exception:  # noqa: BLE001 — broken JSON from the web answer: ask once to re-format it (no new facts)
+        try:
+            fix = oai().chat.completions.create(model=settings().openai_model_brain, response_format={"type": "json_object"}, messages=[
+                {"role": "system", "content": "Re-format the text into valid JSON with the same keys and the same facts. Add nothing."},
+                {"role": "user", "content": (r.output_text or "")[:12000]}])
+            t = _trip_json(fix.choices[0].message.content)
+        except Exception as e:  # noqa: BLE001
+            raise ToolError("I couldn't put the trip plan together — please try again.") from e
+    if not t.itinerary:
+        raise ToolError("I couldn't put the trip plan together — please try again.")
 
     def prep(rows: list[TripPlace], kind: str) -> list[dict[str, Any]]:
         out = []
