@@ -260,7 +260,7 @@ Object.assign(I, {
   "Paid deals (book in Swiggy)": ["చెల్లింపు డీల్స్ (Swiggy లో బుక్ చేయండి)", "पेड डील (Swiggy में बुक करें)", "Paid deals (Swiggy lo book cheyyandi)"],
   "Book table": ["టేబుల్ బుక్ చేయి", "टेबल बुक करो", "Table book cheyyi"], "Not confirmed": ["ఖరారు కాలేదు", "पक्का नहीं हुआ", "Confirm kaledu"],
   "Booking ID": ["బుకింగ్ ID", "बुकिंग ID", "Booking ID"], "Which day and time? (e.g. tomorrow 8 pm)": ["ఏ రోజు, ఏ సమయం? (ఉదా: రేపు రాత్రి 8)", "कौन सा दिन और समय? (जैसे: कल रात 8)", "Ye roju, ye time? (eg: repu 8 pm)"],
-  "How many guests?": ["ఎంత మంది?", "कितने लोग?", "Entha mandi?"], "New chat": ["కొత్త చాట్", "नई चैट", "New chat"],
+  "Working on it…": ["చేస్తున్నా…", "कर रहा हूँ…", "Chestunna…"], "How many guests?": ["ఎంత మంది?", "कितने लोग?", "Entha mandi?"], "New chat": ["కొత్త చాట్", "नई चैट", "New chat"],
   "Complain on a toll-free line": ["టోల్-ఫ్రీకి ఫిర్యాదు", "टोल-फ़्री पर शिकायत", "Toll-free ki complaint"], "Order food": ["ఫుడ్ ఆర్డర్", "खाना ऑर्डर", "Food order"],
   "How can I help today?": ["ఈ రోజు ఏం చేయమంటారు?", "आज क्या मदद करूँ?", "Ee roju em cheyyamantaru?"],
   "Chinku asks you before it calls, sends or books.": ["కాల్, పంపడం, బుకింగ్ ముందు Chinku మిమ్మల్ని అడుగుతుంది.", "कॉल, भेजने या बुकिंग से पहले Chinku आपसे पूछता है।", "Call, send, booking mundu Chinku mimmalni adugutundi."],
@@ -296,11 +296,11 @@ const closeDrawer = () => { $("drawer").classList.remove("on"); $("scrim").class
 $("menu").onclick = openDrawer; $("scrim").onclick = closeDrawer;
 async function loadHome() {
   try { const h = await (await api("/api/home")).json();
-    $("dneeds").innerHTML = (h.needs_you || []).length ? `<h3>${L("Needs you")}</h3>` + h.needs_you.map(n => { const p = n.preview || {};
+    $("dneeds").innerHTML = (h.needs_you || []).length ? `<h3>${L("Needs you")}</h3>` + h.needs_you.map(n => { const p = n.preview || {}; const ids = `data-t="${esc(n.task_id)}" data-s="${esc(n.step_id)}"`;
       const what = p.type === "email" ? `✉️ ${L("Email")} → ${esc(p.to)}` : p.type === "call_plan" ? `📞 ${esc((p.targets || []).map(t => t.name || t.phone).join(", "))}`
         : p.type === "approve_food" ? `🛒 ${esc(p.dish || "")}` : p.type === "approve_table" ? `🍽️ ${esc(p.restaurant || "")}` : esc(n.request);
-      return `<button class="drow" data-go="1"><b>${what}</b><span>${esc(n.request)}</span></button>`; }).join("") : "";
-    $("dneeds").querySelectorAll("[data-go]").forEach(b => b.onclick = () => { closeDrawer(); window.scrollTo(0, document.body.scrollHeight); });
+      return `<div class="drow"><b>${what}</b><span>${esc(n.request)}</span><div class="btns" style="margin-top:6px"><button class="btn sm primary" ${ids} data-d="yes">${L("Yes")}</button><button class="btn sm" ${ids} data-d="no">${L("Not now")}</button></div></div>`; }).join("") : "";
+    $("dneeds").querySelectorAll("[data-d]").forEach(b => b.onclick = () => { closeDrawer(); decide(b.dataset.t, b.dataset.s, b.dataset.d, b.textContent.trim()); });
     $("drems").innerHTML = (h.reminders || []).length ? `<h3>${L("Reminders")}</h3>` + h.reminders.map(r => `<div class="drow"><b>⏰ ${esc(r.text)}</b><span>${esc(r.when)}</span></div>`).join("") : "";
     $("drecent").innerHTML = (h.recent || []).length ? h.recent.map(r => `<button class="drow" data-ask="${esc(r.request)}"><b>${esc(r.request || r.understood)}</b><span>${(r.results || []).map(x => esc(L(x.label))).join(" · ")}</span></button>`).join("")
       : `<div class="empty">—</div>`;
@@ -474,11 +474,13 @@ function row(m) { const d = document.createElement("div"); const mine = m.dir ==
   let inner;
   if (m.dir === "heard") inner = `<div class="bub heard">${heardHtml(m)}</div>`;
   else if (mine) inner = `<div class="bub">${m.media_url ? `<img src="${esc(m.media_url)}" alt="">` : ""}${esc(m.text || (m.card && m.card.type === "sent_media" ? "📎" : ""))}<div class="meta">${hhmm(m.ts)}</div></div>`;
-  else { const t = m.text || ""; const [a, ...b] = t.split("\n");
+  else { const t = (m.card && m.card.task_id) ? (m.text || "").replace(/\s*\(yes \/ no\)\s*$/i, "") : (m.text || ""); const [a, ...b] = t.split("\n");
     inner = `<div class="bub">${t.includes("\n") ? `<span class="first">${esc(a)}</span>\n${esc(b.join("\n"))}` : esc(t)}${card(m.card)}
       <div class="meta">${hhmm(m.ts)}${t.trim() ? `<button class="listen" data-listen="${esc(t)}" aria-label="${L("Listen")}">🔊 ${L("Listen")}</button>` : ""}</div></div>`; }
   d.innerHTML = inner;
+  if (m.card && m.card.task_id) d.querySelectorAll('[data-say="yes"],[data-say="no"]').forEach(b => { b.dataset.dec = b.dataset.say; b.removeAttribute("data-say"); });
   d.querySelectorAll("[data-say]").forEach(b => b.onclick = () => sendMsg(b.dataset.say));
+  d.querySelectorAll("[data-dec]").forEach(b => b.onclick = () => decide(m.card.task_id, m.card.step_id, b.dataset.dec, b.textContent.trim(), d));
   d.querySelectorAll("[data-trip]").forEach(b => b.onclick = () => {
     const picks = [...$(b.dataset.trip).querySelectorAll("input[data-pick]:checked")].map(x => JSON.parse(x.dataset.pick));
     if (!picks.length) { toast(L("Tick the hotels / restaurants to call")); return; }
@@ -498,7 +500,12 @@ function row(m) { const d = document.createElement("div"); const mine = m.dir ==
 let audio = null;
 async function listen(text, btn) { try { btn.disabled = true; const r = await post("/api/tts", {text}); const j = await r.json(); if (audio) audio.pause(); audio = new Audio(j.url); await audio.play(); }
   catch (e) { toast(L("No connection — try again")); } finally { btn.disabled = false; } }
-function setQuick(m) { const q = $("quick"); q.innerHTML = ""; const t = (m && m.text) || "";
+async function decide(task, step, dec, label, scope) {
+  (scope || document).querySelectorAll("[data-dec]").forEach(b => b.disabled = true); $("quick").innerHTML = "";
+  hideWelcome(); waiting = true; showTyping(dec === "yes" ? "Working on it…" : "Thinking…"); schedChat(600);
+  try { const r = await post("/api/approve", {task_id: task, step_id: step, decision: dec, label}); if (!r.ok) throw 0; }
+  catch (e) { waiting = false; hideTyping(); toast(L("No connection — try again")); (scope || document).querySelectorAll("[data-dec]").forEach(b => b.disabled = false); } }
+function setQuick(m) { const q = $("quick"); q.innerHTML = ""; const t = (m && m.text) || ""; if (m && m.card && m.card.task_id) return;
   if (/\(yes[^)]*\)\s*$/i.test(t) && !(m.card && ["email", "call_plan"].includes(m.card.type))) [["Yes", "yes", 1], ["No", "no"]].forEach(([l, v, p]) => { const b = document.createElement("button");
     b.className = "btn" + (p ? " primary" : ""); b.textContent = L(l); b.onclick = () => sendMsg(v); q.appendChild(b); }); }
 function schedChat(ms) { clearTimeout(ctimer); ctimer = setTimeout(pollChat, ms); }

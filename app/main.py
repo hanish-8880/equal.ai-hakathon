@@ -293,6 +293,30 @@ async def chat_send(request: Request, bg: BackgroundTasks) -> JSONResponse:
     return JSONResponse({"ok": True})
 
 
+@app.post("/api/approve")
+async def approve_send(request: Request, bg: BackgroundTasks) -> JSONResponse:
+    """An approval button answers ITS OWN task + step (never 'whatever is newest')."""
+    form = await request.form()
+    if not _ok(form.get("key")):
+        return _forbidden()
+    owner = settings().user_whatsapp
+    task_id, step_id, yes = str(form.get("task_id") or ""), str(form.get("step_id") or ""), form.get("decision") == "yes"
+    if not (task_id and step_id):
+        return JSONResponse({"error": "missing task"}, status_code=400)
+    chat_log(owner, "chat_in", ("✅ " if yes else "✋ ") + str(form.get("label") or ("Yes" if yes else "Not now")))
+    bg.add_task(_approve_safe, owner, task_id, step_id, yes)
+    return JSONResponse({"ok": True})
+
+
+def _approve_safe(owner: str, task_id: str, step_id: str, yes: bool) -> None:
+    try:
+        if executor.approve(owner, task_id, step_id, yes, reply_to(owner), card_to(owner)) == "gone":
+            deliver(owner, "I can't find that request any more — please ask again.")
+    except Exception as e:  # noqa: BLE001 — never silent
+        store().add_event("-", "error", {"where": "approve", "error": str(e)[:500]})
+        deliver(owner, "Sorry, something went wrong with that — nothing was sent. Please try again.")
+
+
 @app.post("/api/voice")
 async def voice_send(request: Request, bg: BackgroundTasks) -> JSONResponse:
     """Hold-to-talk (webm/opus or m4a, max 90 s)."""

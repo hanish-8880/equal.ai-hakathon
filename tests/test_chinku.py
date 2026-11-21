@@ -147,3 +147,26 @@ def test_refs_with_brackets_and_missing_values_never_reach_approval(monkeypatch,
     executor.handle(ME, "call this number", photo(tmp_path), send, card)
     assert not any("Needs you" in x for x, _ in CARDS)  # no approval for a call with no number
     assert any("couldn't find a phone number" in o for o in OUT)
+
+
+def test_button_approves_its_own_task_not_the_newest(monkeypatch):
+    """Real bug (Sun 01:20): every button sent 'yes', which approved whichever request was NEWEST."""
+    from app.config import settings
+    monkeypatch.setattr(settings(), "smtp_user", "me@example.com")
+    mk = lambda body: Plan(understood="x", confidence=0.95, steps=[Step(id="s1", tool="send_email", inputs={"draft": {"to": "a@b.com", "subject": "s", "body": body}})])
+    monkeypatch.setattr("app.chinku.planner.plan", lambda u, text, *a, **k: mk(text))
+    executor.handle(ME, "older email", [], send, card)
+    executor.handle(ME, "newer email", [], send, card)
+    older = next(c["task_id"] for t, c in CARDS if c and c.get("body") == "older email")
+    assert executor.approve(ME, older, "s1", True, send, card) == "done"
+    assert [x[2] for x in SENT] == ["older email"]                          # the OLDER one was sent
+    newer = next(c["task_id"] for t, c in CARDS if c and c.get("body") == "newer email")
+    assert executor.load(newer).steps["s1"].status == "waiting"             # the newer one still waits
+    assert executor.approve(ME, older, "s1", True, send, card) == "already"  # second tap: nothing happens
+    assert len(SENT) == 1
+
+
+def test_bare_yes_with_nothing_waiting_is_not_a_new_request(monkeypatch):
+    monkeypatch.setattr("app.chinku.planner.plan", lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not plan")))
+    executor.handle(ME, "yes", [], send, card)
+    assert OUT[-1].startswith("Nothing is waiting")

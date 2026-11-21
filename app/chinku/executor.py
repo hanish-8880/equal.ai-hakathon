@@ -167,7 +167,7 @@ def run(t: Task, send: Send, card: Card) -> Task:
                     "table_book": f"Book a FREE table at {st.preview.get('restaurant')} · {st.preview.get('when')} · {st.preview.get('guests')} guests?",
                     "cart_add": f"Add {st.preview.get('count')} items (₹{st.preview.get('total') or 0:,.0f}) to your Swiggy cart?",
                     "call": "Call " + ", ".join(f"{x.get('name') or ''} {x.get('phone') or ''}".strip() for x in inputs.get("targets") or []) + "?"}
-            card(f"👉 Needs you: {what.get(s.tool, 'Go ahead?')} (yes / no)", st.preview)
+            card(f"👉 Needs you: {what.get(s.tool, 'Go ahead?')} (yes / no)", {**st.preview, "task_id": t.task_id, "step_id": s.id})
             return t
         fn = tools.REGISTRY.get(s.tool)
         st.status = "running"
@@ -203,24 +203,47 @@ def run(t: Task, send: Send, card: Card) -> Task:
     return t
 
 
+# ---------------- approvals ----------------
+BARE = re.compile(r"\s*(yes|y|ok|okay|sure|avunu|haa|ha|sare|haan|han|theek hai|no|nope|vaddu|ledu|nahi|nahin|"
+                  r"అవును|సరే|హా|వద్దు|లేదు|हाँ|हां|नहीं)\s*[.!]*\s*", re.I)  # ONLY a yes/no word — "send it" is a request
+DONE_WORDS = {"send_email": "Okay — not sent.", "call": "Okay — I won't call.", "cart_add": "Okay — nothing added.",
+              "food_cart_add": "Okay — nothing added.", "table_book": "Okay — not booked.", "remind": "Okay — no reminder call."}
+
+
+def approve(user: str, task_id: str, step_id: str, yes: bool, send: Send, card: Card) -> str:
+    """Answer ONE specific approval (the button carries its own task + step). Returns done | already | gone.
+    Idempotent: a second tap, or a tap on an old card, never re-runs anything."""
+    t = load(task_id)
+    if not t or t.user != user or step_id not in t.steps:
+        return "gone"
+    st = t.steps[step_id]
+    w = store().get("contacts", f"iwait:{user}")
+    if w and w.get("task_id") == task_id and w.get("step_id") == step_id:
+        store().delete("contacts", f"iwait:{user}")
+    if st.status != "waiting" or not store().claim(f"iapprove:{task_id}:{step_id}"):
+        send("That one is already decided — nothing changed.")
+        return "already"
+    tool = next((s.tool for s in t.plan.steps if s.id == step_id), "")
+    if yes:
+        st.status, st.output = "pending", {**st.output, "approved": True, "approved_at": time.time()}
+    else:
+        st.status, st.error = "skipped", "you said no"
+        send(DONE_WORDS.get(tool, "Okay — not done.") + " Nothing left the app.")
+    run(t, send, card)
+    return "done"
+
+
 # ---------------- entry ----------------
 def handle(user: str, text: str, attachments: list[dict[str, Any]], send: Send, card: Card) -> None:
     text = (text or "").strip()
-    # 1) answer to a waiting approval
+    # 1) a typed / spoken "yes" or "no" answers the NEWEST waiting approval (buttons answer their own task: approve())
     w = store().get("contacts", f"iwait:{user}")
     if w and text and not attachments and (runner.YES.match(text) or runner.NO.match(text)):
-        t = load(w["task_id"])
-        store().delete("contacts", f"iwait:{user}")
-        if t and t.steps.get(w["step_id"]) and t.steps[w["step_id"]].status == "waiting":
-            st = t.steps[w["step_id"]]
-            if runner.YES.match(text):
-                st.status, st.output = "pending", {**st.output, "approved": True, "approved_at": time.time()}
-                run(t, send, card)
-            else:
-                st.status, st.error = "skipped", "you said no"
-                send("Okay — not sent. Nothing left the app.")
-                run(t, send, card)
+        if approve(user, w["task_id"], w["step_id"], bool(runner.YES.match(text)), send, card) != "gone":
             return
+    if text and not attachments and BARE.fullmatch(text):
+        send("Nothing is waiting for your answer right now. What do you need?")
+        return
     # 2) new request → (analyze a lone attachment) → plan → readback → run
     analysis = None
     t = Task(task_id="i_" + uuid.uuid4().hex[:8], user=user, request=text, attachments=attachments, plan=Plan(understood=""),
