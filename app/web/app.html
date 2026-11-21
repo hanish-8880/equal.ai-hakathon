@@ -451,6 +451,12 @@ function card(c) {
       ${c.to_pay ? `<div style="font-size:18px;margin-top:6px"><b>${L("To pay")}: ₹${esc(c.to_pay)}</b></div>` : ""}
       <div class="btns"><a class="btn primary" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(c.open_url)}" target="_blank" rel="noopener">${L("Open Swiggy to pay")} ↗</a></div>
       <div class="src">${L("Chinku never checks out or pays.")}</div></div>`;
+  if (c.type === "grocery") return `<div class="rc"><h4>🛒 ${esc(c.query || "")} · Swiggy Instamart <span class="status ok">LIVE</span></h4>
+      <div class="src" style="margin:0 0 6px">${L("Why")}: ${esc(c.why)}</div>
+      ${(c.rows || []).map((r, i) => `<div class="opt ${i === 0 ? "best" : ""}">${r.image ? `<img src="${esc(r.image)}" alt="">` : `<div class="ph">🛒</div>`}
+        <div class="t"><b>${esc(r.name)}</b><span>${esc(r.pack || "")}${r.per_100 ? " · ₹" + esc(r.per_100) + "/100 g" : ""}${r.eta_min ? " · " + esc(r.eta_min) + " min" : ""}</span></div>
+        <div class="p"><b>₹${esc(r.price)}</b><button class="btn sm ${i === 0 ? "primary" : ""}" data-say="${esc(`Add ${r.name} ${r.pack || ""} to my Instamart cart (spinId ${r.spinId}, skuId ${r.skuId}, price ${r.price})`)}">${L("Add")}</button></div></div>`).join("")}
+      <div class="src">${L("Prices near")} ${esc(L(c.where))}. ${L("Chinku never pays.")}</div></div>`;
   if (c.type === "food") { const r0 = (c.rows || [])[0] || {};
     return `<div class="rc"><h4>🍽️ ${L("Swiggy Food")} <span class="status ok">LIVE</span> <span class="status">${esc(L(c.priority))}</span></h4>
       <div class="src" style="margin:0 0 6px">${L("Why")}: ${esc(c.why)}</div>

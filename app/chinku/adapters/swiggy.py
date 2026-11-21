@@ -182,10 +182,28 @@ def address_id(server: str = "im") -> str:
     rows = data if isinstance(data, list) else next((v for v in data.values() if isinstance(v, list)), [])
     a = next((r for r in rows if isinstance(r, dict) and (r.get("id") or r.get("addressId"))), None)
     if not a:
-        raise SwiggyError("No delivery address on your Swiggy account — add one in the Swiggy app first.")
+        raise SwiggyError(f"No delivery address on the Swiggy account “{active()}” — add one in the Swiggy app first (needed for carts).")
     ses["addr"] = str(a.get("id") or a.get("addressId"))
     ses["addr_label"] = str(a.get("annotation") or a.get("label") or a.get("tag") or "your address")
     return ses["addr"]
+
+
+def where(server: str = "im") -> dict[str, Any]:
+    """Location for SEARCHES: the account's saved address, or — if it has none — the user's home area from memory
+    (Swiggy supports latitude/longitude 'guest' search). Carts and orders still need a saved address."""
+    try:
+        return {"addressId": address_id(server)}
+    except SwiggyError as e:
+        if "No delivery address" not in str(e):
+            raise
+    from app.actions import maps
+    from app.chinku import memory
+    from app.config import settings
+    area = memory.get(settings().user_whatsapp, "home") or "Hyderabad"
+    g = maps.geocode(f"{area}, Hyderabad") or maps.geocode(str(area))
+    if not g:
+        raise SwiggyError("This Swiggy account has no saved address, and I couldn't find your home area — add an address in the Swiggy app.")
+    return {"latitude": round(g[0], 4), "longitude": round(g[1], 4)}
 
 
 def grams(desc: str | None) -> float | None:
@@ -198,7 +216,7 @@ def grams(desc: str | None) -> float | None:
 
 def search(query: str) -> list[dict[str, Any]]:
     """Flattened, in-stock variants for one query (code picks; the model never chooses a product)."""
-    data = call("search_products", {"query": query, "addressId": address_id()})
+    data = call("search_products", {"query": query, **where("im")})
     out = []
     for rank, p in enumerate(data.get("products") or []):
         for v in p.get("variations") or []:

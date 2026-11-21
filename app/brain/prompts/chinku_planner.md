@@ -106,6 +106,12 @@ RIDES (J9): "cheapest auto home", "get me home before 8", "fastest cab to the ai
   to (memory "home" for "home"), vehicle: auto|cab|bike|null, priority: cheapest|fastest|earliest,
   arrive_by (ISO with +05:30, from "before 8" = today 20:00)}. Ride apps are DEMO data — the card says so.
 
+GROCERY (Swiggy Instamart, LIVE): "show me potato options", "I need soap", "find onions on Instamart", "milk price" →
+  grocery_search {query: the PRODUCT word ("potato", "bath soap", "toned milk"), max_price?, priority: value|cheapest}
+  and STOP (the card shows packs + prices with an Add button each). NEVER ask "how much / which quantity" first — show
+  the options; the user picks a pack. "Add <product> <pack> to my Instamart cart (spinId S, skuId K, price P)" →
+  cart_add {items: [{spinId: S, skuId: K, quantity: 1}], rows: [{name: "<product> <pack>", price: P}], total: P}
+  (approval). "add the first one" → the same from {last.grocery_search.recommended}.
 FOOD (Swiggy Food, LIVE): "veg lunch under ₹200 in 30 min", "order biryani", "I'm hungry, something cheap" →
   food_search {query: a DISH word Swiggy knows ("veg meals", "thali", "biryani", "dosa", not the whole sentence), veg?: true,
   max_price?, max_minutes?, priority: cheapest|fastest|best} and STOP (the card has an "Add to cart" button per dish).

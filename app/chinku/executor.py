@@ -23,7 +23,7 @@ STEP_WORDS = {"analyze": "look at the {what}", "transcribe_image": "type out the
               "recipe": "write the recipe", "shop_list": "find the ingredients on Swiggy Instamart", "cart_add": "add them to your Swiggy cart (I'll ask you first)",
               "compare": "compare options", "find_support": "find the official support contact",
               "promise": "track their promise", "promise_update": "update the promise", "scam_check": "check if it's a scam", "trip_plan": "plan the trip", "connect_me": "connect you",
-              "food_search": "find food on Swiggy", "food_cart_add": "add it to your Swiggy cart (I'll ask you first)",
+              "food_search": "find food on Swiggy", "grocery_search": "find it on Swiggy Instamart", "food_cart_add": "add it to your Swiggy cart (I'll ask you first)",
               "dineout_search": "find tables on Swiggy Dineout", "table_check": "check the table time", "table_book": "book the table (I'll ask you first)"}
 
 

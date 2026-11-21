@@ -179,3 +179,30 @@ def test_multiple_accounts_switch_and_keep_separate_state(monkeypatch, tmp_path)
     monkeypatch.setattr(swiggy, "_call_live", lambda name, args, server: live.append(swiggy.active()) or {"q": args["query"]})
     swiggy.call("search_products", {"query": "milk"}); swiggy.set_active("main"); swiggy.call("search_products", {"query": "milk"})
     assert live == ["amma", "main"]                                     # cache is per account
+
+
+def test_search_without_saved_address_uses_home_area(monkeypatch):
+    from app.actions import maps
+    from app.chinku import memory
+
+    def no_addr(*a):
+        raise swiggy.SwiggyError("No delivery address on the Swiggy account “second” — add one in the Swiggy app first (needed for carts).")
+    monkeypatch.setattr(swiggy, "address_id", no_addr)
+    monkeypatch.setattr(memory, "get", lambda u, k: "Kukatpally")
+    monkeypatch.setattr(maps, "geocode", lambda p: (17.4849, 78.4138, p))
+    assert swiggy.where("im") == {"latitude": 17.4849, "longitude": 78.4138}
+    monkeypatch.setattr(swiggy, "address_id", lambda *a: "addr1")
+    assert swiggy.where("im") == {"addressId": "addr1"}
+
+
+def test_grocery_search_shows_options_ranked_by_value(monkeypatch):
+    rows = [dict(V("Fresh Potato", "1 kg", 45, 0), per_100=4.5), dict(V("Fresh Potato", "500 g", 28, 1), per_100=5.6),
+            dict(V("Baby Potato", "250 g", 30, 2), per_100=12.0), dict(V("Potato Chips", "50 g", 20, 9), per_100=40.0)]
+    monkeypatch.setattr(swiggy, "search", lambda q: rows if q == "potato" else [])
+    ctx = {"task": type("T", (), {"task_id": "i_g"})(), "card": lambda t, c: CARDS.append((t, c)), "step_id": "s1"}
+    out = tools.grocery_search(ME, {"query": "potato"}, ctx)
+    assert [r["pack"] for r in out["rows"]] == ["1 kg", "500 g", "250 g"]      # best value first; rank-9 chips dropped
+    card = CARDS[-1][1]
+    assert card["type"] == "grocery" and out["recommended"]["spinId"] and "₹4.5/100 g" in card["why"]
+    out2 = tools.grocery_search(ME, {"query": "potato", "priority": "cheapest", "max_price": 40}, ctx)
+    assert [r["price"] for r in out2["rows"]] == [28, 30]

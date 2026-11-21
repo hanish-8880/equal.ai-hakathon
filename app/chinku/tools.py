@@ -902,7 +902,7 @@ def food_search(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[
     seen, items, tried = set(), [], []
     for query in [q] + [a for a in alts if a.lower() != q.lower()]:
         try:
-            data = sw.call("search_menu", {"query": query, "addressId": sw.address_id("food")}, "food")
+            data = sw.call("search_menu", {"query": query, **sw.where("food")}, "food")
         except sw.SwiggyError as e:
             raise ToolError(str(e)) from e
         tried.append(query)
@@ -1095,7 +1095,38 @@ def table_book(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[s
     return {"booked": booked, "order_id": oid}
 
 
+def grocery_search(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+    """'Show me potato options' — real Instamart products (pack, price, price per kg/L) ranked in CODE; Add buttons."""
+    sw = _sw()
+    q = str(inputs.get("query") or "").strip()
+    if not q:
+        raise ToolError("What should I look for on Instamart?")
+    try:
+        found, used = _search_with_fallback(sw, q)
+    except sw.SwiggyError as e:
+        raise ToolError(str(e)) from e
+    words = [w for w in re.findall(r"[a-z]+", used.lower()) if len(w) > 2]
+    rows = [v for v in found if v["rank"] <= 6 and (not words or any(w in (v["name"] or "").lower() for w in words))] or found[:8]
+    if inputs.get("max_price"):
+        rows = [v for v in rows if v["price"] is not None and v["price"] <= float(inputs["max_price"])]
+    prio = inputs.get("priority") if inputs.get("priority") in ("cheapest", "value") else "value"
+    key = (lambda v: (v["price"] is None, v["price"] or 0)) if prio == "cheapest" else \
+          (lambda v: (v["per_100"] is None, v["per_100"] or 0, v["price"] or 0))
+    rows = sorted(rows, key=key)[:6]
+    if not rows:
+        raise ToolError(f"I couldn't find “{q}” on Instamart right now.")
+    saved = bool(sw._sessions.get(f"{sw.active()}:im", {}).get("addr"))
+    loc = "your saved address" if saved else "your home area (this Swiggy account has no saved address — add one in the Swiggy app to order)"
+    w = rows[0]
+    why = f"best value ₹{w['per_100']}/100 g" if prio == "value" and w["per_100"] else f"lowest price ₹{w['price']}"
+    ctx["card"](f"🛒 {q.title()} on Swiggy Instamart · recommended {w['name']} {w['pack']} ₹{w['price']} — {why}",
+                {"type": "grocery", "query": q, "priority": prio, "why": why, "where": loc, "rows": rows,
+                 "checked": datetime.now(IST).isoformat(timespec="minutes")})
+    return {"rows": rows, "recommended": w}
+
+
 REGISTRY: dict[str, Callable[[str, dict[str, Any], dict[str, Any]], dict[str, Any]]] = {
+    "grocery_search": grocery_search,
     "food_search": food_search, "food_cart_add": food_cart_add, "dineout_search": dineout_search,
     "table_check": table_check, "table_book": table_book,
     "connect_me": connect_me,
