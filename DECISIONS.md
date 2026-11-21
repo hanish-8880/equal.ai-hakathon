@@ -388,3 +388,9 @@ never rings the phone during the test.
 - Fixed on the way: memory secret filter blocked +91 phone numbers (12 digits looked like Aadhaar) → now 4-4-4 format or the word Aadhaar/UID.
 - Times: planner proposes ISO from now_ist; code validates (future, IST) and renders words. Would change: a code date parser for common phrases.
 - MODE=instint is now default; plumber flows stay with MODE=plumber.
+
+## Sun 00:40 — Plumber removed; Instint App live
+- Removed (git history keeps it): app/jobs (jobs, booking, parts, billing, customer calls, slots), plumber prompts/call scripts, book_visit/part_sourcing specs, plumber tests and scripts, old UI. Kept: engine + v1 recipes (CLAUDE.md: still selectable), normaliser, translation, voice transcription (now app/brain/listen.py with a vocabulary from the user's memory).
+- Omni agents renamed to Instint (welcome + prompts pushed by scripts/omni_sync_agents.py, read back OK). Inbound = owner tells Instint what they need → same planner + approval.
+- New Instint App: home + chat cards + Leaflet map + 🔊 Listen (/api/tts, cached). Observed: J1 via the app — email arrived with the photo attached (IMAP: att_….jpg, 107 KB).
+- 97 tests pass (plumber tests removed with the code).

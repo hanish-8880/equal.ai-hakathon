@@ -1,393 +1,346 @@
-# CLAUDE.md — Chinku for Plumbers (Equal AI Builders Hackathon 2026)
+# CLAUDE.md — Instint · Equal AI Builders Hackathon 2026 (FINAL)
 
-You are my senior product, design and engineering partner. I am **Hanish**, building **solo** at the
+You are my senior product, design and engineering partner. I am **Hanish**, building solo at the
 Equal AI × OpenAI Builders Hackathon, Equal HQ Hyderabad.
-**Code freeze: Sunday 22 Nov, 2:00 PM IST. Push to GitHub by 12:00 PM Sunday.**
+**Now: Sat 21 Nov, ~11:15 PM IST. Code freeze: Sun 22 Nov, 2:00 PM IST. Push + deploy by 12:00 PM.**
 
-This file replaces the previous CLAUDE.md. Read it fully before every session. It is the source of truth.
-If code or APIs disagree with it, tell me, propose the fix, and update this file.
+This file replaces every earlier CLAUDE.md (Chinku errands, Chinku for Plumbers, earlier Instint drafts).
+It is the single source of truth. The existing repo (formerly "Chinku") is the foundation: **reuse it, never rewrite it.**
 
 ---
 
 ## 0. How you work with me
 
-- **Reuse first.** The existing Chinku repo already has: the spec engine, state machine, Omni generic caller
-  (`call_context` injection verified), OpenAI brain (perceive / route / brief / extract / decide), Twilio WhatsApp,
-  SMTP email, PDF reading, DynamoDB store on AWS, dashboard, web chat at `/chat?key=...`, inbound-call agent,
-  31 passing tests. **Inspect first, list what works, then extend.** Add specs and step types; do not rewrite the engine.
-- **Stages:** DISCOVER / DESIGN / BUILD / REVIEW / PITCH, or normal requests.
-  BUILD = implement the next working increment → run it → report what you observed.
-- **Verify before depending** on any API behaviour. Record results in `DECISIONS.md`.
-- **Label everything** LIVE / SIMULATED / NOT BUILT. Keep `HONEST_NOTE.md` current.
-- **Never claim a result you did not observe.** If you cannot run something, mark it UNVERIFIED.
-- **Scope protection:** follow section 13. Never break the demo job to add a feature.
-- **Deploy after each verified increment:** `git push` + `python -m scripts.aws_deploy push`.
-- **Be concise.** Short reports with the next concrete action.
+1. **Reuse first.** Inspect the repo, list what already works per tool (section 4), then extend.
+2. **Build in increments:** implement → run → observe → report. Never report an unobserved result.
+3. **Verify every external behaviour** (API, webhook payload, model name) with the smallest real test before
+   depending on it. Record it in `DECISIONS.md` (Observed / Chose / Gave up / Would change if).
+4. **Label everything** LIVE / SIMULATED / NOT BUILT. Keep `HONEST_NOTE.md` current.
+5. **Deploy after every verified increment:** `git push` + `python -m scripts.aws_deploy push`.
+6. **Protect the demo.** Follow the checkpoints and cut order (section 13). Never break a working journey to add one.
+7. **No per-feature hacks in the engine.** New behaviour = a new tool, a planner rule, or a recipe.
+8. **Errors are never silent.** The user always sees a plain-words status.
+9. **Be concise.** Short reports, next concrete action.
 
 ---
 
-## 1. Organizer requirements (fixed)
+## 1. Organizer requirements (fixed — do not change)
 
 Solo build. Equal AI reviews every build, shortlists 10, those 10 demo live. Submission must include:
-1. A working demo that runs end to end on fresh input — not slides or mock-ups.
-2. Source code in a repo judges can open.
-3. Evidence of results (accuracy vs baseline, outputs on new data, proof data persists).
-4. A short honest note: built / reused / simulated. Only data we have permission to use.
+1. A working demo that runs end to end on fresh input (not slides or mock-ups).
+2. Source code in a repository judges can open.
+3. Evidence of results (accuracy vs a baseline, outputs on new data, proof data persists).
+4. A short honest note: built by me / reused / simulated. Use only data we have permission to use.
 
-Track: **Build Creative** — personal context into everyday AI products; show a working journey from raw input to a useful outcome.
+Track: **Build Creative** — personal context (camera, mail, anything personal) into an everyday AI product;
+show a working journey from raw input to a useful outcome.
 
 ---
 
 ## 2. Product
 
-**Chinku is the AI office assistant for independent plumbers and small plumbing contractors.**
-The plumber talks to Chinku (voice or text, Telugu / English / mixed) and gets back to work.
-Chinku does the coordination around each job: calls the client, books the visit, calls shops for a missing part,
-gets approval for extra charges, and turns a closing voice note into a correct company invoice.
+**Instint: tell it what you need — type, speak in your language, or show a photo — and it finds the answer or
+does the next step for you: searches, analyses, calls anyone, emails anyone, reminds you, and follows up until
+it's done.**
 
-**Problem in one line:** a plumber's day is lost to phone calls and paperwork — chasing clients, ringing shops for
-parts, waiting for supervisor approvals, writing bills — and every mistake (wrong slot, wrong part, wrong amount)
-costs a trip or money.
-
-**Demo moment to protect (section 12):** a judge plays the shopkeeper and changes "exact model available today" to
-"different model, available tomorrow". Chinku explains what changed, keeps the visit pending, and asks the plumber.
-Then one closing voice note becomes an accurate ₹1,400 invoice.
-
----
-
-## 3. Interfaces (priority order — overrides any earlier plan)
-
-1. **Primary — Chinku App (chat-style web app, mobile first).** The plumber talks or types to Chinku here.
-   Replaces the current `/chat` page (keep the key protection). Design in section 9.
-2. **Primary — Phone.** The plumber can call Chinku's inbound Omni number and speak the same instructions.
-   Same router, same job state.
-3. **Secondary — WhatsApp (Twilio sandbox).**
-   - The plumber may also message Chinku on WhatsApp (same router, same jobs).
-   - Chinku **sends** messages to clients, approvers and the billing company on WhatsApp when that recipient has
-     joined the sandbox. Otherwise use a **phone call** (any number) or **email** (invoices).
-   - Every outbound message records its channel and delivery status; the dashboard shows it.
-   - The sandbox only reaches numbers that sent the join code. Do not pretend otherwise.
-
-Channel rule: **one router, one job store, many channels.** Channel adapters only convert input/output.
-
----
-
-## 3A. Listening and understanding (transcribe → normalise → intent → act)
-
-Every input goes through the same pipeline, whatever the channel. Build it as one module (app/brain/understand.py) with a typed result, and log every stage to the job timeline.
-
-Step 1 — Capture
-- Chinku App: MediaRecorder (webm/opus), hold-to-talk, max 90 s, upload to /api/voice.
-- WhatsApp: voice notes (ogg/opus) downloaded from the Twilio media URL.
-- Phone (inbound Omni): use Omni's transcript and skip to Step 3 (keep the raw text too).
-- Keep the original audio on the job (evidence + re-transcription). Silent/empty audio → reply "I didn't hear anything, try again".
-
-Step 2 — Transcribe (OpenAI)
-- Model from env OPENAI_MODEL_TRANSCRIBE (best available; verify it works first).
-- Telugu + English + Hindi mixed; do not force one language. Keep the words actually spoken.
-- Domain vocabulary prompt, built per request:
-  plumbing terms (angle valve, ball valve, pillar cock, bib cock, health faucet, flush tank, geyser, CPVC, UPVC, PVC, elbow, tee, reducer, union, hose, connection pipe, teflon tape, ½ inch, ¾ inch, 15 mm, 20 mm),
-  brands (Jaquar, Cera, Hindware, Parryware, Astral, Supreme, Ashirvad, Finolex, Prince),
-  plus THIS plumber's contact names, shop names, open job IDs ("Job 24"), work-order refs and recent model numbers from the job store.
-- Return: transcript, detected_languages, low_confidence_spans (if the API gives segments/logprobs; otherwise mark every number and model code as "check"), duration.
-
-Step 3 — Normalise (code first; LLM only for what code cannot do)
-- Numbers: dedicated normaliser for spoken Telugu/English/Hindi numbers and money ("rendu" = 2, "moodu vandala yabhai" = 350, "padhihenu" = 15, "two-fifty" = 250, "1.5 lakh", ₹ variants) and units ("per piece", "each", "total", "inch", "mm"). Unit tests for every pattern seen in real recordings.
-- Entities: job refs ("job 24", "J24", "Flat 304 job"), phone numbers (E.164, +91, starts 6–9), model codes (keep exact characters, never "correct" them), names matched against the plumber's contacts.
-- Self-corrections in the same note ("350… no, 300") → keep the last value and record the correction.
-
-Step 4 — Understand intent (OpenAI router, structured output, Pydantic)
-Input: normalised transcript + the plumber's open jobs (id, site, status, next action) + contacts + recent conversation.
-Output:
-  UnderstandResult:
-    actions: [ {intent, job_ref: id | "new" | "ambiguous", entities{...}, missing[...], confidence 0-1} ]
-    clarifying_question: str | null   (ONE short question, in the plumber's language)
-    readback: str                     (what Chinku understood, 1–2 lines)
-Rules:
-- Multi-intent: one note can hold several actions → split them, keep order.
-- Job resolution: explicit ref wins; else match by site/client/part; else the only open job; else "ambiguous" → ask "Which job — Flat 304 tap or Flat 210 geyser?". Never change a job on a guess.
-- Confidence gate: confidence < 0.8, any missing required field, or any number/model code flagged "check" → ask or read back before acting.
-- Consequential intents (book, approval request, send invoice, any shop commitment) always show the readback and wait for "yes" (voice: haa / avunu / yes / pampu, or a button).
-- Small talk or unclear → friendly reply, no state change.
-
-Step 5 — Show what Chinku heard
-- The plumber's bubble shows the transcript; numbers and model codes are highlighted and tappable to correct.
-- Chinku's reply starts with the readback, e.g. "Job 24 · 2 angle valves · Srinivas, Ravi · limit ₹500 — calling now?"
-- Voice correction anywhere ("kaadu, 300", "not Ravi, Suresh") updates only that field and reads back again.
-
-Accuracy checks (add to the evidence section)
-- Record ≥20 real voice notes (Telugu, English, mixed; quiet and noisy) with labelled expected actions.
-- Compare baseline (plain transcription + one generic prompt) vs our pipeline (vocabulary prompt + normaliser + structured router + confidence gate).
-- Metrics: intent accuracy, job-resolution accuracy, key-entity accuracy (numbers, quantities, model codes, names).
-- Companion metric: wrong-action rate (an action executed that the plumber did not ask for). Target 0.
-- Generate results into eval/results.md by script; never hand-edit.
-
----
-
-## 4. Stack and ownership (verify what is configured; do not assume)
-
-| Layer | Owner | Notes |
-|---|---|---|
-| Phone calls (out + in), voice | OmniDimension | One generic outbound agent `chinku-caller` + inbound agent. Per-call brief via `call_context`. |
-| All understanding | OpenAI | Transcribe, vision (part photos, labels), route, write briefs, extract facts, compose replies, TTS |
-| Exactness | **Code** | Arithmetic, totals, availability / slot locking, approval rules, invoice numbering, dedupe |
-| Messages | Twilio WhatsApp sandbox | Secondary channel, client notifications where joined |
-| Email | SMTP (Gmail app password) | Invoice delivery |
-| State + scheduling | AWS (EC2 us-west-2, DynamoDB via instance role, scheduler) | Stable https at the sslip.io address |
-| App + API | FastAPI | Chat app, dashboard, webhooks |
-
----
-
-## 5. Domain model (one persistent job ID)
-
-```
-Job
-  job_id ("J24"), plumber_id, status, created_at
-  issue, site_address, flat, access_notes, photos[]
-  roles:
-    site_contact   (person who gives access)
-    approver       (who may approve extra charges)
-    billing_to     (company/person receiving invoice; email/whatsapp)
-    work_order     ("WO-117", optional)
-  appointment:     {requested_by_client, plumber_available, confirmed_both, slot, state, history[]}
-  parts_needed:    [{part_id, description, brand, model, size, qty, max_unit_price?}]
-  shop_offers:     [Offer]
-  dependencies:    [{type: "part_ready_before_visit", part_id, condition, state}]
-  extra_work:      [ApprovalRequest]
-  invoice:         Invoice
-  timeline:        [Event]   # every fact links to the call/message/approval that produced it
-  next_action:     {what, owner, blocked_by}
-
-Person: name, phone(E.164), email?, whatsapp_joined: bool, language, roles across jobs
-Offer:  shop, exact_model_quoted, matches_requested: exact|different_model|unknown,
-        stock: usually_stocked|available_now|tomorrow|none, units_available,
-        unit_price, mrp?, tax_included: yes|no|unknown, delivery_charge: number|unknown,
-        condition ("₹300 each if 10+"), condition_met: bool,
-        hold: none|offered|confirmed, hold_until?, pickup_address, earliest_pickup,
-        source_call_id, evidence_quote, checked_at, superseded_by?
-ApprovalRequest: id, scope, amount, reason, sent_to, channel, version,
-        response: approved|rejected|question|pending, responder, responder_is_designated: bool,
-        approved_scope, approved_amount, at, evidence
-Invoice: number, date, lines[{item, qty, unit_rate, amount, source}], labour, tax_config, total,
-        state: draft|awaiting_plumber|approved|sent|delivery_failed|paid, send_attempts[], idempotency_key
-Event:  ts, kind, actor, channel, summary, payload_ref, simulated: bool
-```
-
-Keep distinct, never merged: **supplier cost**, **approved customer charge**, **completed work**.
-Keep distinct: **client requested**, **plumber available**, **both confirmed**.
-Keep distinct: **usually stocked**, **available now**, **hold offered**, **reservation confirmed**.
-
----
-
-## 6. Workflow (build one complete job; see section 13 for order)
-
-### 6.1 Create job + contacts
-Input example: "Chinku, call this customer 98xxxxxx21. Kitchen tap repair at Flat 304. I can visit tomorrow
-11–1 or after 4. Send the final invoice to the maintenance company under WO-117."
-- Extract everything known; ask **only** for what the next step needs.
-- Multiple numbers in one message → ask which to call. Multiple open jobs → ask which job before changing anything.
-- One person may hold several roles.
-
-### 6.2 Call client and book
-- Brief: Chinku calls on behalf of the named plumber; confirms issue, full address, flat/floor, access, who will be
-  present; asks for a photo only if useful; offers the plumber's windows.
-- **Re-check slot availability in code at save time** (conditional write / lock). If taken, offer the next window.
-- Confirm to plumber and client (client: WhatsApp if joined, else short confirmation call).
-- No answer → record attempt, retry per policy (1 retry after 5 min), tell plumber.
-- Late / cancel (stretch): call affected client with revised time; original stays visible until accepted.
-
-### 6.3 Source a missing part
-Input: photo / label / voice note "Job 24, two of these valves, check my regular shops, exact model, price, pickup".
-- Vision reads brand, model, size, qty. Unreadable or ambiguous → ask the plumber. Never guess a model.
-- Shops come only from plumber-supplied contacts.
-- Each shop call asks: exact model and size in stock **today**? units? actual selling price per unit? MRP?
-  tax and delivery included? pickup address and earliest time? can you hold the quantity, until when?
-- Save each offer separately with call id, evidence quote, time. Compare totals **in code**.
-  Unknown charges shown as **unknown**, never zero. Conditional price applies only if the condition is met.
-- Substitute model → send actual model and price to the plumber; **the plumber decides compatibility.**
-- Reserve/purchase only within authority the plumber gave. Default: no commitments.
-
-### 6.4 Part readiness ↔ visit
-Rule example: "If Srinivas has the exact valve under ₹500, ask the customer whether I can come between 4 and 6."
-- Store as a dependency with a machine-checkable condition (shop, exact model, max price).
-- Condition met → proceed to the client call. Not met (different model / tomorrow / over limit) → report what
-  differs, keep the visit **pending**, ask the plumber.
-- A promised callback ("I'll call you back at 5") is its own event: who calls whom, when, what is unresolved.
-
-### 6.5 Extra-work approval
-Input: "Job 24, hose also needs replacement, extra ₹300 including fitting, ask the supervisor."
-- Send to the **designated approver** only: job ref, work, amount, reason. Accept approve / reject / question.
-- Record responder, time, exact scope and amount. Tell the plumber.
-- Price/scope change → new version of the request. A resident's "yes" counts only if the resident is the approver.
-
-### 6.6 Closing voice note → invoice
-Input: "Job 24 finished. Fitted two angle valves at ₹350 each and one hose at ₹300. Labour ₹400.
-The third valve was unused and returned. Send the bill to the company."
-- Extract fitted items, qty, rates, labour, adjustments. Returned/unused parts are **excluded**.
-- Reconcile with the job: approvals, quoted parts. Flag discrepancies (e.g. hose ₹300 approved? yes/no).
-- If a spoken total conflicts with line items, read back the difference and ask.
-- Tax only per configured business settings (default: none).
-- Readback: "Job 24: two valves ₹700, hose ₹300, labour ₹400. Total ₹1,400. Send to the maintenance company
-  against WO-117?" — expected total **₹1,400**.
-- Voice corrections supported. After "yes": generate PDF (business details, invoice no., date, recipient, site,
-  job ID, WO, lines, qty, rates, labour, tax, total) → send to billing contact via configured channel.
-- Idempotent send (one invoice number, retries never duplicate). States: draft → awaiting_plumber → approved → sent
-  / delivery_failed → paid (only when the plumber confirms payment).
-
----
-
-## 7. Accuracy (top priority — how we get it)
-
-1. **Structured outputs only.** Every OpenAI call returns JSON validated by Pydantic. Invalid → one retry → ask the user.
-2. **Evidence per fact.** Every extracted field carries `value`, `status`
-   (confirmed / tentative / refused / not_mentioned / conflicting) and an exact `evidence_quote`.
-   No quote → not confirmed. Never fill a value without a quote.
-3. **Open questions, not leading ones.** Briefs ask "What is the price per unit?" not "Is it ₹350?".
-   A bare "yes" to a listed question = tentative.
-4. **Numbers.** Normalise spoken Telugu/English/Hindi numbers ("moodu vandala yabhai" = 350, "padhihenu" = 15,
-   "lakh", "per piece" vs "total") with a dedicated normaliser + unit tests. Keep the unit the speaker used.
-   The voice agent repeats numbers exactly as heard and reads back key numbers before ending the call.
-5. **Code owns arithmetic and rules.** Totals, comparisons, conditions, slot conflicts, approval validity, invoice
-   totals — all deterministic Python with tests. The LLM never adds numbers.
-6. **Two-pass for money.** Pass 1: LLM extracts line items. Pass 2: code reconciles against job state
-   (approvals, offers, returned parts) and lists discrepancies. Anything unreconciled → ask the plumber.
-7. **Readback before any consequential action** (book slot, send approval request, send invoice, commit to a shop).
-8. **Model choice.** Best available model for extraction and invoices (`OPENAI_MODEL_BRAIN`); a cheaper model only
-   for routing small talk. Already observed: the cheaper model misread a Telugu number (885 vs 390) — keep it out of
-   extraction.
-9. **Ask, don't guess.** Ambiguous job, number, model or size → one short clarifying question.
-10. **Eval set** (section 11) decides prompt changes. Never tune on the fresh hold-out set.
-
----
-
-## 8. Brain prompts (store in `app/brain/prompts/`, versioned)
-
-Reuse existing: Base Agent Prompt (Omni), Brief Writer, Extractor, Router, Reply composer. Changes:
-- **Brief Writer:** add caller persona "calling on behalf of plumber {plumber_name}"; role-specific question sets
-  for `client_booking`, `shop_part_check`, `approval_request`, `client_reschedule`; always end with a numeric readback.
-- **Extractor:** add schemas for `Offer`, `BookingResult`, `ApprovalResponse`, `InvoiceDraft`; add `conflicting` status.
-- **Router:** output `{intent, job_ref | "new" | "ambiguous", entities, missing, clarifying_question}`.
-  Intents: create_job, book_visit, source_part, set_dependency, request_approval, approval_response,
-  close_job_invoice, correct_detail, report_delay, cancel, status_query, small_talk.
-- **Reply composer:** plumber-facing, short, Telugu-English by default, lead with the answer, mark tentative items,
-  end with one clear action ("Send cheyyala?").
-
----
-
-## 9. Chinku App — chat-style UI (primary interface)
-
-Goal: feels like WhatsApp/ChatGPT, built for a plumber on a phone with dirty hands.
-
-**Mobile layout (default):**
-- Top bar: "Chinku" + active job chip ("J24 · Flat 304 · Kitchen tap") → tap to switch jobs.
-- Chat stream: plumber bubbles right, Chinku bubbles left. Chinku bubbles can contain **cards**:
-  - Job card (next action, owner, blocker).
-  - Live call card: "Calling Srinivas Hardware… ringing → on call → reading result" with a simulated/live label.
-  - Shop comparison card: one row per shop — exact model ✓/✗, stock state chip, unit price, total, hold, address;
-    unknown values shown as "unknown"; tap a row → evidence quote.
-  - Approval card: scope, amount, approver, status chip.
-  - Invoice card: lines, total, [Send] [Correct] buttons, PDF preview link.
-- Status chips: **Tentative** (amber), **Confirmed** (green), **Pending/Blocked** (grey), **Failed** (red),
-  **Simulated** (dashed outline). Meaning never by colour alone — always text.
-- Bottom: big **hold-to-talk mic** (primary), text box, 📎 photo/PDF. While recording: waveform + "Release to send".
-  After send: show transcript in the bubble so the plumber can see what Chinku heard; tap to correct.
-- Chinku replies also play as short TTS audio (toggle).
-- Quick actions under the last card: "Yes, send", "Change", "Call again", "Show job".
-
-**Desktop / dispatcher + demo view (`/dashboard`):** three columns — jobs list · chat · job detail
-(appointment, roles, shop offers table, approvals, invoice, **timeline** with links to the call/message/approval
-that produced each fact). When a shop corrects its price, only that cell and the total update (highlight briefly).
-
-Tech: keep it simple — server-rendered HTML + small vanilla JS or a single-file React via CDN; SSE or polling for
-live updates; MediaRecorder for audio. Must work on a phone browser over https. Keep the `?key=` protection.
-
----
-
-## 10. Reliability rules (keep existing, add these)
-
-- Idempotency on Twilio `MessageSid`, Omni `call_id`, invoice `idempotency_key`. Duplicate or out-of-order webhooks
-  must not double-book, double-approve or double-send.
-- Slot booking uses a conditional write so two clients cannot take one slot.
-- State persists in DynamoDB; restart mid-job → resumes.
-- Every outbound action logs channel + status; failures retry with backoff and are reported to the plumber.
-- Confirmation gate before: calling a new number, sending approval request, booking, sending invoice, any commitment.
-- Any error → Chinku tells the plumber in plain words; never silence.
-
----
-
-## 11. Evidence for judges
-
-1. **Accuracy vs baseline** on labelled real call transcripts (shop calls, client bookings, approvals) and
-   closing voice notes:
-   - Baseline: one plain prompt "summarise this call / make an invoice".
-   - Chinku: schema + statuses + evidence + code reconciliation.
-   - Main metric: field accuracy. Companion metric: **wrong-confirmed rate** (tentative/missing reported as
-     confirmed) and **invoice total errors**. Report counts. Keep a fresh hold-out set (≥5) never used for tuning.
-2. **Focused checks (automated tests + at least one live where possible):**
-   - Client requests a slot another booking just took.
-   - Same brand, different model.
-   - Price applies only to a larger quantity.
-   - Stock tomorrow / reservation expired.
-   - Resident says yes but only the supervisor can approve.
-   - Unused part returned; invoice corrected by voice.
-   - Duplicate webhook; invoice send retried (no duplicate).
-3. **Persistence:** restart the server mid-job; the job resumes on the dashboard.
-4. `eval/results.md` is generated by script, never hand-edited.
-
----
-
-## 12. Demo (90 seconds) — protect this
-
-1. Plumber (me) holds the mic: "Chinku, Job 24 ki rendu angle valves kavali, Srinivas and Ravi shops ki call chesi
-   exact model, price, pickup kanukko. Srinivas daggara 500 lopu unte customer ni 4 to 6 adugu."
-2. Judge's phone rings — judge plays Srinivas: "Different model undi, exact one repu vastundi."
-3. Chinku App shows: offer card "Different model · Tomorrow", dependency **not met**, visit **pending**, and asks:
-   "Srinivas has model X, not Y, and exact model only tomorrow. Wait, take X, or check Ravi?"
-4. Plumber: "Ravi ni check chey." → second shop call (or cached simulated, clearly labelled).
-5. Closing voice note → readback "Total ₹1,400 … send?" → "Yes" → PDF invoice delivered; dashboard timeline shows
-   every fact linked to its call/approval.
-6. Close with one measured accuracy number and one honest limitation.
-
-Fallback: a recorded replay of the same run, labelled as a recording.
-
----
-
-## 13. Build order and checkpoints (IST)
-
-| By | Must be working (observed) |
+### Why it wins (one step above Equal)
+| Equal AI today | Instint |
 |---|---|
-| Sat 9:00 PM | Job model + roles; section 3A pipeline working; create a job from a real Telugu-English voice note in Chinku App; job card shows |
-| Sat 11:30 PM | Client booking call with slot re-check and confirmations |
-| Sun 2:00 AM | Part sourcing: 2 shop calls, offers, comparison, different-model/tomorrow handling, dependency rule |
-| Sun 4:00 AM | Extra-work approval with designated-approver rule |
-| Sun 6:00 AM | Closing note → reconciliation → readback → PDF → idempotent send (₹1,400 case passes) |
-| Sun 8:00 AM | Chat UI polish (cards, chips, mic, transcript), dashboard timeline |
-| Sun 10:00 AM | Eval vs baseline generated; focused checks pass; restart test |
-| Sun 12:00 PM | README, HONEST_NOTE, demo rehearsed + fallback recording, pushed + deployed |
+| Screens and answers calls coming **to** you | **Makes calls for you** — book, ask, complain, confirm |
+| Voice only | **Photo, screenshot, PDF, voice or text** turned into action |
+| Summary after a call | **Follow-through**: tracks promises ("callback by 4 PM"), reminds, calls again, escalates |
+| One call | **A whole task** from one request: search → call → email → remind |
+| — | **Connect me now**: waits on the line, transfers to you when a human picks up |
+| — | **Language bridge**: calls in *their* language, reports in *yours* |
+
+Equal has said users want the assistant to "act autonomously on behalf of the user — e.g. sending addresses to the
+delivery person with consent or making outbound calls to book meetings." Instint is that next step, built today.
+
+**Pitch line:** *"Equal answers the calls that come to you. Instint makes the calls, sends the mails, and follows up
+until it's done."*
+
+**Research to cite:** Indians spent 15+ billion hours on hold to customer service in a year — ~30.7 hours per person
+(ServiceNow CX report). Google's call-for-you features (Hold for Me, Gemini Call for Me) are not available in India and
+are English-only.
+
+---
+
+## 3. Stack and ownership (verified facts marked ✓)
+
+| Layer | Owner | Facts |
+|---|---|---|
+| Outbound/inbound phone calls, voice | OmniDimension | ✓ One generic outbound agent `chinku-caller` (#286768) + `chinku-inbound` (#286801). ✓ Per-call brief via `call_context` reaches the prompt. ✓ Post-call webhook to AWS. Languages: English (India), Hindi, Telugu. LLM gpt-4.1, TTS Cartesia, STT Soniox. |
+| | | ✓ **Call transfer available**: Call Configuration → Transfer & Routing → "Enable Call Transfer" and "Custom API transfer" (server returns `__omni_transfer_number`). Currently OFF — enable and test. |
+| | | ✗ **No keypad/DTMF** option found → cannot navigate "press 1" menus. Label as NEXT. |
+| | | Available in-call options: Web Search, Google Calendar, Cal.com, Custom API (during call), WhatsApp Cloud (Meta). Optional. |
+| All intelligence | OpenAI | Transcribe, vision, planning, call briefs, extraction with evidence, replies, TTS, web search (verify availability on our credits). Strong model for extraction (cheap model misread a Telugu number: 885 vs 390). |
+| Exactness | Code | Arithmetic, dates/times (IST), comparisons, validation, approvals, idempotency |
+| Email | SMTP (Gmail app password) | ✓ works |
+| State, schedule, hosting | AWS | ✓ EC2 us-west-2, stable https (sslip.io), ✓ DynamoDB via instance role, scheduler |
+| Optional channel | Twilio WhatsApp sandbox | Unreliable (URL flips back; only joined numbers). **Not part of the demo.** |
+| Maps | OpenStreetMap + Leaflet | Free, no key. Geocoding via Nominatim (respect usage policy) or OpenAI web search results. |
+
+---
+
+## 4. Tools (the planner composes these — fixed set)
+
+| Tool | Does | Status |
+|---|---|---|
+| `analyze` | Photo/PDF/screenshot → structured content + type classification (handwritten page, bill, receipt, broken product, ticket screenshot, poster/banner/visiting card, notice, letter, suspicious SMS) | exists → extend classification |
+| `transcribe_image` | Exact editable text; keep lines/numbers; `[unclear]` instead of guessing | NEW mode of analyze |
+| `transcribe_audio` | Voice → text, Telugu/English/Hindi mixed, vocabulary prompt | exists |
+| `extract` | Key facts (dates, amounts, names, IDs, phone numbers, deadlines) each with source quote | exists |
+| `search` | Web research with sources + date checked (official support emails/helplines, hospitals/clinics, shops, facts) | NEW — verify OpenAI web search; else labelled NOT BUILT |
+| `map` | Show places from `search` on an OpenStreetMap card; user picks one | NEW |
+| `call` | Outbound call via OmniDimension with an OpenAI-written brief; extract answers with evidence quotes + status | exists |
+| `connect_me` | During/after a call, transfer to the user's (or a named contact's) phone via Custom API transfer | NEW — verify |
+| `draft_email` / `send_email` | Draft anything (text, transcript, complaint, attachment) to anyone; send after approval | exists |
+| `remind` | One-time, repeating, or auto-created from a promise; delivered in app (+ optional call) | exists → add repeating + promise-based |
+| `follow_up` | At a promise time: ask "Did they…?" and offer the next step (call again / escalate) | NEW (schedule + call) |
+| `remember` / `recall` | Personal memory: contacts, places, preferences, accounts' non-secret identifiers, past tickets | NEW |
+| `compute` | Totals, comparisons, dates — deterministic code | exists |
+| `scam_check` | Analyze suspicious SMS/screenshot/number + search official sources → Likely scam / Looks genuine / Unsure, with reasons and sources | NEW (analyze + search) |
+
+Existing recipes stay working and selectable by the planner (not in the headline): dealer quotes, banner rate,
+warranty complaint, passbook explanation, appointment + reminder, invoice total.
+
+---
+
+## 5. Planner (core of Instint)
+
+Pipeline for every request: **capture → transcribe (voice) → analyze (attachments) → recall memory → plan →
+approval → execute → results → follow-through.**
+
+`plan(request, attachments, memory, conversation, active_tasks) -> Plan` (OpenAI, structured output, Pydantic):
+```
+Plan:
+  understood: str                 # one-line readback, user's language
+  steps: [ {id, tool, inputs{}, depends_on[], needs_approval: bool, output_name} ]
+  clarifying_question: str|null   # ONE question when essentials are missing
+  suggested_actions: [ {label, instruction} ]   # only when no instruction given (section 7)
+  cannot_do: [ {what, why, best_alternative} ] # honest limits + next best step
+  confidence: 0-1
+```
+Rules:
+1. **One sentence → many steps.** "Transcribe this, email me a copy, remind me tomorrow at 9" =
+   transcribe_image → draft_email(to=me) [approval] → send_email → remind(tomorrow 09:00 IST).
+2. **The instruction decides what happens to an attachment.** "Transcribe" = exact text only. "Email the important
+   details" = extract + short email. Never mix modes.
+3. **Conversation memory.** "Call the second one", "same hospital", "email that to Suresh" resolve from the thread
+   and memory. Never ask the user to repeat something already said.
+4. **Try its best.** If a step is impossible (needs the user's app login, payment, OTP, IVR keypad), say exactly
+   why in `cannot_do` and do the best alternative (call the helpline instead, show the official link, draft the text).
+5. **Approval gate** (`needs_approval=true`): any call, any email/message to anyone, transfers, anything involving money,
+   calling a number read from a photo. Reading, transcribing, searching, drafting, reminders to the user: no approval.
+6. **Confidence < 0.8 or missing essentials** → one clarifying question, no action.
+7. **Times** resolved in code (IST), always shown in words: "Tomorrow, Sun 22 Nov, 9:00 AM".
+8. Every step output becomes a stored **Result** (section 8). Partial success shown honestly.
+
+---
+
+## 6. Journeys (build these end to end; in priority order)
+
+**J1 — Photo → email (anyone).**
+"Transcribe this, email me a copy, and remind me tomorrow at 9 to review it." → editable transcript → "Your email is
+ready" card → Send → email in inbox → reminder set. Variant: "Email the important points to suresh@…".
+
+**J2 — Appointment for Mummy (call, confirm, remind).**
+"Book a dermatologist for Mummy tomorrow evening near Kukatpally and tell her." → search clinics/hospitals → **map
+card** → "Which one?" (or the one named) → approval → call the clinic → slot captured with evidence → **Booked** only
+when the clinic confirms → call Mummy in Telugu with the details → reminder call to Mummy 1 hour before + reminder to me.
+
+**J3 — Complaint with follow-through (auto-detect + auto-find email).**
+Photo of a broken product / screenshot of a problem (missed return pickup, double charge, internet down) → Instint
+identifies it ("Broken mixer · Brand X · Model Y") → searches the **official** support email/helpline (official domain
+only, show the source) → drafts the complaint → approval → sends email **or** calls the helpline → records ticket
+number + promised time (evidence quotes) → creates a promise → at that time asks "Did they fix it?" → if no, follow-up
+call / escalation suggestion (helpline → email → grievance officer → National Consumer Helpline).
+
+**J4 — Photo → call.**
+Photo of a poster, banner, visiting card or shop board + "Call this number and ask …" → number read and validated →
+approval ("Call 98xxxx21 — Sri Sai Constructions?") → call → answers with quotes.
+
+**J5 — Connect me now (transfer).**
+On a support/booking call, when a human is on the line and the user asked for it ("connect me when someone picks up"),
+Instint says "Connecting you now" and transfers via Custom API transfer to the user's phone. Verify with a test call
+first; if it fails, show "Talk to them now: call <number>, ticket <id>" instead.
+
+**J6 — Language bridge.**
+"Call this Bengaluru shop and ask in Kannada if they have it; tell me in Telugu." Brief language = callee's language;
+report language = user's language. (Omni agent languages currently English (India), Hindi, Telugu — add Kannada/Tamil
+in the agent if available; verify before demo.)
+
+**J7 — Scam check.** Forward/upload a suspicious SMS, screenshot or number → verdict with reasons + official sources.
+
+**J8 — Group ask (stretch).** "Ask Ravi, Sai and Kiran if they're free Sunday lunch" → calls one after another
+(1 concurrent call on our plan) → table of answers with quotes.
+
+---
+
+## 7. No-instruction attachments → smart suggestions
+
+Photo/PDF without instruction → preview + "What should I do with this?" + 2–3 actions that fit **that** image:
+- Handwritten page → Transcribe · Email me a summary · Remind me to review
+- Broken product / receipt problem → Raise a complaint · Find support contact
+- Ticket / return screenshot → Follow up · Check pickup details
+- Poster / banner / visiting card → Call and ask · Save contact
+- Bill → Remind me before due date · Explain this
+- Suspicious SMS → Is this a scam?
+- Notice / letter → Explain in Telugu · Set a reminder for the date
+If an instruction was given, skip the question and start.
+
+---
+
+## 8. Results, promises and memory
+
+**Result types:** Transcript (editable, Copy, Email this) · Email (Draft → Waiting for you → Sent/Failed) ·
+Call result (who, outcome, answers with quotes + status confirmed/tentative/refused/not mentioned, ticket no.,
+promised time) · Booking (Requested → Booked only on confirmation) · Reminder · Research (answer + sources + date) ·
+Map pick · Scam verdict · Comparison table (code-computed; unknowns shown as "unknown").
+
+**Promises:** any commitment heard on a call ("callback by 4 PM", "technician tomorrow 10–12", "refund in 5 days")
+becomes a Promise {who, what, by_when, evidence_quote, task_id} → shown on the Active task card → `follow_up` at
+by_when.
+
+**Memory:** `remember` stores user-stated facts (contacts incl. Mummy's number and language, home area, preferred
+hospital, email, past tickets, preferences). Used automatically by the planner. **Never store** OTPs, passwords, card
+or bank account numbers, government ID numbers. User can view and delete memory in Settings.
+
+---
+
+## 9. UI — Instint App (chat-first, warm white + light blue)
+
+Serve at `/app` (keep `?key=` protection). Mobile first (check 390×844), good on desktop.
+
+**Tokens:** background warm white #FAF8F4 · primary light blue #DCEBFF · accent blue #2F6FED (mic, buttons, links) ·
+text #14161A / #5F6672 · cards white, border #E8E4DC, radius 20px, soft shadow · font Plus Jakarta Sans
+(+ Noto Sans Telugu / Devanagari) · tap targets ≥ 44px · motion 150–200 ms ease-out, respect reduced motion.
+Status chips always in words: Ready · Waiting for you · Sent · Booked · Promised · Resolved · Failed · Simulated (dashed).
+Show **Sent / Booked / Resolved only when confirmed.**
+
+**First launch:** language choice (Telugu / English / Hindi) with a visible **Skip**. Voice choice only at the first call.
+
+**Home — exactly these, top to bottom:**
+1. Big input card: **"What do you need?"** / *Type or speak in your language* — big **mic** (hold to talk),
+   **Add photo** (camera/gallery/PDF), text field.
+2. Example chips (each starts a real task): **Email this photo · Book a doctor · Complain & follow up · Call from a photo**.
+3. **Needs you** (only when a decision waits): e.g. "Your email is ready · to suresh@… · [Send] [Edit]",
+   "Call Sri Sai Clinic to book? · [Call] [Not now]".
+4. **Active task** (one): e.g. "Internet complaint · Callback promised by 4 PM".
+5. **Recent work:** plain rows — "Transcript ready · Copy text", "Email sent · View email",
+   "Booked · Tomorrow 6 PM · Sri Sai Clinic".
+
+**Working view (chat thread):** user bubble (photo thumbnail + editable transcript of what was said, numbers/codes
+highlighted and tappable) → Instint readback ("Transcribe · email you · remind tomorrow 9 AM") → live step list
+(✓ / ⏳ / ✗ with words) → result cards. Live call card: "Calling Sri Sai Clinic… ringing → on call → reading result",
+with **Connect me now** button when transfer is available. Map card: OpenStreetMap with numbered pins + list
+(name, distance, open now if known, source) → tap to choose. Every Instint answer has a 🔊 **Listen** button (OpenAI TTS).
+
+Screenshot every screen at 390×844 and desktop; fix spacing/typography before reporting.
+
+---
+
+## 10. Accuracy and safety
+
+- Structured outputs only (Pydantic); invalid → one retry → ask the user.
+- Every fact has an exact source quote (image text, call transcript, or web source). No quote → not confirmed.
+- Exact transcription: never summarise, never guess; `[unclear]` marks.
+- Code owns arithmetic, dates, comparisons; Telugu/English/Hindi number normaliser with unit tests.
+- Calls use open questions; a bare "yes" to a listed question = tentative; agent reads back key numbers before ending.
+- Every call opens: "I'm an AI assistant calling on behalf of Hanish." Never share OTPs, card numbers, passwords;
+  never agree to pay or buy. No emergency numbers.
+- Call only numbers whose owners agreed (me, family who agreed, volunteering judges). Demo businesses (clinic, support
+  line, shop) are played by consenting people and labelled SIMULATED.
+- Search: official sources only for support contacts; always show source + date checked; say clearly when unsure.
+- Approval before anything leaves the device; show exactly what goes to whom.
+- Idempotency on webhooks, sends and calls; state persists in DynamoDB; restart resumes.
+
+---
+
+## 11. Demo (3 minutes) — rehearse on a phone
+
+1. **Language bridge (30 s):** "Ask this Bengaluru shop in Kannada if they have this charger; tell me in Telugu."
+   Judge's phone rings (judge plays the shop) → Telugu answer with quote. *(Fallback: Hindi if Kannada not supported.)*
+2. **Complaint + follow-through + Connect me now (60 s):** photo of a broken mixer → "Raise a complaint" → official
+   email found (source shown) → Send → or helpline call (judge plays support) → ticket + "callback by 4 PM" promise →
+   Active task card → (demo time shortened, labelled) "Did they fix it?" → "Connect me now" transfer to my phone.
+3. **Photo → email in the judge's inbox (45 s):** judge photographs a handwritten page: "Transcribe this, email me a
+   copy, remind me tomorrow at 9." → transcript → Send → judge opens their own inbox.
+4. **Close (15 s):** one measured number from eval + one honest limitation (no keypad menus yet).
+Fallback: recorded replay of the full run, labelled as a recording.
+
+---
+
+## 12. Evidence for judges (`eval/results.md`, generated by script, never hand-edited)
+
+1. **Exact transcription:** ≥10 handwritten/printed pages with typed ground truth. Baseline = one plain "read this
+   image" prompt. Metrics: word error rate + hallucinated words (companion).
+2. **Planning:** ≥20 real requests (voice + text; Telugu/English/mixed; single and multi-step) with expected plans.
+   Metrics: correct steps, correct recipients/times; **wrong-action rate** (target 0).
+3. **Call extraction:** existing results (dealer ₹714/bag → ₹35,700 in code; "moodu vandala tombhai" = 390;
+   banner "65 lakhs") + new booking and support calls.
+4. **Complaint contact search:** for 10 brands, % where the found email/helpline is on the official domain.
+5. **Persistence:** restart mid-task → task, promise and pending approval remain.
+
+---
+
+## 13. Checkpoints (IST) and cut order
+
+| By | Must be observed working |
+|---|---|
+| Sun 1:00 AM | Planner + conversation memory + `remember/recall` + `transcribe_image`; J1 via API |
+| Sun 3:00 AM | J1 end to end (real inbox + reminder); J4 photo → call |
+| Sun 5:00 AM | `search` + `map`; J2 (clinic call, Mummy call, reminders) |
+| Sun 7:00 AM | J3 (auto-detect, official email search, send/call, promise, follow-up); J5 transfer verified |
+| Sun 8:30 AM | J6 language bridge; J7 scam check |
+| Sun 10:00 AM | UI complete (home, working view, cards, map, Listen); screenshots fixed |
+| Sun 11:00 AM | Eval scripts run; restart test |
+| Sun 12:00 PM | README, HONEST_NOTE, submission text, demo rehearsed + fallback recorded; pushed + deployed |
 | Sun 2:00 PM | Code freeze |
 
-Cut order if late: delay/reschedule → WhatsApp client notifications (use calls) → second shop live (simulate,
-labelled) → UI polish. **Never cut:** the demo moment, invoice accuracy, evidence, honest note.
-
-Old features (dealer quotes, banner, passbook, appointment, warranty) stay in the repo and keep passing tests, but
-are not in the demo or README headline.
+**Cut order if late:** J8 → J7 → J6 → map polish (list only) → Listen button.
+**Never cut:** J1, J3, approval gate, evidence quotes, eval, honest note.
 
 ---
 
-## 14. Safety, consent, honesty
+## 14. HONEST_NOTE.md (keep current)
 
-- Call only numbers whose owners agreed (me, friends, judges who volunteer). Mock shops and clients for testing.
-- Every call says it is an AI assistant calling for the named plumber.
-- No payments, no purchases, no reservations beyond the plumber's stated authority.
-- Mask phone numbers in the UI except last 4 digits. Keep the chat key out of the repo and submission.
-- HONEST_NOTE: built by me (engine, specs, brain prompts, schemas, reconciliation, UI, eval); reused (OmniDimension,
-  Twilio sandbox, OpenAI, AWS, SMTP); simulated (test shops/clients played by consenting people, mock part photos,
-  any replayed calls); limits (sandbox WhatsApp only reaches joined numbers; Omni plan = 1 concurrent call, so shops
-  are called one after another).
+- **Built by me:** planner and tool engine, state machine, approval gates, promises/follow-up, memory, prompts and
+  schemas, transcription/extraction logic, number normaliser, Instint App UI, eval harness.
+- **Reused:** OpenAI (models, vision, speech, TTS, web search if used), OmniDimension (calls, transfer), SMTP/Gmail,
+  AWS (EC2, DynamoDB, scheduler), OpenStreetMap/Leaflet, Twilio WhatsApp sandbox (optional).
+- **Simulated:** businesses and support agents played by consenting people; shortened follow-up timers in the demo;
+  mock documents where noted; any replayed run.
+- **Limits:** no keypad/IVR navigation (OmniDimension has no DTMF option); one concurrent call on our plan; cannot act
+  inside other apps or log into accounts; WhatsApp sandbox unreliable for Indian numbers.
 
 ---
 
-## 15. Final report format (when I ask, and at the end)
+## 15. Submission text (update with real results before submitting)
 
-Run commands · features actually verified (with observed evidence) · test results (counts) · remaining integration
-gaps · 90-second demo script · next 3 actions. Use observed results only.  
+**Project:** Instint — tell it what you need, and it gets it done.
+
+**What are you building?** Instint is an everyday assistant with one question: "What do you need?" You type, speak in
+Telugu, English or a mix, or show a photo. Instint plans the steps and does the work: it reads photos and documents,
+searches the web, **makes real phone calls** with an AI voice agent, emails anyone, sets reminders, and **follows up
+on promises** until the task is done. It books a doctor and calls your mother to tell her; it spots a broken product in
+a photo, finds the company's official support email, sends the complaint, and checks back when they promised to
+respond; it waits on a support line and connects you when a human answers; it calls a shop in Kannada and tells you
+the answer in Telugu. Every result carries proof — exact quotes, sources, ticket numbers — and nothing is sent or
+called without your one-tap approval.
+
+**What exact problem are you solving?** People know what they want, but still have to turn it into a search, a phone
+call, an email and a reminder themselves — and then chase it. Indians spent over 15 billion hours on hold to customer
+service in a year, about 30 hours each. Call assistants today handle calls coming *to* you; the call-for-you features
+that exist abroad are not available in India or in Indian languages. Instint does the outbound work and the
+follow-through, in your language.
+
+**Pitch:** *"Equal answers the calls that come to you. Instint makes the calls, sends the mails, and follows up until
+it's done."*
+
+---
+
+## 16. Final report format (at each checkpoint and at the end)
+
+Run commands · journeys verified (with observed evidence) · test counts · eval numbers · remaining gaps ·
+demo script status · next 3 actions. Observed results only.  
