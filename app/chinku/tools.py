@@ -136,6 +136,8 @@ def extract(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str,
     f = json_call(settings().openai_model_brain, sys, json.dumps({"want": inputs.get("want"), "text": text[:12000]}, ensure_ascii=False),
                   Facts, ctx["task"].task_id, "extract")
     f.facts = [x for x in f.facts if x.quote and x.quote.strip() and x.quote.strip()[:40] in text]  # evidence must exist
+    if not inputs.get("silent"):
+        ctx["card"]("📋 " + ("\n".join(f"{x.label}: {x.value}" for x in f.facts) if f.facts else "I couldn't find those details in the text."), None)
     return f.model_dump()
 
 
@@ -347,6 +349,9 @@ def recall(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, 
     q = str(inputs.get("about") or "").lower()
     if q:
         rows = [r for r in rows if q in r["key"].lower() or q in str(r["value"]).lower()] or rows
+    if not inputs.get("silent"):
+        ctx["card"]("🧠 " + ("; ".join(f"{r['key']}: {r['value']}" for r in rows[:12]) if rows else "I don't remember anything about that yet."),
+                    {"type": "memory", "saved": [{"key": r["key"], "value": r["value"]} for r in rows[:12]]} if rows else None)
     return {"memory": rows}
 
 
@@ -366,8 +371,15 @@ def _eval(n: ast.AST) -> float:
 
 def compute(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
     expr = str(inputs.get("expression") or "").replace(",", "").replace("×", "*").replace("÷", "/").replace("₹", "")
-    v = _eval(ast.parse(expr, mode="eval").body)
-    return {"expression": inputs.get("expression"), "value": round(v, 2)}
+    try:
+        v = _eval(ast.parse(expr, mode="eval").body)
+    except (SyntaxError, ZeroDivisionError) as e:
+        raise ToolError("I couldn't calculate that — please write it like “714 × 50”.") from e
+    v = round(v, 2)
+    shown = f"{v:,.0f}" if float(v).is_integer() else f"{v:,.2f}"
+    if not inputs.get("silent"):
+        ctx["card"](f"🧮 {inputs.get('expression')} = {shown}", None)  # code computes; the user always sees the answer
+    return {"expression": inputs.get("expression"), "value": v, "shown": shown}
 
 
 def reply(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
