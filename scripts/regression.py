@@ -131,7 +131,7 @@ def _():
     out, cards = run("call them")
     cp = next(c for c in cards if c.get("type") == "call_plan")
     answer(False)
-    return f"{sup['email']} · {sup['phone']} · email to {em['to']} · call card {cp.get('phone') or cp.get('targets')} · both declined"
+    return f"{sup['email']} · {sup['phone']} · email to {em['to']} · call card {(cp.get('targets') or [{}])[0].get('phone')} · both declined"
 
 
 @case("Toll-free call: approval card (night rule allows 1800) → no")
