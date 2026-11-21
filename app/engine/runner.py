@@ -82,8 +82,7 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> 
                 save_task(pending, "gate_confirmed")
                 advance(pending["task_id"], send)
             else:
-                send("Sare 👍 calls start chestunna. Result WhatsApp lo pamputa.")
-                start(pending, send)
+                start(pending, send)  # no separate "starting" message (saves WhatsApp quota)
             return
         if NO.match(text or ""):
             pending["status"] = "cancelled"

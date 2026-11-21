@@ -180,3 +180,9 @@ item table + total come from code. File served from /media and sent on WhatsApp.
 Observed (LIVE Gmail + brain, simulated WhatsApp): self-sent test mail found in 3,554-message inbox; ₹64,965 computed = printed; reply in 24 s;
 7-slide deck in 44 s with exact item table. Defects fixed: router left make_ppt false (added input hints + boolean rule);
 email date in US time → IST; deck bullets leaked tool instructions → audience rule in write_deck prompt.
+
+## [Sat 16:45] BLOCKER: Twilio trial = 50 WhatsApp messages/day (error 63038, HTTP 429)
+Observed: after 50 outbound messages today, every reply fails with 63038 "exceeded the 50 daily messages limit". Inbound still arrives; tasks ran but replies were lost, and the send error crashed the task.
+Chose: send failures are non-fatal (logged as wa_send_failed; reply stays in task state + dashboard); removed 2 acknowledgement messages
+("calls start chestunna", "call lo cheppindi ardham ayyindi"); voice note + text sent as ONE message.
+Real fix needs Hanish: upgrade Twilio (add balance, removes trial cap) or a second Twilio account for the demo. Decision pending.

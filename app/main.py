@@ -22,7 +22,8 @@ app = FastAPI(title="Chinku")
 
 def notify(to: str, text: str, audio: bytes | None = None) -> None:
     if audio:
-        whatsapp.send_voice(to, audio, "")
+        whatsapp.send_voice(to, audio, text)  # one message: voice note + caption (saves WhatsApp quota)
+        return
     whatsapp.send(to, text)
 
 
@@ -117,7 +118,6 @@ def process_inbound_call(parsed: dict[str, Any]) -> None:
     if not said.strip():
         return
     text = f"[Hanish phone call lo cheppadu]\n{said}\n\n[Call summary: {parsed.get('summary') or '-'}]"
-    whatsapp.send(owner, "📞 Call lo cheppindi ardham ayyindi — pani start chestunna.")
     runner.handle_message(owner, text, None, reply_to(owner))
 
 

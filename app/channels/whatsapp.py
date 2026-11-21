@@ -40,15 +40,21 @@ def send(to: str, body: str, media_url: str | None = None) -> dict[str, Any]:
     if media_url:
         data["MediaUrl"] = media_url
     url = f"https://api.twilio.com/2010-04-01/Accounts/{s.twilio_account_sid}/Messages.json"
-    last: Exception | None = None
+    last = ""
     for _ in range(2):
         try:
             r = httpx.post(url, data=data, auth=(s.twilio_account_sid, s.twilio_auth_token), timeout=20)
+            if r.status_code == 429 or '"code":63038' in r.text:  # trial daily limit: retrying will not help
+                last = r.text[:300]
+                break
             r.raise_for_status()
             return r.json()
         except httpx.HTTPError as e:
-            last = e
-    raise RuntimeError(f"twilio send failed: {last}")
+            last = str(e)[:300]
+    # Never crash a task because WhatsApp delivery failed: the reply is kept in task state / dashboard.
+    from app.store.dynamo import store
+    store().add_event("-", "wa_send_failed", {"to_last4": to[-4:], "error": last, "body": body[:500]})
+    return {"failed": True, "error": last}
 
 
 def send_voice(to: str, audio_mp3: bytes, caption: str = "") -> dict[str, Any]:
