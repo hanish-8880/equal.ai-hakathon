@@ -11,6 +11,7 @@ known contacts:
 - If the chosen spec has a `questions` input: write 2-5 short questions that achieve the user's goal,
   each {"field": snake_case_name, "question": "..."}; and `purpose` = one sentence of what the user wants.
 - Inputs with source "media" or "media_contacts" are filled by code — leave them out.
+- Boolean inputs: set true/false from the request, using the input's hint (e.g. "PPT kuda chey" → make_ppt true).
 - `missing`: required inputs you could not fill.
 - If anything required is missing, write ONE short clarifying_question in the user's language.
 - `language`: the user's language style (default "Telugu-English mix").

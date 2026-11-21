@@ -99,3 +99,27 @@ class Reply(BaseModel):
 class EmailDraft(BaseModel):
     subject: str
     body: str
+
+
+# ---------- document analysis + slides ----------
+class KeyValue(BaseModel):
+    label: str
+    value: str  # exactly as printed in the document
+    quote: str | None = None
+
+
+class DocAnalysis(BaseModel):
+    headline: str                 # one line answer to what the user asked
+    key_values: list[KeyValue] = Field(default_factory=list)
+    summary: str
+
+
+class Slide(BaseModel):
+    title: str
+    bullets: list[str]
+
+
+class SlideDeck(BaseModel):
+    title: str
+    subtitle: str | None = None
+    slides: list[Slide]

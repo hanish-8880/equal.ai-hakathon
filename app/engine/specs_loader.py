@@ -9,7 +9,7 @@ from typing import Any
 import yaml
 
 SPEC_DIR = Path(__file__).parent / "specs"
-STEP_TYPES = {"call", "wait_for", "email", "schedule", "reply", "compute"}
+STEP_TYPES = {"call", "wait_for", "email", "schedule", "reply", "compute", "fetch_email", "make_doc"}
 
 
 class SpecError(ValueError):

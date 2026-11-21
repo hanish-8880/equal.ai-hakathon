@@ -29,6 +29,15 @@ def notify(to: str, text: str, audio: bytes | None = None) -> None:
 steps.NOTIFY = notify
 
 
+def send_file(to: str, data: bytes, filename: str, caption: str) -> None:
+    whatsapp.MEDIA_DIR.mkdir(exist_ok=True)
+    (whatsapp.MEDIA_DIR / filename).write_bytes(data)
+    whatsapp.send(to, caption, f"{settings().public_base_url}/media/{filename}")
+
+
+steps.SEND_FILE = send_file
+
+
 def _scheduler_loop() -> None:
     """Persisted schedules (task state) → survives restarts. EventBridge can call /internal/fire instead."""
     while True:
@@ -137,7 +146,8 @@ async def omni_webhook(request: Request, bg: BackgroundTasks) -> JSONResponse:
 @app.get("/media/{name}")
 def media(name: str) -> FileResponse:
     p = whatsapp.MEDIA_DIR / Path(name).name
-    mt = {".mp3": "audio/mpeg", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".pdf": "application/pdf"}.get(p.suffix.lower(), "application/octet-stream")
+    mt = {".mp3": "audio/mpeg", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".pdf": "application/pdf",
+          ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation"}.get(p.suffix.lower(), "application/octet-stream")
     return FileResponse(p, media_type=mt)
 
 

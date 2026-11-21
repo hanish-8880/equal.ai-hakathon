@@ -1,0 +1,33 @@
+name: email_pdf_report
+description: "Someone emailed Hanish a PDF (bill, invoice, quotation, report, statement); Chinku should find it in Hanish's own Gmail inbox, analyse it, send the key values / total on WhatsApp, and (if asked) make a PowerPoint about it"
+route_examples:
+  - "na boss ippude PDF mail chesaru, analyze chesi value WhatsApp lo pampu, PPT kuda chey"
+  - "Suresh sent me a quotation PDF by email, analyse it, tell me the total and make a ppt"
+inputs:
+  from_hint:    {source: text_or_contacts}
+  subject_hint: {source: text}
+  request:      {source: text, required: true}
+  make_ppt:     {source: text, default: false, type: boolean, hint: "true if the user asks for a PPT / presentation / slides / deck"}
+confirm_before: []
+steps:
+  - id: fetch
+    type: fetch_email
+    from: "{inputs.from_hint}"
+    subject: "{inputs.subject_hint}"
+    days: 7
+  - id: total
+    type: compute
+    list: "steps.fetch.output.document.line_items"
+    field: amount
+    check_against: "steps.fetch.output.document.stated_total"
+    skip_if_empty: true
+  - id: tell_value
+    type: reply
+    template_hint: "Tell Hanish which email it was (from, subject, date), the key values EXACTLY as printed in the document, and the total from step 'total' (say if it matches the printed total). If make_ppt is true say the PPT is coming next. Answer what he asked: {inputs.request}"
+  - id: ppt
+    type: make_doc
+    kind: pptx
+    when: "{inputs.make_ppt}"
+    source: "steps.fetch.output.document"
+    request: "{inputs.request}"
+result_schema: {}

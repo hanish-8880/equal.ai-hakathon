@@ -19,6 +19,8 @@ RETRY_DELAY_S = 300
 DISPATCH = omni.dispatch_call  # swapped in tests
 QUEUE_POLL_S, QUEUE_MAX_S, JOIN_S = 15, 600, 45
 ON_CALL_TERMINAL = lambda task_id, step_id: None  # set by runner
+# SEND_FILE(to_whatsapp, data, filename, caption): send a document. Set by main.py.
+SEND_FILE = lambda to, data, filename, caption: store().add_event("-", "send_file_unwired", {"file": filename})
 # NOTIFY(to_whatsapp, text, mp3_bytes_or_None): message anyone (owner or contact). Set by main.py.
 NOTIFY = lambda to, text, audio=None: store().add_event("-", "notify_unwired", {"to_last4": to[-4:], "text": text[:200]})
 
@@ -308,6 +310,8 @@ def run_compute(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any]
     from app.engine.specs_loader import _lookup
     ctx = tctx(task)
     rows = _lookup(ctx, step["list"]) or []
+    if not rows and step.get("skip_if_empty"):
+        return {"status": "done", "output": {"total": None, "skipped": "no line items"}}
     field = step["field"]
     vals, missing = [], []
     for r in rows:
@@ -328,6 +332,48 @@ def run_compute(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any]
            "stated_total": stated, "matches_stated": (abs(stated - total) < 0.5) if stated is not None else None}
     store().add_event(task["task_id"], "computed", out)
     return {"status": "done", "output": out}
+
+
+# ---------------- fetch_email ----------------
+def run_fetch_email(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+    """Owner's own inbox, read-only: newest mail with a PDF → read the PDF. The raw PDF is not stored."""
+    from app.actions import inbox
+    ctx = tctx(task)
+    frm, subj = render(step.get("from", ""), ctx) or None, render(step.get("subject", ""), ctx) or None
+    found = inbox.find_latest_pdf(frm, subj, int(step.get("days", 7)))
+    if not found:
+        who = f" from {frm}" if frm else ""
+        send(f"Last {step.get('days', 7)} days lo{who} PDF unna mail dorakaledu. Sender peru / subject cheppandi?")
+        return {"status": "failed", "error": "no matching mail"}
+    doc = perceive.read_document(found["pdf"], found["filename"], task["task_id"]).model_dump()
+    meta = {k: found[k] for k in ("from", "from_email", "subject", "date", "filename")}
+    store().add_event(task["task_id"], "email_fetched", {**meta, "items": len(doc.get("line_items", []))})
+    return {"status": "done", "output": {"email": meta, "document": doc}}
+
+
+# ---------------- make_doc ----------------
+def run_make_doc(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+    from app.actions import slides
+    from app.engine.specs_loader import _lookup
+    ctx = tctx(task)
+    when = render(step.get("when", True), ctx)
+    if str(when).lower() in ("false", "no", "0", "none", ""):
+        return {"status": "done", "output": {"skipped": "not requested"}}
+    if step.get("kind", "pptx") != "pptx":
+        raise NotImplementedError(f"make_doc kind {step.get('kind')}")
+    doc = _lookup(ctx, step["source"]) or {}
+    computed = (task["steps"].get("total") or {}).get("output")
+    meta = ((task["steps"].get("fetch") or {}).get("output") or {}).get("email")
+    req = render(step.get("request", ""), ctx)
+    analysis = decider.analyze_document(req, doc, computed, task["task_id"]).model_dump()
+    deck = decider.write_deck(req, doc, analysis, computed, meta, task["task_id"]).model_dump()
+    table = [(it.get("label", ""), inr(float(it["amount"]))) for it in doc.get("line_items", []) if it.get("amount") is not None]
+    total = (computed or {}).get("total_str")
+    data = slides.render(deck, table or None, total, footer=f"Prepared by Chinku for {settings().user_name}")
+    fname = f"{task['task_id']}_{(deck['title'] or 'report')[:30].replace(' ', '_')}.pptx"
+    SEND_FILE(task["user"], data, fname, f"📊 {deck['title']} — PPT ready")
+    store().add_event(task["task_id"], "doc_made", {"file": fname, "slides": len(deck.get("slides", [])) + 1 + bool(table)})
+    return {"status": "done", "output": {"file": fname, "slides": len(deck.get("slides", [])), "analysis": analysis}}
 
 
 # ---------------- schedule ----------------
@@ -374,6 +420,10 @@ def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) 
         return run_schedule(step, spec, task, send)
     if step["type"] == "compute":
         return run_compute(step, spec, task, send)
+    if step["type"] == "fetch_email":
+        return run_fetch_email(step, spec, task, send)
+    if step["type"] == "make_doc":
+        return run_make_doc(step, spec, task, send)
     if step["type"] == "wait_for":
         return run_wait_for(step, spec, task, send)
     return _run(step, spec, task, send)

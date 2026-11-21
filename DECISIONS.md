@@ -171,3 +171,12 @@ Chose (Hanish approved order: A now, eval next, B=Gmail→analyze→PPT after ev
 - Numbers that fail validation (landlines, partial) are SKIPPED and listed in the plan, not blocking.
 Observed (live vision + router, simulated calls): mock insurance letter → 3 numbers with labels; landline skipped; questions: cover, premium payment, claim process.
 Gave up: calling landlines (indian_mobile validation only).
+
+## [Sat 16:50] Feature B: email_pdf_report (Gmail PDF → analyse → WhatsApp value → PPT) — new step types fetch_email, make_doc
+Chose (Hanish approved Gmail read of his own inbox): IMAP read-only (select readonly + BODY.PEEK, nothing marked read/moved), same app password.
+Newest mail with a PDF in last 7 days, optional sender/subject hint (contacts can hold "boss" email). Raw PDF never stored; only DocRead.
+Totals via existing compute step (skip_if_empty for documents without line items). PPT: brain writes outline (SlideDeck), python-pptx renders;
+item table + total come from code. File served from /media and sent on WhatsApp.
+Observed (LIVE Gmail + brain, simulated WhatsApp): self-sent test mail found in 3,554-message inbox; ₹64,965 computed = printed; reply in 24 s;
+7-slide deck in 44 s with exact item table. Defects fixed: router left make_ppt false (added input hints + boolean rule);
+email date in US time → IST; deck bullets leaked tool instructions → audience rule in write_deck prompt.
