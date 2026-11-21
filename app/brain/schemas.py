@@ -73,3 +73,9 @@ class Extraction(BaseModel):
 # ---------- reply ----------
 class Reply(BaseModel):
     text: str
+
+
+# ---------- email ----------
+class EmailDraft(BaseModel):
+    subject: str
+    body: str

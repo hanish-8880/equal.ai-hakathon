@@ -1,0 +1,25 @@
+name: warranty_email
+description: "Product photo and/or message about a broken appliance; user wants a warranty / complaint email sent to the brand's support"
+route_examples:
+  - "mixer pani cheyatledu, warranty mail pettu"
+  - "this fan stopped working, send a warranty complaint email"
+inputs:
+  brand:         {source: image_or_text, required: true}
+  model:         {source: image_or_text}
+  serial:        {source: image}
+  product_type:  {source: image_or_text, required: true}
+  problem:       {source: text, required: true}
+  purchase_date: {source: text}
+  support_email: {source: text, validate: email}
+confirm_before: []
+steps:
+  - id: send_mail
+    type: email
+    to: "{inputs.support_email}"
+    to_lookup: "Official India customer-care / warranty support email address for {inputs.brand} {inputs.product_type}"
+    goal: "Warranty service request: {inputs.brand} {inputs.product_type} {inputs.model} — problem: {inputs.problem}"
+    shareable: [user_name]
+  - id: report
+    type: reply
+    template_hint: "Tell the user the warranty email was sent, to which address (and that in demo mode it was delivered to their own inbox), and suggest what to do if support does not reply in 2 days."
+result_schema: {}

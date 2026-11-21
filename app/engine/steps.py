@@ -4,7 +4,10 @@ import time
 import uuid
 from typing import Any
 
-from app.brain import brief_writer, decider, extractor
+from app.actions import email as email_action
+from app.brain import brief_writer, decider, extractor, lookup
+from app.config import settings
+from app.engine import validate
 from app.engine.specs_loader import arith, render
 from app.store.dynamo import store
 from app.voice import omni
@@ -168,6 +171,7 @@ def rank(results: list[dict[str, Any]], expr: str, inputs: dict[str, Any], schem
 def run_reply(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
     prior = _prior_results(task)
     results = [r for out in prior.values() if isinstance(out, list) for r in out]
+    results += [{"step": k, "output": out} for k, out in prior.items() if isinstance(out, dict)]
     ranking = rank(results, step["rank_by"], task["inputs"], spec.get("result_schema", {}),
                    step.get("rank_label", "score")) if step.get("rank_by") else None
     text = decider.compose_reply(step.get("template_hint", ""), task["inputs"], results, ranking,
@@ -176,9 +180,43 @@ def run_reply(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
     return {"status": "done", "output": {"text": text, "ranking": ranking}}
 
 
+# ---------------- email ----------------
+def email_preview(state: dict[str, Any]) -> str:
+    d = state["draft"]
+    to = state.get("to") or "❓ (support email dorakaledu — email address type cheyandi)"
+    src = f"\n(source: {state['source']})" if state.get("source") else ""
+    demo = "\n[Demo mode: mail mee inbox ki vastundi]" if settings().email_demo_override else ""
+    return f"📧 Draft mail\nTo: {to}{src}\nSubject: {d['subject']}\n\n{d['body']}\n{demo}\nPampana? (yes / no / correct email type cheyandi)"
+
+
+def run_email(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
+    state = task["steps"].get(step["id"], {})
+    if state.get("status") == "confirmed":
+        if not state.get("to"):
+            send("Email address ledu — address type cheyandi.")
+            return {**state, "status": "awaiting_confirm"}
+        used = email_action.send(state["to"], state["draft"]["subject"], state["draft"]["body"])
+        store().add_event(task["task_id"], "email_sent", {"to": state["to"], "delivered_to": used})
+        return {**state, "status": "done", "output": {"to": state["to"], "delivered_to": used,
+                                                       "subject": state["draft"]["subject"],
+                                                       "demo_override": settings().email_demo_override}}
+    ctx = {"inputs": task["inputs"]}
+    to = validate.email(render(step["to"], ctx))
+    source = "you" if to else None
+    if not to and step.get("to_lookup"):
+        found = lookup.find_email(render(step["to_lookup"], ctx), task["task_id"])
+        to, source = validate.email(found.email), found.source_url
+    draft = decider.draft_email(render(step["goal"], ctx), task["inputs"], step.get("shareable", []), task["task_id"])
+    new = {"status": "awaiting_confirm", "to": to, "source": source, "draft": draft.model_dump()}
+    send(email_preview(new))
+    return new
+
+
 def run(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], send) -> dict[str, Any]:
     if step["type"] == "call":
         return run_call(step, spec, task)
     if step["type"] == "reply":
         return run_reply(step, spec, task, send)
+    if step["type"] == "email":
+        return run_email(step, spec, task, send)
     raise NotImplementedError(f"step type {step['type']} NOT BUILT yet")

@@ -86,3 +86,13 @@ Chose: brief_writer must ask open questions only; extractor treats bare "yes" to
 Gave up: nothing.
 Would change if: eval shows open questions make calls too long.
 This transcript becomes an eval case (leading-question "Yeah" → inclusions tentative).
+
+## [Sat 14:45] F3 warranty_email — LIVE (simulated WA input, real vision/search/LLM/SMTP)
+Observed: mock product label (gpt-image-2) → vision brand/model/serial (0.99) → photo remembered → instruction routed to warranty_email →
+web search (Responses API web_search, gpt-5.5, 10 s) found customercare@ttkprestige.com + source URL → draft with [purchase date] placeholder →
+user "yes" → Gmail SMTP (nhanish588@gmail.com app password, VERIFIED) → reply.
+Chose: new generic step type `email` (to / to_lookup / goal / shareable) with its own confirm gate (preview → yes / no / type a corrected address).
+Chose: EMAIL_DEMO_OVERRIDE=true by default — every mail is delivered to the user's own inbox, subject tagged "[DEMO — would go to X]",
+  because sending fake complaints to real companies is not OK. Gave up: proof that the brand receives it.
+Chose: a photo sent alone is remembered 15 min and attached to the next instruction (WhatsApp sends photo and voice note separately).
+Would change if: user wants a real warranty claim sent → set EMAIL_DEMO_OVERRIDE=false for that one task.

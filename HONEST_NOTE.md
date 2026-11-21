@@ -8,7 +8,8 @@
 | Brain prompts, schemas, router/brief/extractor/reply | BUILT by me (on OpenAI gpt-5.5 / gpt-5.4-mini) — LIVE |
 | Dashboard (tasks, calls, briefs, transcripts, evidence) | BUILT — basic |
 | Eval harness | NOT BUILT |
-| warranty_email, passbook_explain, appointment | NOT BUILT |
+| Specs: warranty_email | BUILT — LIVE via script (vision, web-search lookup, draft, confirm, Gmail send). Emails are delivered to my own inbox in demo mode (SIMULATED recipient) |
+| passbook_explain, appointment | NOT BUILT |
 | Phone number, voice, live call execution | REUSED — OmniDimension (one generic agent, per-call brief injected) |
 | WhatsApp transport | REUSED — Twilio sandbox |
 | Transcription, vision, TTS | REUSED — OpenAI APIs |

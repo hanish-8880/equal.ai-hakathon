@@ -186,3 +186,34 @@ def test_parse_omni_log_row_verified_shape():
     p = parse_webhook(row)
     assert p["call_id"] == "11127484" and p["chinku_call_id"] == "c_x" and p["task_id"] == "t1"
     assert p["transcript"] == "assistant: Namaste, I am Chinku.\nuser: Rate 385."
+
+
+def test_email_gate_correct_confirm_send(monkeypatch):
+    from app.brain.lookup import Found
+    from app.brain.schemas import EmailDraft
+    sent_mail = []
+    monkeypatch.setattr(runner.router, "route", lambda *a, **k: RouteResult(spec="warranty_email", inputs={
+        "brand": "Prestige", "product_type": "mixer grinder", "problem": "not working"}))
+    monkeypatch.setattr(steps.lookup, "find_email", lambda q, tid=None: Found(email="care@brand.com", source_url="https://x"))
+    monkeypatch.setattr(steps.decider, "draft_email", lambda *a, **k: EmailDraft(subject="Warranty", body="Hi"))
+    monkeypatch.setattr(steps.email_action, "send", lambda to, s, b: sent_mail.append(to) or "me@x.com")
+    monkeypatch.setattr(steps.decider, "compose_reply", lambda *a, **k: "mail sent")
+    out = []
+    runner.handle_message("u", "mixer broken, warranty mail pettu", None, out.append)
+    t = store().scan("tasks")[0]
+    assert t["status"] == "awaiting_confirm" and "care@brand.com" in out[-1] and sent_mail == []
+    runner.handle_message("u", "use support@prestige.in instead", None, out.append)  # correction
+    assert "support@prestige.in" in out[-1] and sent_mail == []
+    runner.handle_message("u", "yes", None, out.append)
+    assert sent_mail == ["support@prestige.in"]
+    assert store().scan("tasks")[0]["status"] == "done" and out[-1] == "mail sent"
+
+
+def test_photo_alone_remembered_for_next_message(monkeypatch):
+    seen = []
+    monkeypatch.setattr(runner.router, "route", lambda msg, image, *a, **k: seen.append(image) or RouteResult(spec=None, clarifying_question="Em cheyyali?"))
+    runner.handle_message("u", "", {"image_type": "product", "fields": {"brand": "Bajaj"}}, lambda m: None)
+    runner.handle_message("u", "warranty mail pettu", None, lambda m: None)
+    assert seen[1] == {"image_type": "product", "fields": {"brand": "Bajaj"}}
+    runner.handle_message("u", "another msg", None, lambda m: None)
+    assert seen[2] is None  # used once only

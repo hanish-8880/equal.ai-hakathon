@@ -18,6 +18,7 @@ from app.store.dynamo import store
 YES = re.compile(r"^\s*(yes|y|ok|okay|avunu|haa|ha|sare|cheyyi|confirm|go|done|👍)\b", re.I)
 NO = re.compile(r"^\s*(no|vaddu|cancel|stop|ledu)\b", re.I)
 OPEN = ("planned", "awaiting_confirm", "running", "waiting_input")
+EMAIL_IN_TEXT = re.compile(r"[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}")
 
 
 def now() -> float:
@@ -39,9 +40,23 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> 
     """Entry point for every WhatsApp message (already perceived). `send(text)` replies to the user."""
     pending = open_task(user)
     if pending and pending["status"] == "awaiting_confirm" and not image:
+        gate = next((sid for sid, st in pending["steps"].items() if st.get("status") == "awaiting_confirm"), None)
+        addr = EMAIL_IN_TEXT.search(text or "")
+        if gate and addr:  # correction of the email address during a step gate
+            st = pending["steps"][gate]
+            st["to"], st["source"] = addr.group(0), "you"
+            save_task(pending, "gate_corrected")
+            send(steps.email_preview(st))
+            return
         if YES.match(text or ""):
-            send("Sare 👍 calls start chestunna. Result WhatsApp lo pamputa.")
-            start(pending, send)
+            if gate:
+                pending["steps"][gate]["status"] = "confirmed"
+                pending["status"] = "running"
+                save_task(pending, "gate_confirmed")
+                advance(pending["task_id"], send)
+            else:
+                send("Sare 👍 calls start chestunna. Result WhatsApp lo pamputa.")
+                start(pending, send)
             return
         if NO.match(text or ""):
             pending["status"] = "cancelled"
@@ -49,12 +64,26 @@ def handle_message(user: str, text: str, image: dict[str, Any] | None, send) -> 
             send("Ok, cancel chesa.")
             return
 
+    # a photo sent alone is remembered for ~15 min and used with the next instruction
+    if image and not (text or "").strip():
+        store().put("contacts", f"lastimg:{user}", {"owner": user, "kind": "last_image", "image": image, "ts": now()})
+    elif not image:
+        last = store().get("contacts", f"lastimg:{user}")
+        if last and now() - last["ts"] < 900:
+            image = last["image"]
+            store().put("contacts", f"lastimg:{user}", {**last, "ts": 0})
+
     contacts = store().scan("contacts", user=user)
     msg = text or ""
     if pending:  # let the router merge corrections / answers into the pending task
         msg = f"{msg}\n\n[PENDING TASK spec={pending['spec']} inputs={pending['inputs']}]"
     r = router.route(msg, image, catalog(), contacts, pending["task_id"] if pending else None)
     if not r.spec or r.spec not in load_specs():
+        if image and not (text or "").strip():
+            f = image.get("fields") or {}
+            seen = " ".join(str(f[k]) for k in ("brand", "model", "product_type", "project_name") if f.get(k)) or image.get("image_type", "photo")
+            send(f"Photo chusa 👀 ({seen}). Deeni gurinchi em cheyyali? (voice note / text pampandi)")
+            return
         send(r.clarifying_question or "Nenu phone calls tho errands chestanu — e.g. dealers ki call chesi best rate. Em cheyyali?")
         return
 
@@ -160,11 +189,13 @@ def advance(task_id: str, send) -> None:
             task["step_idx"] += 1
             save_task(task)
             continue
-        if state == "running":
-            return  # waiting on webhooks
+        if state in ("running", "awaiting_confirm"):
+            return  # waiting on webhooks / user
         result = steps.run(step, spec, task, send)
         task = store().get("tasks", task_id)  # step may have written
         task["steps"][step["id"]] = result
+        if result["status"] == "awaiting_confirm":
+            task["status"] = "awaiting_confirm"
         save_task(task, f"step_{result['status']}")
         if result["status"] != "done":
             return

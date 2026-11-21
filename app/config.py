@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     public_base_url: str = ""
     smtp_user: str = ""
     smtp_app_password: str = ""
+    email_demo_override: bool = True  # deliver every email to SMTP_USER inbox (demo safety)
     user_name: str = "Hanish"
     user_whatsapp: str = ""
     test_phone: str = ""
