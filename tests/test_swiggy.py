@@ -15,7 +15,7 @@ def mem(monkeypatch):
     set_store(MemoryStore(path=None))
     OUT.clear(); CARDS.clear(); CALLS.clear()
     monkeypatch.setattr(swiggy, "connected", lambda: True)
-    monkeypatch.setattr(swiggy, "address_id", lambda: "addr1")
+    monkeypatch.setattr(swiggy, "address_id", lambda *a: "addr1")
     yield
 
 
@@ -108,3 +108,18 @@ def test_leaves_never_become_seeds(monkeypatch):
     ctx = {"task": type("T", (), {"task_id": "i_c"})(), "card": lambda t, c: CARDS.append((t, c)), "step_id": "s2"}
     out = tools.shop_list(ME, {"ingredients": [{"name": "Coriander leaves", "search_query": "coriander leaves", "grams": 30}]}, ctx)
     assert out["rows"][0]["product"] == "Coriander Leaves (Kothimbir)" and "check" in out["rows"][0]["note"]
+
+
+def test_food_search_tries_alternatives_filters_and_ranks_in_code(monkeypatch):
+    menus = {"veg meals": {"items": [{"name": "Veg platter", "price": 399, "isVeg": True, "menu_item_id": "1", "restaurant_id": "r1", "restaurant_name": "A", "deliveryTimeMinutes": 35}]},
+             "veg thali": {"items": [{"name": "Mini thali", "price": 149, "isVeg": True, "menu_item_id": "2", "restaurant_id": "r2", "restaurant_name": "B", "deliveryTimeMinutes": 30},
+                                     {"name": "Chicken thali", "price": 179, "isVeg": False, "menu_item_id": "3", "restaurant_id": "r2", "restaurant_name": "B", "deliveryTimeMinutes": 30}]},
+             "veg biryani": {"items": [{"name": "Veg biryani", "price": 189, "isVeg": True, "menu_item_id": "4", "restaurant_id": "r3", "restaurant_name": "C", "deliveryTimeMinutes": 55}]}}
+    calls = []
+    monkeypatch.setattr(swiggy, "call", lambda name, args, server="im": calls.append(args["query"]) or menus.get(args["query"], {"items": []}))
+    ctx = {"task": type("T", (), {"task_id": "i_f"})(), "card": lambda t, c: CARDS.append((t, c)), "step_id": "s1"}
+    out = tools.food_search(ME, {"query": "veg meals", "veg": True, "max_price": 200, "max_minutes": 40}, ctx)
+    assert [r["dish"] for r in out["rows"]] == ["Mini thali"]                          # only veg, ≤ ₹200, ≤ 40 min
+    whys = {e["item"].split(" · ")[0]: e["why"] for e in out["excluded"]}
+    assert whys["Veg platter"].startswith("₹399") and whys["Chicken thali"] == "not veg" and "55 min" in whys["Veg biryani"]
+    assert calls[:2] == ["veg meals", "veg thali"] and len(calls) <= 4                 # tried alternatives, at most 4 searches

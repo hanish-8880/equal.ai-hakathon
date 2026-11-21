@@ -882,13 +882,28 @@ def food_search(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[
     q = str(inputs.get("query") or "").strip()
     if not q:
         raise ToolError("What would you like to eat?")
-    try:
-        data = sw.call("search_menu", {"query": q, "addressId": sw.address_id("food")}, "food")
-    except sw.SwiggyError as e:
-        raise ToolError(str(e)) from e
     veg, max_price, max_min = inputs.get("veg"), inputs.get("max_price"), inputs.get("max_minutes")
+    alts = [a for a in (inputs.get("alternatives") or []) if isinstance(a, str)] or (
+        ["veg thali", "veg biryani", "masala dosa", "veg fried rice", "curd rice", "paneer"] if veg else
+        ["thali", "biryani", "dosa", "fried rice", "meals", "chicken curry"])
+    seen, items, tried = set(), [], []
+    for query in [q] + [a for a in alts if a.lower() != q.lower()]:
+        try:
+            data = sw.call("search_menu", {"query": query, "addressId": sw.address_id("food")}, "food")
+        except sw.SwiggyError as e:
+            raise ToolError(str(e)) from e
+        tried.append(query)
+        for it in data.get("items") or []:
+            k = (it.get("menu_item_id"), it.get("restaurant_id"))
+            if k not in seen:
+                seen.add(k)
+                items.append(it)
+        ok_now = [it for it in items if not (veg and it.get("isVeg") is False) and not (max_price and (it.get("price") or 0) > float(max_price))
+                  and not (max_min and (it.get("deliveryTimeMinutes") or 0) > float(max_min))]
+        if len(ok_now) >= 3 or len(tried) >= 4:  # enough good options, or 4 searches max (Swiggy: be gentle)
+            break
     keep, excluded = [], []
-    for it in data.get("items") or []:
+    for it in items:
         name, price, mins = (it.get("name") or "").strip(), it.get("price"), it.get("deliveryTimeMinutes")
         why = ("not veg" if veg and it.get("isVeg") is False else
                f"₹{price} is over ₹{max_price}" if max_price and price is not None and price > float(max_price) else
@@ -905,12 +920,13 @@ def food_search(user: str, inputs: dict[str, Any], ctx: dict[str, Any]) -> dict[
            "best": lambda r: (r["rating"] is None, -(r["rating"] or 0), r["price"] or 10**6)}[prio]
     keep.sort(key=key)
     if not keep:
-        raise ToolError(f"Nothing on Swiggy matched “{q}”" + (f" ({excluded[0]['why']})" if excluded else "") + ". Try another dish name.")
+        raise ToolError(f"Nothing on Swiggy fits right now — I tried {', '.join(tried)}" + (f" (e.g. {excluded[0]['item']}: {excluded[0]['why']})" if excluded else "")
+                        + ". Many kitchens close late at night — try a higher budget or later.")
     w = keep[0]
     why = {"cheapest": f"lowest price ₹{w['price']}", "fastest": f"fastest delivery ({w['eta'] or str(w['minutes']) + ' min'})",
            "best": f"best rated restaurant ({w['rating']}★)"}[prio]
     ctx["card"](f"🍽️ Recommended: {w['dish']} · {w['restaurant']} · ₹{w['price']} · {w['eta'] or ''} — {why}",
-                {"type": "food", "query": q, "priority": prio, "why": why, "rows": keep[:6], "excluded": excluded[:6],
+                {"type": "food", "query": q, "tried": tried, "priority": prio, "why": why, "rows": keep[:6], "excluded": excluded[:6],
                  "address": "your saved Swiggy address", "checked": datetime.now(IST).isoformat(timespec="minutes")})
     return {"rows": keep[:6], "recommended": w, "excluded": excluded}
 
