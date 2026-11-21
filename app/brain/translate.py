@@ -28,6 +28,8 @@ Rules:
   masked phones (******3607), emails, URLs, emoji, people/shop/company names in Latin letters (Sai Facility, Srinivas),
   and any text in parentheses that starts with "yes" such as (yes / no).
 - Plumbing part names may stay in English letters (angle valve, hose, geyser, flush tank) — plumbers say them that way.
+- Billing words: "against WO-117" means "under work order WO-117" (Telugu: WO-117 మీద, Hindi: WO-117 पर, mix: WO-117 meeda) — never "opposed to".
+  "(returned / unused)" → Telugu (తిరిగి ఇచ్చారు / వాడలేదు), Hindi (लौटा दिया / इस्तेमाल नहीं हुआ), mix (return chesaru / vaadaledu).
 - Keep every line break where it is. Do not add or remove information.
 Example (Telugu): "J24: 2 angle valve ₹700, labour ₹400. Total ₹1,100. Not billed: 1 × hose (returned).\\nSend to Sai Facility? (yes / no)"
 → "J24: 2 angle valve ₹700, కూలీ ₹400. మొత్తం ₹1,100. బిల్‌లో వేయలేదు: 1 × hose (తిరిగి ఇచ్చారు).\\nSai Facility కి పంపాలా? (yes / no)"
@@ -67,7 +69,7 @@ def already(text: str, code: str) -> bool:
 def to_lang(text: str, code: str) -> str:
     if not text or not text.strip() or code not in NAMES or already(text, code):
         return text
-    key = f"tr2:{code}:{hashlib.sha1(text.encode('utf-8')).hexdigest()}"
+    key = f"tr3:{code}:{hashlib.sha1(text.encode('utf-8')).hexdigest()}"
     hit = store().get("contacts", key)
     if hit and hit.get("text"):
         return hit["text"]
