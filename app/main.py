@@ -81,6 +81,9 @@ def entry(user: str, text: str, image: dict[str, Any] | None, force_confirm: boo
         runner.handle_message(user, text, image, reply_to(user), force_confirm=force_confirm)
 
 
+_slot_sync_at = [0.0]
+
+
 def _scheduler_loop() -> None:
     """Persisted schedules (task state) → survives restarts. EventBridge can call /internal/fire instead."""
     while True:
@@ -88,6 +91,10 @@ def _scheduler_loop() -> None:
             runner.tick_schedules()
             runner.sweep_stuck_calls()
             runner.fire_due_retries()
+            if time.time() - _slot_sync_at[0] > 300:  # keep the phone agent's free-slot list fresh (no-op if unchanged)
+                _slot_sync_at[0] = time.time()
+                from app.jobs import slots
+                slots.sync_inbound_agent()
         except Exception as e:  # noqa: BLE001
             store().add_event("-", "error", {"where": "scheduler", "error": str(e)[:300]})
         time.sleep(15)
@@ -260,9 +267,24 @@ def process_inbound_call(parsed: dict[str, Any]) -> None:
     owner = inbound_caller_allowed(parsed.get("from_number"))
     store().add_event("-", "inbound_call", {"from_last4": (parsed.get("from_number") or "")[-4:], "allowed": bool(owner),
                                             "summary": parsed.get("summary"), "transcript": parsed.get("transcript", "")[:3000]})
-    if not owner:
+    from app.jobs import customer_call, slots
+    try:
+        windows = slots.work_windows()
+        for i, w in enumerate(windows, start=1):
+            w["id"] = f"W{i}"
+        read = customer_call.read_call(parsed.get("transcript", ""), windows) if parsed.get("transcript") else None
+    except Exception as e:  # noqa: BLE001
+        read = None
+        store().add_event("-", "error", {"where": "customer_call_read", "error": str(e)[:300]})
+    # a customer booking (any number — the owner can also test as a customer from his own phone)
+    if read and (read.caller_kind == "customer" or (not owner and read.caller_kind != "plumber")):
+        customer_call.handle(parsed, read)
         return
-    said = "\n".join(l[5:].strip() for l in parsed.get("transcript", "").splitlines() if l.startswith("user:"))
+    if not owner:  # someone else claiming to be the plumber: never take tasks from them
+        if read and read.caller_kind == "plumber":
+            deliver(settings().user_whatsapp, f"⚠️ {mask_phone(parsed.get('from_number'))} called claiming to give tasks as you — ignored.")
+        return
+    said ="\n".join(l[5:].strip() for l in parsed.get("transcript", "").splitlines() if l.startswith("user:"))
     if not said.strip():
         return
     text = f"[Hanish phone call lo cheppadu]\n{said}\n\n[Call summary: {parsed.get('summary') or '-'}]"

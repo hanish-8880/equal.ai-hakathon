@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     default_language: str = "English"
     mode: str = "plumber"  # "plumber" = Chinku for Plumbers (job router); "errands" = v1 specs only
     job_id_start: int = 21
+    work_hours: str = "10:00-12:00,12:00-14:00,16:00-18:00"  # visit windows customers can book by phone (demo default)
+    slot_days: int = 3  # how many days ahead callers can book
     plumber_name: str = "Hanish"  # calls, replies, voice notes (Telugu off for now)
     user_whatsapp: str = ""
     chat_key: str = ""  # secret for the /chat web page

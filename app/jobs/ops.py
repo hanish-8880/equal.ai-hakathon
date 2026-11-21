@@ -126,6 +126,8 @@ def book_slot(step: dict[str, Any], spec: dict[str, Any], task: dict[str, Any], 
     jobs.log(job, "visit_booked", f"Visit booked {w.get('label')} (customer: “{(f.get('chosen_slot') or {}).get('evidence_quote') or chosen}”)",
              actor="client", channel="call", ref=call_id)
     jobs.save(job)
+    from app.jobs import slots
+    slots.sync_soon()  # callers must no longer be offered this slot
     CARD(task["user"], f"Booked ✅ {job.job_id} · {w.get('label')} · {job.flat.value or job.site_address.value or ''}", jobs.card(job))
     return {"status": "done", "output": {"booked": True, "fields": {"slot_start": {"value": w["start"], "status": "confirmed"}}, "slot": w}}
 
